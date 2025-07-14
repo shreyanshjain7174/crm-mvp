@@ -9,9 +9,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Set base path for GitHub Pages (uncomment when deploying)
-  // basePath: '/crm-mvp',
-  // assetPrefix: '/crm-mvp/',
+  // Set base path for GitHub Pages
+  basePath: '/crm-mvp',
+  assetPrefix: '/crm-mvp/',
 }
 
 module.exports = nextConfig
