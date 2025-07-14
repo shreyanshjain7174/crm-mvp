@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String
+  company     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  leads       Lead[]
+  
+  @@map("users")
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  email       String?
+  status      String   @default("COLD") // COLD, WARM, HOT, CONVERTED, LOST
+  source      String?
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  assignedTo  String?
+  aiScore     Float?
+  businessProfile String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  interactions Interaction[]
+  aiSuggestions AISuggestion[]
+  executions   WorkflowExecution[]
+  
+  @@map("leads")
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  leadId      String
+  content     String
+  direction   String    // INBOUND, OUTBOUND
+  messageType String    @default("TEXT") // TEXT, IMAGE, DOCUMENT, AUDIO, VIDEO
+  status      String    @default("SENT") // SENT, DELIVERED, READ, FAILED
+  whatsappId  String?
+  timestamp   DateTime  @default(now())
+  
+  lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
+model Interaction {
+  id          String        @id @default(cuid())
+  leadId      String
+  type        String        // CALL, EMAIL, WHATSAPP, MEETING, STATUS_CHANGE, NOTE
+  description String
+  outcome     String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  
+  lead        Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  @@map("interactions")
+}
+
+model AISuggestion {
+  id          String           @id @default(cuid())
+  leadId      String
+  type        String           // MESSAGE, FOLLOW_UP, STATUS_CHANGE, PRIORITY_UPDATE
+  content     String
+  context     String?
+  confidence  Float
+  approved    Boolean          @default(false)
+  executed    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  approvedAt  DateTime?
+  executedAt  DateTime?
+  
+  lead        Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  @@map("ai_suggestions")
+}
+
+model ContextMemory {
+  id          String   @id @default(cuid())
+  leadId      String
+  content     String
+  embedding   String?  // JSON string of float array
+  metadata    String?  // JSON string
+  createdAt   DateTime @default(now())
+  
+  @@map("context_memory")
+}
+
+model BusinessProfile {
+  id          String   @id @default(cuid())
+  name        String
+  industry    String
+  description String?
+  whatsappNumber String?
+  apiConfig   String?  // JSON string
+  aiConfig    String?  // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("business_profiles")
+}
+
+model AgentWorkflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  triggers    String   // JSON string - workflow triggers
+  nodes       String   // JSON string - workflow nodes with connections
+  settings    String?  // JSON string - global workflow settings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  executions  WorkflowExecution[]
+  
+  @@map("agent_workflows")
+}
+
+model WorkflowExecution {
+  id          String   @id @default(cuid())
+  workflowId  String
+  leadId      String?
+  status      String   @default("RUNNING") // PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  currentNode String?
+  context     String?  // JSON string - execution context and variables
+  result      String?  // JSON string - final execution result
+  error       String?  // Error message if failed
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  
+  workflow    AgentWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  lead        Lead?         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  steps       ExecutionStep[]
+  
+  @@map("workflow_executions")
+}
+
+model ExecutionStep {
+  id          String   @id @default(cuid())
+  executionId String
+  nodeId      String
+  nodeType    String
+  status      String   @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, SKIPPED
+  input       String?  // JSON string
+  output      String?  // JSON string
+  error       String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  
+  @@map("execution_steps")
+}
+
+model AgentTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // lead_capture, follow_up, qualification, support
+  description String
+  icon        String?
+  workflow    String   // JSON string - pre-built workflow definition
+  isBuiltIn   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("agent_templates")
+}
