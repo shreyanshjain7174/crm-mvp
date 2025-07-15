@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const response = await apiClient.login(credentials);
       setUser(response.user);
-      setToken(apiClient.getToken());
+      setToken(response.token);
       router.push('/dashboard');
     } catch (error) {
       throw error;
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const response = await apiClient.register(userData);
       setUser(response.user);
-      setToken(apiClient.getToken());
+      setToken(response.token);
       router.push('/dashboard');
     } catch (error) {
       throw error;

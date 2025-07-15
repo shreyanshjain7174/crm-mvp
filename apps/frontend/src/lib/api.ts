@@ -176,8 +176,11 @@ class ApiClient {
 
   // Auth methods
   async login(credentials: LoginRequest): Promise<AuthResponse> {
+    console.log('API login called, DEMO_MODE:', DEMO_MODE);
+    
     // Use demo mode if enabled
     if (DEMO_MODE) {
+      console.log('Using demo mode for login');
       return demoAuthService.login(credentials);
     }
     

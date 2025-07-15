@@ -3,7 +3,18 @@ import { User, AuthResponse, LoginRequest, RegisterRequest } from './api';
 // Demo mode configuration
 export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
                         process.env.NODE_ENV === 'development' ||
-                        typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+                        (typeof window !== 'undefined' && window.location.hostname.includes('github.io'));
+
+// Debug logging
+if (typeof window !== 'undefined') {
+  console.log('Demo Mode Detection:', {
+    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
+    NODE_ENV: process.env.NODE_ENV,
+    hostname: window.location.hostname,
+    isGitHubPages: window.location.hostname.includes('github.io'),
+    DEMO_MODE
+  });
+}
 
 // Demo user data
 const DEMO_USER: User = {
@@ -18,6 +29,8 @@ const DEMO_USER: User = {
 // Demo authentication service
 export const demoAuthService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
+    console.log('Demo login called with:', credentials);
+    
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
@@ -25,8 +38,10 @@ export const demoAuthService = {
     const token = `demo-token-${Date.now()}`;
     
     // Store token in localStorage
-    localStorage.setItem('auth-token', token);
+    localStorage.setItem('auth_token', token);
     localStorage.setItem('demo-user', JSON.stringify(DEMO_USER));
+    
+    console.log('Demo login success:', { token, user: DEMO_USER });
     
     return {
       user: DEMO_USER,
@@ -50,7 +65,7 @@ export const demoAuthService = {
     };
     
     // Store token in localStorage
-    localStorage.setItem('auth-token', token);
+    localStorage.setItem('auth_token', token);
     localStorage.setItem('demo-user', JSON.stringify(user));
     
     return {
@@ -64,7 +79,7 @@ export const demoAuthService = {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    const token = localStorage.getItem('auth-token');
+    const token = localStorage.getItem('auth_token');
     const storedUser = localStorage.getItem('demo-user');
     
     if (!token || !storedUser) {
@@ -80,7 +95,7 @@ export const demoAuthService = {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    localStorage.removeItem('auth-token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('demo-user');
   },
 
@@ -100,14 +115,14 @@ export const demoAuthService = {
   },
 
   getToken(): string | null {
-    return localStorage.getItem('auth-token');
+    return localStorage.getItem('auth_token');
   },
 
   setToken(token: string | null): void {
     if (token) {
-      localStorage.setItem('auth-token', token);
+      localStorage.setItem('auth_token', token);
     } else {
-      localStorage.removeItem('auth-token');
+      localStorage.removeItem('auth_token');
     }
   }
 };
