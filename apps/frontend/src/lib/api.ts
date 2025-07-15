@@ -1,3 +1,5 @@
+import { DEMO_MODE, demoAuthService } from './demo-mode';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 // Auth interfaces
@@ -120,15 +122,22 @@ class ApiClient {
   setToken(token: string | null) {
     this.token = token;
     if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('auth_token', token);
+      if (DEMO_MODE) {
+        demoAuthService.setToken(token);
       } else {
-        localStorage.removeItem('auth_token');
+        if (token) {
+          localStorage.setItem('auth_token', token);
+        } else {
+          localStorage.removeItem('auth_token');
+        }
       }
     }
   }
 
   getToken(): string | null {
+    if (DEMO_MODE) {
+      return demoAuthService.getToken();
+    }
     return this.token;
   }
 
@@ -167,6 +176,11 @@ class ApiClient {
 
   // Auth methods
   async login(credentials: LoginRequest): Promise<AuthResponse> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      return demoAuthService.login(credentials);
+    }
+    
     const response = await this.request<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -178,6 +192,11 @@ class ApiClient {
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      return demoAuthService.register(userData);
+    }
+    
     const response = await this.request<AuthResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -189,10 +208,21 @@ class ApiClient {
   }
 
   async getCurrentUser(): Promise<{ user: User }> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      return demoAuthService.getCurrentUser();
+    }
+    
     return this.request<{ user: User }>('/api/auth/me');
   }
 
   async logout(): Promise<{ message: string }> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      await demoAuthService.logout();
+      return { message: 'Successfully logged out (Demo Mode)' };
+    }
+    
     const response = await this.request<{ message: string }>('/api/auth/logout', {
       method: 'POST',
     });
@@ -203,6 +233,12 @@ class ApiClient {
   }
 
   async updateProfile(updates: Partial<User>): Promise<{ user: User; message: string }> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      const result = await demoAuthService.updateProfile(updates);
+      return { ...result, message: 'Profile updated successfully (Demo Mode)' };
+    }
+    
     return this.request<{ user: User; message: string }>('/api/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(updates),

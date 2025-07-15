@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { DEMO_MODE } from '@/lib/demo-mode';
 
 export default function RegisterPage() {
   const { register, loading } = useAuth();
@@ -79,6 +80,14 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {DEMO_MODE && (
+                <Alert>
+                  <AlertDescription>
+                    🎭 <strong>Demo Mode:</strong> This is a live demo! You can use any credentials to register and explore the full CRM system.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
