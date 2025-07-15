@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { WebSocketClient } from '@/lib/websocket/client';
 import { EventChannel, EVENT_CHANNELS } from '@/lib/websocket/events';
 import { useAuth } from '@/contexts/auth-context';
+import { DEMO_MODE } from '@/lib/demo-mode';
 
 interface RealtimeConfig {
   channels?: EventChannel[];
@@ -40,6 +41,20 @@ export function useRealtime(config: RealtimeConfig = {}) {
   const initializeClient = useCallback(async () => {
     if (!user || !token) {
       console.warn('Cannot initialize WebSocket: user not authenticated');
+      return;
+    }
+
+    // Skip WebSocket connection in demo mode
+    if (DEMO_MODE) {
+      console.log('Demo mode: Skipping WebSocket connection');
+      setState(prev => ({ 
+        ...prev, 
+        connected: true, 
+        connecting: false, 
+        error: null,
+        reconnectAttempts: 0,
+        latency: 0
+      }));
       return;
     }
 
@@ -169,6 +184,12 @@ export function useRealtime(config: RealtimeConfig = {}) {
 
   // Event subscription helpers
   const subscribe = useCallback(<T = any>(eventType: string, handler: (data: T) => void) => {
+    if (DEMO_MODE) {
+      // In demo mode, return a no-op unsubscribe function
+      console.log('Demo mode: Skipping event subscription for', eventType);
+      return () => {};
+    }
+
     if (!clientRef.current) {
       console.warn('Cannot subscribe: WebSocket client not initialized');
       return () => {};
@@ -316,6 +337,11 @@ export function useRealtime(config: RealtimeConfig = {}) {
 
   // Emit events
   const emit = useCallback((eventType: string, data?: any) => {
+    if (DEMO_MODE) {
+      console.log('Demo mode: Skipping event emission for', eventType, data);
+      return;
+    }
+
     if (!clientRef.current?.connected) {
       console.warn('Cannot emit event: not connected');
       return;
@@ -325,6 +351,11 @@ export function useRealtime(config: RealtimeConfig = {}) {
   }, []);
 
   const emitWithAck = useCallback((eventType: string, data?: any) => {
+    if (DEMO_MODE) {
+      console.log('Demo mode: Skipping event emission with ack for', eventType, data);
+      return Promise.resolve({ success: true, message: 'Demo mode response' });
+    }
+
     if (!clientRef.current?.connected) {
       return Promise.reject(new Error('Not connected'));
     }
