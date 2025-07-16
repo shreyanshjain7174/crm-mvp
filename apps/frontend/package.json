@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "echo \"No tests yet\" && exit 0",
     "typecheck": "tsc --noEmit",
     "export": "next build && next export",
     "deploy": "npm run build && touch out/.nojekyll"
