@@ -1,0 +1,245 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
+
+jobs:
+  # Test and Quality Checks
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm install
+        cd apps/backend && npm install
+        cd ../frontend && npm install
+
+    - name: Setup test database
+      run: |
+        cd apps/backend
+        npx prisma migrate deploy
+        npx prisma generate
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+
+    - name: Run backend tests
+      run: |
+        cd apps/backend
+        npm run test
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+
+    - name: Run frontend tests
+      run: |
+        cd apps/frontend
+        npm run test
+      env:
+        CI: true
+
+    - name: Type checking
+      run: |
+        cd apps/backend && npm run typecheck
+        cd ../frontend && npm run typecheck
+
+    - name: Linting
+      run: |
+        cd apps/backend && npm run lint
+        cd ../frontend && npm run lint
+
+  # Build and Push Docker Images
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: [frontend, backend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./apps/${{ matrix.service }}
+        file: ./apps/${{ matrix.service }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+  # Deploy to Development
+  deploy-dev:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    environment: development
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Development
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.DEV_HOST }}
+        username: ${{ secrets.DEV_USERNAME }}
+        key: ${{ secrets.DEV_SSH_KEY }}
+        script: |
+          cd /opt/crm-mvp
+          git pull origin dev
+          docker compose -f docker-compose.dev.yml down
+          docker compose -f docker-compose.dev.yml pull
+          docker compose -f docker-compose.dev.yml up -d
+          docker system prune -f
+
+  # Deploy to Production
+  deploy-prod:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Production
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USERNAME }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /opt/crm-mvp
+          git pull origin main
+          docker compose down
+          docker compose pull
+          docker compose up -d
+          docker system prune -f
+
+  # Deploy to GitHub Pages (Static Demo)
+  deploy-pages:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: github-pages
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd apps/frontend
+        npm ci
+
+    - name: Build for GitHub Pages
+      run: |
+        cd apps/frontend
+        npm run build
+      env:
+        GITHUB_PAGES: true
+        NEXT_PUBLIC_DEMO_MODE: true
+        NEXT_PUBLIC_BACKEND_URL: https://api.example.com
+        NEXT_PUBLIC_WS_URL: wss://api.example.com
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./apps/frontend/out
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

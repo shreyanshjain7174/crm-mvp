@@ -1,0 +1,17 @@
+# Development Dockerfile with hot reload
+FROM node:18-slim AS development
+
+# Install dependencies and setup in one layer
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install && \
+    mkdir -p uploads
+
+# Expose ports and start development server
+EXPOSE 3001 9229
+CMD ["npm", "run", "dev"]

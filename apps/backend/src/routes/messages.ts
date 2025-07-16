@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { Direction, MessageType } from '@prisma/client';
+import { Direction, MessageType } from '../types/enums';
 
 const sendMessageSchema = z.object({
   leadId: z.string(),
@@ -12,20 +12,14 @@ export async function messageRoutes(fastify: FastifyInstance) {
   // Get all conversations (grouped by lead)
   fastify.get('/conversations', async (request, reply) => {
     try {
-      const leads = await fastify.prisma.lead.findMany({
-        include: {
-          messages: {
-            orderBy: { timestamp: 'desc' },
-            take: 1
-          }
-        },
-        where: {
-          messages: {
-            some: {}
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
+      const result = await fastify.db.query(`
+        SELECT l.*, 
+          (SELECT row_to_json(m) FROM (SELECT * FROM messages WHERE lead_id = l.id ORDER BY timestamp DESC LIMIT 1) m) as latest_message
+        FROM leads l 
+        WHERE EXISTS (SELECT 1 FROM messages WHERE lead_id = l.id)
+        ORDER BY l.updated_at DESC
+      `);
+      const leads = result.rows;
       
       return leads;
     } catch (error) {
@@ -39,10 +33,11 @@ export async function messageRoutes(fastify: FastifyInstance) {
     try {
       const { leadId } = request.params;
       
-      const messages = await fastify.prisma.message.findMany({
-        where: { leadId },
-        orderBy: { timestamp: 'asc' }
-      });
+      const result = await fastify.db.query(
+        'SELECT * FROM messages WHERE lead_id = $1 ORDER BY timestamp ASC',
+        [leadId]
+      );
+      const messages = result.rows;
       
       return messages;
     } catch (error) {
@@ -57,18 +52,19 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const data = sendMessageSchema.parse(request.body);
       
       // Create message in database
-      const message = await fastify.prisma.message.create({
-        data: {
-          ...data,
-          direction: 'OUTBOUND',
-          messageType: data.messageType || 'TEXT'
-        }
-      });
+      const messageResult = await fastify.db.query(`
+        INSERT INTO messages (lead_id, content, direction, message_type)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [data.leadId, data.content, 'OUTBOUND', data.messageType || 'TEXT']);
+      const message = messageResult.rows[0];
 
       // Get lead info for WhatsApp sending
-      const lead = await fastify.prisma.lead.findUnique({
-        where: { id: data.leadId }
-      });
+      const leadResult = await fastify.db.query(
+        'SELECT * FROM leads WHERE id = $1',
+        [data.leadId]
+      );
+      const lead = leadResult.rows[0];
 
       if (!lead) {
         return reply.status(404).send({ error: 'Lead not found' });
@@ -95,10 +91,11 @@ export async function messageRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params;
       
-      const message = await fastify.prisma.message.update({
-        where: { id },
-        data: { status: 'READ' }
-      });
+      const result = await fastify.db.query(
+        'UPDATE messages SET status = $1 WHERE id = $2 RETURNING *',
+        ['READ', id]
+      );
+      const message = result.rows[0];
       
       // Emit real-time event
       fastify.io.emit('message:read', message);
