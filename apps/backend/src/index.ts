@@ -3,10 +3,10 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import websocket from '@fastify/websocket';
-import { PrismaClient } from '@prisma/client';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import { pool, initializeDatabase } from './db/connection';
 import { leadRoutes } from './routes/leads';
 import { messageRoutes } from './routes/messages';
 import { whatsappRoutes } from './routes/whatsapp';
@@ -17,8 +17,6 @@ import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 
 dotenv.config();
-
-const prisma = new PrismaClient();
 const app = fastify({ logger: true });
 
 const server = createServer();
@@ -31,7 +29,7 @@ const io = new Server(server, {
 
 declare module 'fastify' {
   interface FastifyInstance {
-    prisma: PrismaClient;
+    db: typeof pool;
     io: Server;
     authenticate: typeof authenticate;
   }
@@ -51,8 +49,11 @@ async function buildApp() {
   
   await app.register(websocket);
 
+  // Initialize database
+  await initializeDatabase();
+  
   // Decorate fastify instance
-  app.decorate('prisma', prisma);
+  app.decorate('db', pool);
   app.decorate('io', io);
   app.decorate('authenticate', authenticate);
 
@@ -94,13 +95,11 @@ async function start() {
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
-  await prisma.$disconnect();
   process.exit(0);
 });
 
