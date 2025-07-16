@@ -19,7 +19,7 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/backend/prisma ./apps/backend/prisma/
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm ci --frozen-lockfile && \
+RUN npm ci --frozen-lockfile --prefer-offline && \
     npm cache clean --force
 
 # Generate Prisma client
@@ -60,7 +60,7 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/backend/prisma ./apps/backend/prisma/
 
 # Install only production dependencies
-RUN npm ci --only=production --frozen-lockfile && \
+RUN npm ci --only=production --frozen-lockfile --prefer-offline && \
     npm cache clean --force
 
 # Generate Prisma client

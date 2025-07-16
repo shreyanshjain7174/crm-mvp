@@ -11,8 +11,8 @@ COPY package*.json ./
 # Copy frontend-specific package.json
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Install dependencies using workspace
-RUN npm ci --frozen-lockfile && npm cache clean --force
+# Install dependencies using workspace with better caching
+RUN npm ci --frozen-lockfile --prefer-offline && npm cache clean --force
 
 # Build stage
 FROM node:18-alpine AS builder
@@ -26,7 +26,7 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Build the frontend
 WORKDIR /app/apps/frontend
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 DOCKER_BUILD=true
 RUN npm run build
 
 # Production stage - Ultra lightweight
