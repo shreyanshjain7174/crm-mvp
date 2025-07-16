@@ -18,8 +18,8 @@ COPY apps/backend/package*.json ./apps/backend/
 # Copy prisma schema
 COPY apps/backend/prisma ./apps/backend/prisma/
 
-# Install dependencies using workspace
-RUN npm ci --only=production --frozen-lockfile && \
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --frozen-lockfile && \
     npm cache clean --force
 
 # Generate Prisma client
@@ -40,6 +40,33 @@ COPY --from=deps /app/node_modules ./node_modules
 WORKDIR /app/apps/backend
 RUN npm run build
 
+# Production dependencies stage
+FROM node:18-slim AS prod-deps
+
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy root package.json and lock file first
+COPY package*.json ./
+
+# Copy backend-specific package.json
+COPY apps/backend/package*.json ./apps/backend/
+
+# Copy prisma schema
+COPY apps/backend/prisma ./apps/backend/prisma/
+
+# Install only production dependencies
+RUN npm ci --only=production --frozen-lockfile && \
+    npm cache clean --force
+
+# Generate Prisma client
+WORKDIR /app/apps/backend
+RUN npx prisma generate
+
 # Production stage - Ultra lightweight
 FROM node:18-slim AS runner
 
@@ -55,8 +82,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy files and generate Prisma client
-COPY --from=deps --chown=appuser:appuser /app/node_modules ./node_modules
-COPY --from=deps --chown=appuser:appuser /app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=prod-deps --chown=appuser:appuser /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=appuser:appuser /app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=builder --chown=appuser:appuser /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder --chown=appuser:appuser /app/apps/backend/package*.json ./apps/backend/
 
