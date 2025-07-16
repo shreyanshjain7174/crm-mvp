@@ -1,11 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { SuggestionType } from '@prisma/client';
 import { AIService } from '../services/ai.service';
 
 const generateSuggestionSchema = z.object({
   leadId: z.string(),
-  type: z.nativeEnum(SuggestionType),
+  type: z.enum(['MESSAGE', 'FOLLOW_UP', 'STATUS_CHANGE', 'PRIORITY_UPDATE']),
   context: z.string().optional()
 });
 

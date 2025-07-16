@@ -1,20 +1,19 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { LeadStatus, Priority } from '@prisma/client';
 
 const createLeadSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(10),
   email: z.string().email().optional(),
   source: z.string().optional(),
-  priority: z.nativeEnum(Priority).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   businessProfile: z.string().optional()
 });
 
 const updateLeadSchema = z.object({
   name: z.string().optional(),
-  status: z.nativeEnum(LeadStatus).optional(),
-  priority: z.nativeEnum(Priority).optional(),
+  status: z.enum(['COLD', 'WARM', 'HOT', 'CONVERTED', 'LOST']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   assignedTo: z.string().optional(),
   businessProfile: z.string().optional()
 });

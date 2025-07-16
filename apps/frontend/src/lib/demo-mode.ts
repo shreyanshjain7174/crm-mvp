@@ -1,20 +1,20 @@
 import { User, AuthResponse, LoginRequest, RegisterRequest } from './api';
 
-// Demo mode configuration
-export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
-                        process.env.NODE_ENV === 'development' ||
-                        (typeof window !== 'undefined' && window.location.hostname.includes('github.io'));
+// Demo mode configuration - only enable when explicitly set or on GitHub Pages
+const isExplicitlyEnabled = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+
+export const DEMO_MODE = isExplicitlyEnabled || isGitHubPages;
 
 // Debug logging
-if (typeof window !== 'undefined') {
-  console.log('Demo Mode Detection:', {
-    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
-    NODE_ENV: process.env.NODE_ENV,
-    hostname: window.location.hostname,
-    isGitHubPages: window.location.hostname.includes('github.io'),
-    DEMO_MODE
-  });
-}
+console.log('Demo Mode Detection:', {
+  NODE_ENV: process.env.NODE_ENV,
+  NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
+  isExplicitlyEnabled,
+  isGitHubPages,
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined',
+  DEMO_MODE
+});
 
 // Demo user data
 const DEMO_USER: User = {

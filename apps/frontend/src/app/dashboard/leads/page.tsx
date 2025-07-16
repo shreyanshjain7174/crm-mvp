@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search, Filter, Phone, Mail, MessageCircle, Loader2 } from 'lucide-react';
 import { useLeads, useCreateLead, useUpdateLead, useDeleteLead } from '@/hooks/use-api';
 import { Lead } from '@/lib/api';
@@ -15,6 +19,15 @@ type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export default function LeadsPage() {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newLead, setNewLead] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    source: '',
+    priority: 'MEDIUM' as Priority,
+    businessProfile: ''
+  });
   
   const { data: leads = [], isLoading, error } = useLeads();
   const createLead = useCreateLead();
@@ -65,6 +78,31 @@ export default function LeadsPage() {
     return 'No pending actions';
   };
 
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createLead.mutateAsync({
+        name: newLead.name,
+        phone: newLead.phone,
+        email: newLead.email || undefined,
+        source: newLead.source || undefined,
+        priority: newLead.priority,
+        businessProfile: newLead.businessProfile || undefined
+      });
+      setIsAddModalOpen(false);
+      setNewLead({
+        name: '',
+        phone: '',
+        email: '',
+        source: '',
+        priority: 'MEDIUM',
+        businessProfile: ''
+      });
+    } catch (error) {
+      console.error('Failed to create lead:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -91,10 +129,112 @@ export default function LeadsPage() {
           <h1 className="text-3xl font-bold">Leads</h1>
           <p className="text-gray-600">Manage and track your potential customers</p>
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Lead</span>
-        </Button>
+        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Add Lead</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Lead</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateLead} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={newLead.name}
+                  onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                  placeholder="Enter full name"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone *</Label>
+                <Input
+                  id="phone"
+                  value={newLead.phone}
+                  onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                  placeholder="+91XXXXXXXXXX"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newLead.email}
+                  onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="source">Source</Label>
+                <Select value={newLead.source} onValueChange={(value) => setNewLead({ ...newLead, source: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                    <SelectItem value="Website">Website</SelectItem>
+                    <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                    <SelectItem value="Facebook">Facebook</SelectItem>
+                    <SelectItem value="Referral">Referral</SelectItem>
+                    <SelectItem value="Cold Call">Cold Call</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={newLead.priority} onValueChange={(value) => setNewLead({ ...newLead, priority: value as Priority })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LOW">Low</SelectItem>
+                    <SelectItem value="MEDIUM">Medium</SelectItem>
+                    <SelectItem value="HIGH">High</SelectItem>
+                    <SelectItem value="URGENT">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="businessProfile">Business Profile</Label>
+                <Input
+                  id="businessProfile"
+                  value={newLead.businessProfile}
+                  onChange={(e) => setNewLead({ ...newLead, businessProfile: e.target.value })}
+                  placeholder="Brief description of business needs"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createLead.isPending}>
+                  {createLead.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Lead'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">

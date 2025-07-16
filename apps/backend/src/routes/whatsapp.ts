@@ -81,6 +81,33 @@ export async function whatsappRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Test endpoint to simulate receiving WhatsApp message (for development)
+  fastify.post<{ Body: { phone: string; message: string; senderName?: string } }>('/test-receive', async (request, reply) => {
+    try {
+      const { phone, message, senderName } = request.body;
+      
+      const simulatedMessage = {
+        id: `test_${Date.now()}`,
+        from: phone,
+        timestamp: new Date().toISOString(),
+        text: { body: message },
+        type: 'text'
+      };
+      
+      const simulatedContacts = senderName ? [{
+        profile: { name: senderName },
+        wa_id: phone
+      }] : undefined;
+      
+      await processIncomingMessage(fastify, simulatedMessage, simulatedContacts);
+      
+      return { success: true, message: 'Test message processed' };
+    } catch (error) {
+      fastify.log.error('Error processing test message:', error);
+      reply.status(500).send({ error: 'Failed to process test message' });
+    }
+  });
+
   // Send WhatsApp message
   fastify.post<{ Body: { phone: string; message: string } }>('/send', async (request, reply) => {
     try {
@@ -132,12 +159,19 @@ async function processIncomingMessage(
       // Create new lead from contact info
       const contactName = contacts?.find(c => c.wa_id === phone)?.profile?.name || `Lead ${phone}`;
       
+      // For now, assign to first user in database (in production, use proper logic)
+      const firstUser = await fastify.prisma.user.findFirst();
+      if (!firstUser) {
+        throw new Error('No users found in database');
+      }
+      
       lead = await fastify.prisma.lead.create({
         data: {
           name: contactName,
           phone,
           source: 'WhatsApp',
-          status: 'COLD'
+          status: 'COLD',
+          userId: firstUser.id
         }
       });
       

@@ -40,6 +40,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {DEMO_MODE && (
+        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 z-50">
+          🎭 DEMO MODE ACTIVE - Use any credentials to login
+        </div>
+      )}
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { WebSocketClient } from '@/lib/websocket/client';
 import { EventChannel, EVENT_CHANNELS } from '@/lib/websocket/events';
 import { useAuth } from '@/contexts/auth-context';
@@ -32,10 +32,15 @@ export function useRealtime(config: RealtimeConfig = {}) {
   });
 
   const {
-    channels = [EVENT_CHANNELS.AGENTS, EVENT_CHANNELS.WORKFLOWS, EVENT_CHANNELS.APPROVALS, EVENT_CHANNELS.SYSTEM],
     autoConnect = true,
     reconnectOnAuthChange = true
   } = config;
+
+  // Memoize channels to prevent unnecessary re-renders
+  const memoizedChannels = useMemo(() => 
+    config.channels || [EVENT_CHANNELS.AGENTS, EVENT_CHANNELS.WORKFLOWS, EVENT_CHANNELS.APPROVALS, EVENT_CHANNELS.SYSTEM],
+    [config.channels]
+  );
 
   // Initialize WebSocket client
   const initializeClient = useCallback(async () => {
@@ -80,7 +85,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
         },
         {
           autoConnect: true,
-          channels,
+          channels: memoizedChannels,
           onConnect: () => {
             setState(prev => ({
               ...prev,
@@ -144,12 +149,104 @@ export function useRealtime(config: RealtimeConfig = {}) {
         error: error instanceof Error ? error.message : 'Connection failed'
       }));
     }
-  }, [user, token, channels]);
+  }, [user, token, memoizedChannels]);
 
   // Auto-connect when user is authenticated
   useEffect(() => {
     if (autoConnect && user && token) {
-      initializeClient();
+      // Call initializeClient directly instead of through the memoized function
+      // to avoid dependency issues
+      const initialize = async () => {
+        if (!user || !token) {
+          console.warn('Cannot initialize WebSocket: user not authenticated');
+          return;
+        }
+
+        // Skip WebSocket connection in demo mode
+        if (DEMO_MODE) {
+          console.log('Demo mode: Skipping WebSocket connection');
+          setState(prev => ({ 
+            ...prev, 
+            connected: true, 
+            connecting: false, 
+            error: null,
+            reconnectAttempts: 0,
+            latency: 0
+          }));
+          return;
+        }
+
+        if (clientRef.current) {
+          clientRef.current.disconnect();
+        }
+
+        setState(prev => ({ ...prev, connecting: true, error: null }));
+
+        try {
+          const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+          
+          clientRef.current = new WebSocketClient(
+            {
+              url: wsUrl,
+              auth: {
+                token,
+                userId: user.id
+              },
+              reconnectionAttempts: 5,
+              reconnectionDelay: 1000,
+              timeout: 20000
+            },
+            {
+              autoConnect: true,
+              channels: memoizedChannels,
+              onConnect: () => {
+                setState(prev => ({
+                  ...prev,
+                  connected: true,
+                  connecting: false,
+                  error: null,
+                  reconnectAttempts: 0
+                }));
+                console.log('Realtime connection established');
+              },
+              onDisconnect: (reason) => {
+                setState(prev => ({
+                  ...prev,
+                  connected: false,
+                  connecting: false,
+                  error: reason === 'io client disconnect' ? null : reason
+                }));
+                console.log('Realtime connection lost:', reason);
+              },
+              onError: (error) => {
+                setState(prev => ({
+                  ...prev,
+                  connected: false,
+                  connecting: false,
+                  error: error.message
+                }));
+                console.error('Realtime connection error:', error);
+              },
+              onReconnect: (attemptNumber) => {
+                setState(prev => ({
+                  ...prev,
+                  reconnectAttempts: attemptNumber
+                }));
+                console.log('Realtime reconnection attempt:', attemptNumber);
+              }
+            }
+          );
+        } catch (error) {
+          console.error('Failed to initialize WebSocket client:', error);
+          setState(prev => ({
+            ...prev,
+            connecting: false,
+            error: error instanceof Error ? error.message : 'Connection failed'
+          }));
+        }
+      };
+
+      initialize();
     }
 
     return () => {
@@ -158,14 +255,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
         clientRef.current = null;
       }
     };
-  }, [autoConnect, user, token, initializeClient]);
-
-  // Reconnect when auth changes
-  useEffect(() => {
-    if (reconnectOnAuthChange && clientRef.current && user && token) {
-      initializeClient();
-    }
-  }, [user, token, reconnectOnAuthChange, initializeClient]);
+  }, [autoConnect, user?.id, token, memoizedChannels]);
 
   // Manual connection control
   const connect = useCallback(() => {
@@ -174,7 +264,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
     } else if (!state.connected && !state.connecting) {
       clientRef.current.connect();
     }
-  }, [initializeClient, state.connected, state.connecting]);
+  }, [state.connected, state.connecting]); // Remove initializeClient from dependencies
 
   const disconnect = useCallback(() => {
     if (clientRef.current) {

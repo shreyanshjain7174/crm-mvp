@@ -115,7 +115,11 @@ class ApiClient {
     this.baseURL = baseURL;
     // Try to get token from localStorage
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token');
+      if (DEMO_MODE) {
+        this.token = demoAuthService.getToken();
+      } else {
+        this.token = localStorage.getItem('auth_token');
+      }
     }
   }
 
@@ -149,8 +153,9 @@ class ApiClient {
     };
 
     // Add auth token if available
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    const currentToken = this.getToken();
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
     }
 
     const config: RequestInit = {
@@ -161,6 +166,21 @@ class ApiClient {
     const response = await fetch(url, config);
 
     if (!response.ok) {
+      let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+      
+      // Try to get error details from response body
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        if (errorData.details) {
+          console.error('API Error details:', errorData.details);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+      }
+      
       if (response.status === 401) {
         // Token expired or invalid
         this.setToken(null);
@@ -168,7 +188,8 @@ class ApiClient {
           window.location.href = '/login';
         }
       }
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -176,11 +197,8 @@ class ApiClient {
 
   // Auth methods
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    console.log('API login called, DEMO_MODE:', DEMO_MODE);
-    
     // Use demo mode if enabled
     if (DEMO_MODE) {
-      console.log('Using demo mode for login');
       return demoAuthService.login(credentials);
     }
     

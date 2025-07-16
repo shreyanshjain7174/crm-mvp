@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useRealtime } from '@/hooks/use-realtime';
 import { EVENT_CHANNELS } from '@/lib/websocket/events';
 
@@ -17,17 +17,19 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
+  const channels = useMemo(() => [
+    EVENT_CHANNELS.AGENTS,
+    EVENT_CHANNELS.WORKFLOWS,
+    EVENT_CHANNELS.APPROVALS,
+    EVENT_CHANNELS.LEADS,
+    EVENT_CHANNELS.MESSAGES,
+    EVENT_CHANNELS.AI_SUGGESTIONS,
+    EVENT_CHANNELS.SYSTEM,
+    EVENT_CHANNELS.USER_ACTIVITY
+  ], []);
+
   const realtime = useRealtime({
-    channels: [
-      EVENT_CHANNELS.AGENTS,
-      EVENT_CHANNELS.WORKFLOWS,
-      EVENT_CHANNELS.APPROVALS,
-      EVENT_CHANNELS.LEADS,
-      EVENT_CHANNELS.MESSAGES,
-      EVENT_CHANNELS.AI_SUGGESTIONS,
-      EVENT_CHANNELS.SYSTEM,
-      EVENT_CHANNELS.USER_ACTIVITY
-    ],
+    channels,
     autoConnect: true,
     reconnectOnAuthChange: true
   });
