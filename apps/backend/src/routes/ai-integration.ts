@@ -179,7 +179,7 @@ export async function aiIntegrationRoutes(fastify: FastifyInstance) {
   });
 
   // Health check for AI service
-  fastify.get('/ai-health', async (request, reply) => {
+  fastify.get('/ai-health', async (_request, _reply) => {
     try {
       const response = await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 5000 });
       return {

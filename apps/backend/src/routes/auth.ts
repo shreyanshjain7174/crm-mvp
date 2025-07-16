@@ -235,7 +235,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   // Logout (client-side token removal, but we can track it)
   fastify.post('/logout', {
     preHandler: [fastify.authenticate]
-  }, async (request, reply) => {
+  }, async (_request, _reply) => {
     // In a production app, you might want to maintain a blacklist of tokens
     // For now, we'll just return success and let the client remove the token
     return { message: 'Logout successful' };

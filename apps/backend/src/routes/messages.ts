@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { Direction, MessageType } from '../types/enums';
+import { MessageType } from '../types/enums';
 
 const sendMessageSchema = z.object({
   leadId: z.string(),

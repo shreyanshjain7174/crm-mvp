@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { AIAgentFactory } from './ai-agent-factory';
-import { WorkflowNode, WorkflowExecution, ExecutionContext } from './types';
+import { WorkflowNode, WorkflowExecution } from './types';
 
 export class WorkflowExecutor extends EventEmitter {
   private db: Pool;

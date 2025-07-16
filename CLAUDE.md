@@ -78,8 +78,12 @@ npm run deploy:staging
 npm run deploy:prod
 ```
 
-[... rest of the existing content remains unchanged ...]
-
 ## Deployment Strategy Notes
 
 - For now other than the sensitive information push the changes in the main branch, after this point we will use one staging branch and the main branch will be our production branch
+
+## Commit Guidelines
+- Never use co-authored commits only user signed off commits.
+
+## Secrets and API Keys
+- Pinecone API Key: pcsk_6jpGA2_6ZDynb5Up9bqCaNdbz7oVVuBTLDQupJCZ3piQBSFkNe9k7C2HnSfqh65fQwcPSN

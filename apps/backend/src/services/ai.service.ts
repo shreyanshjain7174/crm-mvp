@@ -81,7 +81,7 @@ export class AIService {
     }
   }
 
-  private buildSystemPrompt(lead: any, type: SuggestionType): string {
+  private buildSystemPrompt(lead: any, _type: SuggestionType): string {
     return `You are an AI CRM assistant for Indian SMEs. Your task is to help sales teams manage WhatsApp leads effectively.
 
 Lead Context:
@@ -104,7 +104,7 @@ Rules:
 - Avoid overly sales-y language`;
   }
 
-  private buildUserPrompt(lead: any, type: SuggestionType, context?: string): string {
+  private buildUserPrompt(lead: any, type: SuggestionType, _context?: string): string {
     switch (type) {
       case 'MESSAGE':
         return `Generate a WhatsApp message response for this lead. The message should be relevant to their recent conversation and help move the lead forward in the sales process. Keep it under 160 characters if possible.`;
@@ -123,16 +123,17 @@ Rules:
     }
   }
 
-  private generateFallbackSuggestion(lead: any, type: SuggestionType, context?: string): string {
+  private generateFallbackSuggestion(lead: any, type: SuggestionType, _context?: string): string {
     switch (type) {
-      case 'MESSAGE':
+      case 'MESSAGE': {
         const lastMessage = lead.messages?.[0];
         if (!lastMessage || lastMessage.direction === 'OUTBOUND') {
           return `Hi ${lead.name}! Hope you're doing well. Do you have any questions about our products/services?`;
         }
         return `Thank you for your message, ${lead.name}! Let me help you with that. Could you share more details about your requirements?`;
+      }
       
-      case 'FOLLOW_UP':
+      case 'FOLLOW_UP': {
         const daysSinceLastContact = lead.messages?.length > 0 
           ? Math.floor((Date.now() - new Date(lead.messages[0].timestamp).getTime()) / (1000 * 60 * 60 * 24))
           : 999;
@@ -143,8 +144,9 @@ Rules:
           return 'Send a helpful resource or case study to maintain engagement';
         }
         return 'Wait 2-3 days before next follow-up to avoid being pushy';
+      }
       
-      case 'STATUS_CHANGE':
+      case 'STATUS_CHANGE': {
         const messageCount = lead.messages?.length || 0;
         const hasRecentActivity = messageCount > 0 && 
           (Date.now() - new Date(lead.messages[0].timestamp).getTime()) < (1000 * 60 * 60 * 24 * 3);
@@ -155,8 +157,9 @@ Rules:
           return 'Consider updating to WARM - no recent activity from hot lead';
         }
         return 'Current status seems appropriate based on recent activity';
+      }
       
-      case 'PRIORITY_UPDATE':
+      case 'PRIORITY_UPDATE': {
         const recentMessages = lead.messages?.filter((m: any) => 
           (Date.now() - new Date(m.timestamp).getTime()) < (1000 * 60 * 60 * 24 * 7)
         ) || [];
@@ -167,6 +170,7 @@ Rules:
           return 'Consider reducing priority - no recent engagement';
         }
         return 'Current priority level seems appropriate';
+      }
       
       default:
         return 'Review this lead\'s activity and consider appropriate next steps';
@@ -176,27 +180,31 @@ Rules:
   async executeSuggestion(suggestion: any): Promise<void> {
     try {
       switch (suggestion.type) {
-        case 'MESSAGE':
+        case 'MESSAGE': {
           // This would integrate with WhatsApp API to send the message
           // For now, just mark as executed
           break;
+        }
         
-        case 'STATUS_CHANGE':
+        case 'STATUS_CHANGE': {
           // Parse the suggestion to extract new status and update lead
           // This is a simplified implementation
           break;
+        }
         
-        case 'PRIORITY_UPDATE':
+        case 'PRIORITY_UPDATE': {
           // Parse the suggestion to extract new priority and update lead
           break;
+        }
         
-        case 'FOLLOW_UP':
+        case 'FOLLOW_UP': {
           // Create a scheduled follow-up interaction
           await this.db.query(`
             INSERT INTO interactions (lead_id, type, description, scheduled_at)
             VALUES ($1, $2, $3, $4)
           `, [suggestion.lead_id, 'NOTE', `AI Suggested Follow-up: ${suggestion.content}`, new Date(Date.now() + 24 * 60 * 60 * 1000)]);
           break;
+        }
       }
 
       // Mark suggestion as executed

@@ -69,7 +69,7 @@ export abstract class BaseAgent {
 class IntentRecognitionAgent extends BaseAgent {
   async execute(input: any): Promise<AgentResult> {
     try {
-      const { message, context } = input;
+      const { message } = input;
       
       // Simple intent recognition logic
       const intent = this.recognizeIntent(message);
@@ -112,7 +112,7 @@ class IntentRecognitionAgent extends BaseAgent {
 class LeadQualificationAgent extends BaseAgent {
   async execute(input: any): Promise<AgentResult> {
     try {
-      const { lead, context } = input;
+      const { lead } = input;
       
       // Simple lead qualification logic
       const score = this.calculateLeadScore(lead);
@@ -186,7 +186,7 @@ class ResponseGenerationAgent extends BaseAgent {
     }
   }
 
-  private generateResponse(message: string, lead: any, context: any): string {
+  private generateResponse(message: string, lead: any, _context: any): string {
     const name = lead.name || 'there';
     
     if (message.toLowerCase().includes('price')) {
@@ -202,10 +202,10 @@ class ResponseGenerationAgent extends BaseAgent {
 class FollowUpSchedulerAgent extends BaseAgent {
   async execute(input: any): Promise<AgentResult> {
     try {
-      const { lead, context } = input;
+      const { lead } = input;
       
       // Simple follow-up scheduling logic
-      const schedule = this.calculateFollowUpSchedule(lead, context);
+      const schedule = this.calculateFollowUpSchedule(lead);
       
       const result = {
         success: true,
@@ -225,7 +225,7 @@ class FollowUpSchedulerAgent extends BaseAgent {
     }
   }
 
-  private calculateFollowUpSchedule(lead: any, context: any): any {
+  private calculateFollowUpSchedule(lead: any): any {
     const now = new Date();
     const followUpTimes = [];
     
