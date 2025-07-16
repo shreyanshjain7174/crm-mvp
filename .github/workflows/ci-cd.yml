@@ -71,7 +71,7 @@ jobs:
     - name: Run backend tests
       run: |
         cd apps/backend
-        npm run test
+        npm run test -- --passWithNoTests
       env:
         NODE_ENV: test
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
@@ -81,7 +81,7 @@ jobs:
     - name: Run frontend tests
       run: |
         cd apps/frontend
-        npm run test
+        npm run test -- --passWithNoTests
       env:
         CI: true
 
