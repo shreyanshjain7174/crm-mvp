@@ -95,7 +95,7 @@ export async function initializeDatabase() {
       
       console.log('Database migrations applied successfully');
     } catch (migrationError) {
-      console.warn('Migration warning (may be expected):', migrationError.message);
+      console.warn('Migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
     }
 
     console.log('Database initialized successfully');
