@@ -55,7 +55,10 @@ services:
       JWT_SECRET: dev-jwt-secret
       PORT: 3001
       FRONTEND_URL: http://localhost:3000
-      PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x
+      # AISensy WhatsApp API
+      AISENSY_API_KEY: ${AISENSY_API_KEY}
+      AISENSY_CAMPAIGN_NAME: ${AISENSY_CAMPAIGN_NAME:-CRM_Chat}
+      AISENSY_WEBHOOK_SECRET: ${AISENSY_WEBHOOK_SECRET:-dev-webhook-secret}
     ports:
       - "3001:3001"
       - "3002:3002"

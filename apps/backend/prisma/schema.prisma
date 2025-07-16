@@ -52,10 +52,13 @@ model Message {
   leadId      String
   content     String
   direction   String    // INBOUND, OUTBOUND
-  messageType String    @default("TEXT") // TEXT, IMAGE, DOCUMENT, AUDIO, VIDEO
+  messageType String    @default("TEXT") // TEXT, IMAGE, DOCUMENT, AUDIO, VIDEO, BUTTON, INTERACTIVE
   status      String    @default("SENT") // SENT, DELIVERED, READ, FAILED
   whatsappId  String?
+  errorMessage String?  // Error message if sending failed
   timestamp   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   
   lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   

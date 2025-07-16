@@ -34,14 +34,14 @@ An advanced **Agentic CRM** system designed specifically for Indian SMEs with co
 ### Prerequisites
 
 - Node.js 18+ and npm 9+
-- Docker and Docker Compose
+- Docker and Docker Compose (or Podman)
 - Git
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/crm-mvp.git
+   git clone https://github.com/shreyanshjain7174/crm-mvp.git
    cd crm-mvp
    ```
 
@@ -52,45 +52,98 @@ An advanced **Agentic CRM** system designed specifically for Indian SMEs with co
 
 3. **Set up environment variables**
    ```bash
-   # Frontend
-   cp apps/frontend/.env.example apps/frontend/.env.local
+   # Copy example environment files
+   cp .env.example .env.local
+   cp .env.production .env
    
-   # Backend (when implemented)
-   # cp apps/backend/.env.example apps/backend/.env
+   # Edit environment variables as needed
+   nano .env.local
    ```
 
-4. **Start development server**
+4. **Start development server (Containerized)**
    ```bash
-   npm run dev
+   # Using Docker or Podman (auto-detected)
+   ./start-dev.sh
+   
+   # Or manually with Docker Compose
+   docker-compose up -d
    ```
 
 5. **Access the application**
    - Frontend: http://localhost:3000
-   - Login with demo credentials or register a new account
+   - Backend API: http://localhost:3001
+   - Database: PostgreSQL on port 5432
+   - Redis: Redis on port 6379
+
+### Alternative Local Development
+
+For non-containerized development:
+```bash
+# Install dependencies
+npm install
+
+# Start frontend only (with demo mode)
+npm run dev:frontend
+
+# Start backend only (requires database)
+npm run dev:backend
+```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-#### Frontend (.env.local)
+#### Root Environment (.env.local)
 ```bash
-# WebSocket connection
-NEXT_PUBLIC_WS_URL=ws://localhost:3001
+# Database Configuration
+DATABASE_URL=postgresql://crm_user:crm_password@localhost:5432/crm_db
+REDIS_URL=redis://localhost:6379
 
-# WhatsApp API (when backend is implemented)
-NEXT_PUBLIC_WHATSAPP_API_URL=https://waba.360dialog.io
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key
+SESSION_SECRET=your-session-secret
+
+# WhatsApp API Configuration (AISensy)
+AISENSY_API_KEY=your-aisensy-api-key
+AISENSY_CAMPAIGN_NAME=your-campaign-name
+AISENSY_WEBHOOK_SECRET=your-webhook-secret
 
 # AI Configuration
-NEXT_PUBLIC_OPENAI_API_KEY=your-openai-api-key
-NEXT_PUBLIC_PINECONE_API_KEY=your-pinecone-api-key
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+PINECONE_API_KEY=your-pinecone-api-key
+PINECONE_ENVIRONMENT=your-pinecone-environment
+
+# Application URLs
+FRONTEND_URL=http://localhost:3000
+BACKEND_URL=http://localhost:3001
+WEBHOOK_URL=https://yourdomain.com/api/whatsapp/webhook
 ```
 
-### WhatsApp Setup (360dialog)
+#### Frontend Environment (.env.local)
+```bash
+# API Endpoints
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+NEXT_PUBLIC_WS_URL=ws://localhost:3002
 
-1. Sign up for 360dialog Business API
-2. Get your API token and webhook secret
-3. Configure webhook URL: `https://yourdomain.com/api/whatsapp/webhook`
-4. Update environment variables
+# Feature Flags
+NEXT_PUBLIC_DEMO_MODE=false
+GITHUB_PAGES=false
+```
+
+### WhatsApp Setup (AISensy)
+
+1. Sign up for AISensy Business WhatsApp API
+2. Get your API key from the AISensy dashboard
+3. Create a campaign in AISensy (make sure it's "Live")
+4. Configure webhook URL: `https://yourdomain.com/api/whatsapp/webhook`
+5. Update environment variables with your AISensy credentials
+
+**AISensy Features:**
+- Free forever plan available
+- Easy integration with JWT-based authentication
+- Support for templates and media messages
+- Automatic contact creation for new numbers
 
 ### AI Configuration
 
@@ -106,13 +159,15 @@ NEXT_PUBLIC_PINECONE_API_KEY=your-pinecone-api-key
 - **State Management**: Zustand for client state, React Query for server state
 - **Real-time**: Socket.io client for live updates
 
-### Backend Architecture (Planned)
+### Backend Architecture
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Fastify for high-performance APIs
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: PostgreSQL with direct `pg` driver
 - **Caching**: Redis for sessions and real-time data
 - **Queue**: BullMQ for background jobs
 - **Events**: Redis Streams for inter-service communication
+- **Containers**: Docker/Podman with multi-stage builds
+- **CI/CD**: GitHub Actions with automated testing and deployment
 
 ### AI System
 - **Orchestration**: LangGraph for agent coordination
@@ -180,42 +235,124 @@ NEXT_PUBLIC_PINECONE_API_KEY=your-pinecone-api-key
 ### Available Scripts
 
 ```bash
-# Development
+# Development (Containerized)
+./start-dev.sh           # Start full stack with Docker/Podman
+docker-compose up -d     # Start all services in background
+docker-compose down      # Stop all services
+docker-compose logs -f   # View logs from all services
+
+# Development (Local)
 npm run dev              # Start frontend development server
-npm run build            # Build for production
-npm run start            # Start production server
+npm run dev:frontend     # Start frontend only
+npm run dev:backend      # Start backend only
+npm run dev:all          # Start all services locally
+
+# Production
+npm run build            # Build all applications
+npm run start            # Start production servers
+docker-compose -f docker-compose.prod.yml up -d  # Production deployment
 
 # Quality Checks
 npm run lint             # ESLint validation
 npm run typecheck        # TypeScript type checking
 npm run format           # Code formatting
+npm run test             # Run all tests
 
-# Frontend specific
-npm run dev:frontend     # Frontend development server
-npm run build:frontend   # Build frontend
-npm run test:frontend    # Frontend tests (when implemented)
+# Database Operations
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database with sample data
+npm run db:studio        # Open database studio
 ```
+
+## 🐳 Docker Deployment
+
+### Development Environment
+
+The application uses Docker Compose for easy development setup:
+
+```bash
+# Start all services
+./start-dev.sh
+
+# Or manually
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Services Included
+
+- **Frontend**: Next.js development server (port 3000)
+- **Backend**: Fastify API server (port 3001)
+- **Database**: PostgreSQL 15 (port 5432)
+- **Cache**: Redis 7 (port 6379)
+- **WebSocket**: Socket.io server (port 3002)
+
+### Production Deployment
+
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
+
+# Start production services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Scale services
+docker-compose -f docker-compose.prod.yml up -d --scale backend=3
+```
+
+### Container Features
+
+- **Multi-stage builds**: Optimized for production
+- **Health checks**: Automatic service monitoring
+- **Volume mounts**: Persistent data storage
+- **Environment-based configuration**: Easy deployment across environments
+- **Security**: Non-root user execution
+- **Auto-restart**: Services restart on failure
 
 ### Project Structure
 
 ```
 crm-mvp/
 ├── apps/
-│   └── frontend/           # Next.js application
+│   ├── frontend/           # Next.js application
+│   │   ├── src/
+│   │   │   ├── app/        # App Router pages
+│   │   │   ├── components/ # React components
+│   │   │   │   ├── ai/     # AI-specific components
+│   │   │   │   ├── dashboard/ # Dashboard components
+│   │   │   │   └── ui/     # UI components
+│   │   │   ├── hooks/      # Custom React hooks
+│   │   │   ├── lib/        # Utilities and configurations
+│   │   │   │   ├── websocket/ # WebSocket client
+│   │   │   │   └── workflows/ # LangGraph workflows
+│   │   │   ├── contexts/   # React contexts
+│   │   │   └── types/      # TypeScript definitions
+│   │   ├── Dockerfile      # Frontend container config
+│   │   └── Dockerfile.dev  # Development container config
+│   └── backend/            # Fastify API server
 │       ├── src/
-│       │   ├── app/        # App Router pages
-│       │   ├── components/ # React components
-│       │   │   ├── ai/     # AI-specific components
-│       │   │   ├── dashboard/ # Dashboard components
-│       │   │   └── ui/     # UI components
-│       │   ├── hooks/      # Custom React hooks
-│       │   ├── lib/        # Utilities and configurations
-│       │   │   ├── websocket/ # WebSocket client
-│       │   │   └── workflows/ # LangGraph workflows
-│       │   ├── contexts/   # React contexts
-│       │   └── types/      # TypeScript definitions
+│       │   ├── routes/     # API route handlers
+│       │   ├── services/   # Business logic services
+│       │   ├── agents/     # AI agent implementations
+│       │   ├── middleware/ # Express middleware
+│       │   ├── types/      # TypeScript definitions
+│       │   └── db/         # Database connection and migrations
+│       ├── Dockerfile      # Backend container config
+│       └── Dockerfile.dev  # Development container config
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml       # GitHub Actions CI/CD pipeline
+├── docker-compose.yml      # Development environment
+├── docker-compose.prod.yml # Production environment
+├── start-dev.sh           # Development startup script
 ├── CLAUDE.md              # Detailed implementation guide
-├── docker-compose.yml     # Development environment
+├── .env.example           # Environment variable template
+├── .env.production        # Production environment template
 └── README.md             # This file
 ```
 

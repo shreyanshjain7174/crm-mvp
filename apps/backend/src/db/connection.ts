@@ -49,14 +49,17 @@ export async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        lead_id UUID NOT NULL,
+        leadId UUID NOT NULL,
         content TEXT NOT NULL,
         direction VARCHAR(50) NOT NULL,
-        message_type VARCHAR(50) DEFAULT 'TEXT',
+        messageType VARCHAR(50) DEFAULT 'TEXT',
         status VARCHAR(50) DEFAULT 'SENT',
-        whatsapp_id VARCHAR(255),
+        whatsappId VARCHAR(255),
+        errorMessage TEXT,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE
       )
     `);
 
@@ -64,16 +67,36 @@ export async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS interactions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        lead_id UUID NOT NULL,
+        leadId UUID NOT NULL,
         type VARCHAR(100) NOT NULL,
         description TEXT NOT NULL,
         outcome TEXT,
-        scheduled_at TIMESTAMP,
-        completed_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+        scheduledAt TIMESTAMP,
+        completedAt TIMESTAMP,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE
       )
     `);
+
+    // Add migration logic for existing tables
+    try {
+      // Add errorMessage column to messages table if it doesn't exist
+      await client.query(`
+        ALTER TABLE messages 
+        ADD COLUMN IF NOT EXISTS errorMessage TEXT
+      `);
+      
+      // Add createdAt and updatedAt columns to messages table if they don't exist
+      await client.query(`
+        ALTER TABLE messages 
+        ADD COLUMN IF NOT EXISTS createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      `);
+      
+      console.log('Database migrations applied successfully');
+    } catch (migrationError) {
+      console.warn('Migration warning (may be expected):', migrationError.message);
+    }
 
     console.log('Database initialized successfully');
   } catch (error) {
