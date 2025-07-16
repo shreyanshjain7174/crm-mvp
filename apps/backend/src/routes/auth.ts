@@ -21,9 +21,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       const { email, password, name, company } = registerSchema.parse(request.body);
       
       // Check if user already exists
-      const existingUser = await fastify.prisma.user.findUnique({
-        where: { email }
-      });
+      const existingResult = await fastify.db.query(
+        'SELECT id FROM users WHERE email = $1',
+        [email]
+      );
+      const existingUser = existingResult.rows[0];
       
       if (existingUser) {
         return reply.status(400).send({ error: 'User already exists' });
@@ -33,21 +35,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       const hashedPassword = await bcrypt.hash(password, 10);
       
       // Create user
-      const user = await fastify.prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-          company: company || 'Default Company'
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          company: true,
-          createdAt: true
-        }
-      });
+      const result = await fastify.db.query(`
+        INSERT INTO users (email, password, name, company)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, email, name, company, created_at
+      `, [email, hashedPassword, name, company || 'Default Company']);
+      const user = result.rows[0];
       
       // Generate JWT token
       const token = fastify.jwt.sign({ 
@@ -75,9 +68,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       const { email, password } = loginSchema.parse(request.body);
       
       // Find user
-      const user = await fastify.prisma.user.findUnique({
-        where: { email }
-      });
+      const result = await fastify.db.query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
+      const user = result.rows[0];
       
       if (!user) {
         return reply.status(401).send({ error: 'Invalid credentials' });
@@ -97,10 +92,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
       
       // Update last login
-      await fastify.prisma.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() }
-      });
+      await fastify.db.query(
+        'UPDATE users SET last_login_at = NOW() WHERE id = $1',
+        [user.id]
+      );
       
       return {
         user: {
@@ -127,17 +122,11 @@ export async function authRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate]
   }, async (request, reply) => {
     try {
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: request.user.userId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          company: true,
-          createdAt: true,
-          lastLoginAt: true
-        }
-      });
+      const result = await fastify.db.query(
+        'SELECT id, email, name, company, created_at, last_login_at FROM users WHERE id = $1',
+        [(request as any).user.userId]
+      );
+      const user = result.rows[0];
       
       if (!user) {
         return reply.status(404).send({ error: 'User not found' });
@@ -162,17 +151,27 @@ export async function authRoutes(fastify: FastifyInstance) {
       
       const updates = updateSchema.parse(request.body);
       
-      const user = await fastify.prisma.user.update({
-        where: { id: request.user.userId },
-        data: updates,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          company: true,
-          createdAt: true
-        }
-      });
+      const updateFields = [];
+      const values = [];
+      let paramIndex = 1;
+      
+      if (updates.name !== undefined) {
+        updateFields.push(`name = $${paramIndex++}`);
+        values.push(updates.name);
+      }
+      if (updates.company !== undefined) {
+        updateFields.push(`company = $${paramIndex++}`);
+        values.push(updates.company);
+      }
+      
+      values.push((request as any).user.userId);
+      
+      const result = await fastify.db.query(`
+        UPDATE users SET ${updateFields.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING id, email, name, company, created_at
+      `, values);
+      const user = result.rows[0];
       
       return { user, message: 'Profile updated successfully' };
     } catch (error) {
@@ -197,9 +196,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       const { currentPassword, newPassword } = changePasswordSchema.parse(request.body);
       
       // Get current user
-      const user = await fastify.prisma.user.findUnique({
-        where: { id: request.user.userId }
-      });
+      const result = await fastify.db.query(
+        'SELECT * FROM users WHERE id = $1',
+        [(request as any).user.userId]
+      );
+      const user = result.rows[0];
       
       if (!user) {
         return reply.status(404).send({ error: 'User not found' });
@@ -216,10 +217,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       
       // Update password
-      await fastify.prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashedNewPassword }
-      });
+      await fastify.db.query(
+        'UPDATE users SET password = $1 WHERE id = $2',
+        [hashedNewPassword, user.id]
+      );
       
       return { message: 'Password changed successfully' };
     } catch (error) {

@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { SuggestionType } from '@prisma/client';
+import { SuggestionType } from '../types/enums';
 import { AIService } from '../services/ai.service';
 
 const generateSuggestionSchema = z.object({
@@ -15,7 +15,7 @@ const approveSuggestionSchema = z.object({
 });
 
 export async function aiRoutes(fastify: FastifyInstance) {
-  const aiService = new AIService(fastify.prisma);
+  const aiService = new AIService(fastify.db);
 
   // Generate AI suggestion
   fastify.post<{ Body: z.infer<typeof generateSuggestionSchema> }>('/suggest', async (request, reply) => {
@@ -42,11 +42,11 @@ export async function aiRoutes(fastify: FastifyInstance) {
     try {
       const { leadId } = request.params;
       
-      const suggestions = await fastify.prisma.aISuggestion.findMany({
-        where: { leadId },
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      });
+      const result = await fastify.db.query(
+        'SELECT * FROM ai_suggestions WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 10',
+        [leadId]
+      );
+      const suggestions = result.rows;
       
       return suggestions;
     } catch (error) {
@@ -64,14 +64,11 @@ export async function aiRoutes(fastify: FastifyInstance) {
       const { id } = request.params;
       const data = approveSuggestionSchema.parse(request.body);
       
-      const suggestion = await fastify.prisma.aISuggestion.update({
-        where: { id },
-        data: {
-          approved: data.approved,
-          approvedAt: data.approved ? new Date() : null,
-          content: data.modifiedContent || undefined
-        }
-      });
+      const result = await fastify.db.query(
+        'UPDATE ai_suggestions SET approved = $1, approved_at = $2, content = COALESCE($3, content) WHERE id = $4 RETURNING *',
+        [data.approved, data.approved ? new Date() : null, data.modifiedContent, id]
+      );
+      const suggestion = result.rows[0];
       
       if (data.approved) {
         await aiService.executeSuggestion(suggestion);
@@ -93,17 +90,15 @@ export async function aiRoutes(fastify: FastifyInstance) {
   // Get AI analytics
   fastify.get('/analytics', async (request, reply) => {
     try {
-      const totalSuggestions = await fastify.prisma.aISuggestion.count();
-      const approvedSuggestions = await fastify.prisma.aISuggestion.count({
-        where: { approved: true }
-      });
-      const executedSuggestions = await fastify.prisma.aISuggestion.count({
-        where: { executed: true }
-      });
+      const totalResult = await fastify.db.query('SELECT COUNT(*) as count FROM ai_suggestions');
+      const approvedResult = await fastify.db.query('SELECT COUNT(*) as count FROM ai_suggestions WHERE approved = true');
+      const executedResult = await fastify.db.query('SELECT COUNT(*) as count FROM ai_suggestions WHERE executed = true');
+      const avgResult = await fastify.db.query('SELECT AVG(confidence) as avg_confidence FROM ai_suggestions');
       
-      const avgConfidence = await fastify.prisma.aISuggestion.aggregate({
-        _avg: { confidence: true }
-      });
+      const totalSuggestions = parseInt(totalResult.rows[0].count);
+      const approvedSuggestions = parseInt(approvedResult.rows[0].count);
+      const executedSuggestions = parseInt(executedResult.rows[0].count);
+      const avgConfidence = parseFloat(avgResult.rows[0].avg_confidence || 0);
       
       return {
         totalSuggestions,
@@ -111,7 +106,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
         executedSuggestions,
         approvalRate: totalSuggestions > 0 ? (approvedSuggestions / totalSuggestions) * 100 : 0,
         executionRate: approvedSuggestions > 0 ? (executedSuggestions / approvedSuggestions) * 100 : 0,
-        averageConfidence: avgConfidence._avg.confidence || 0
+        averageConfidence: avgConfidence
       };
     } catch (error) {
       fastify.log.error('Error fetching AI analytics:', error);

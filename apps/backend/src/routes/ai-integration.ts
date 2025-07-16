@@ -102,13 +102,14 @@ export async function aiIntegrationRoutes(fastify: FastifyInstance) {
       const { leadId, workflowType = 'lead_qualification' } = request.body;
       
       // Get lead data
-      const lead = await fastify.prisma.lead.findUnique({
-        where: { id: leadId },
-        include: {
-          messages: { orderBy: { timestamp: 'desc' }, take: 5 },
-          interactions: { orderBy: { createdAt: 'desc' }, take: 3 }
-        }
-      });
+      const leadResult = await fastify.db.query(`
+        SELECT l.*, 
+          (SELECT json_agg(m ORDER BY m.timestamp DESC) FROM (SELECT * FROM messages WHERE lead_id = l.id ORDER BY timestamp DESC LIMIT 5) m) as messages,
+          (SELECT json_agg(i ORDER BY i.created_at DESC) FROM (SELECT * FROM interactions WHERE lead_id = l.id ORDER BY created_at DESC LIMIT 3) i) as interactions
+        FROM leads l 
+        WHERE l.id = $1
+      `, [leadId]);
+      const lead = leadResult.rows[0];
 
       if (!lead) {
         return reply.status(404).send({ error: 'Lead not found' });
@@ -138,14 +139,10 @@ export async function aiIntegrationRoutes(fastify: FastifyInstance) {
       });
 
       // Create interaction record
-      await fastify.prisma.interaction.create({
-        data: {
-          leadId,
-          type: 'STATUS_CHANGE',
-          description: `AI workflow started: ${workflowType}`,
-          completedAt: new Date()
-        }
-      });
+      await fastify.db.query(`
+        INSERT INTO interactions (lead_id, type, description, completed_at)
+        VALUES ($1, $2, $3, NOW())
+      `, [leadId, 'STATUS_CHANGE', `AI workflow started: ${workflowType}`]);
 
       return response.data;
     } catch (error) {
@@ -168,16 +165,10 @@ export async function aiIntegrationRoutes(fastify: FastifyInstance) {
 
       // Store AI suggestion if it's for a specific lead
       if (leadId && response.data.response) {
-        await fastify.prisma.aiSuggestion.create({
-          data: {
-            leadId,
-            type: 'MESSAGE',
-            content: response.data.response,
-            context: JSON.stringify(context || {}),
-            confidence: response.data.confidence || 0.8,
-            approved: false
-          }
-        });
+        await fastify.db.query(`
+          INSERT INTO ai_suggestions (lead_id, type, content, context, confidence, approved)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `, [leadId, 'MESSAGE', response.data.response, JSON.stringify(context || {}), response.data.confidence || 0.8, false]);
       }
 
       return response.data;

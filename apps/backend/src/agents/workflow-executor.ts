@@ -1,427 +1,192 @@
-import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { AIAgentFactory } from './ai-agent-factory';
 import { WorkflowNode, WorkflowExecution, ExecutionContext } from './types';
 
 export class WorkflowExecutor extends EventEmitter {
-  private prisma: PrismaClient;
+  private db: Pool;
   private agentFactory: AIAgentFactory;
   private activeExecutions: Map<string, WorkflowExecution> = new Map();
 
-  constructor(prisma: PrismaClient) {
+  constructor(db: Pool) {
     super();
-    this.prisma = prisma;
-    this.agentFactory = new AIAgentFactory();
+    this.db = db;
+    this.agentFactory = new AIAgentFactory(db);
   }
 
   async executeWorkflow(workflowId: string, triggerData: any, leadId?: string): Promise<string> {
-    // Get workflow definition
-    const workflow = await this.prisma.agentWorkflow.findUnique({
-      where: { id: workflowId }
-    });
-
-    if (!workflow || !workflow.isActive) {
-      throw new Error('Workflow not found or inactive');
-    }
-
     // Create execution record
-    const execution = await this.prisma.workflowExecution.create({
-      data: {
-        id: uuidv4(),
-        workflowId,
-        leadId,
-        status: 'RUNNING',
-        context: JSON.stringify({
-          trigger: triggerData,
-          variables: {},
-          currentStep: 0
-        }),
-        startedAt: new Date()
-      }
-    });
-
-    // Parse workflow nodes
-    const nodes: WorkflowNode[] = JSON.parse(workflow.nodes);
-    const startNode = nodes.find(node => node.type === 'trigger');
-
-    if (!startNode) {
-      throw new Error('No trigger node found in workflow');
-    }
-
-    // Start execution
-    this.activeExecutions.set(execution.id, {
-      id: execution.id,
+    const executionId = uuidv4();
+    const execution: WorkflowExecution = {
+      id: executionId,
       workflowId,
-      nodes,
-      currentNode: startNode,
+      status: 'pending',
       context: {
-        trigger: triggerData,
-        variables: {},
         leadId,
-        executionId: execution.id
+        trigger: triggerData,
+        variables: {}
       },
-      status: 'RUNNING'
-    });
-
-    // Execute workflow asynchronously
-    this.executeNode(execution.id, startNode.id);
-
-    // Emit event
-    this.emit('workflow:started', { executionId: execution.id, workflowId, leadId });
-
-    return execution.id;
-  }
-
-  private async executeNode(executionId: string, nodeId: string): Promise<void> {
-    const execution = this.activeExecutions.get(executionId);
-    if (!execution) {
-      throw new Error('Execution not found');
-    }
-
-    const node = execution.nodes.find(n => n.id === nodeId);
-    if (!node) {
-      throw new Error('Node not found');
-    }
-
-    // Create execution step
-    const step = await this.prisma.executionStep.create({
-      data: {
-        id: uuidv4(),
-        executionId,
-        nodeId,
-        nodeType: node.type,
-        status: 'RUNNING',
-        input: JSON.stringify(execution.context),
-        startedAt: new Date()
-      }
-    });
-
-    try {
-      let result: any;
-
-      // Execute based on node type
-      switch (node.type) {
-        case 'trigger':
-          result = await this.executeTrigger(node, execution.context);
-          break;
-        case 'ai_agent':
-          result = await this.executeAIAgent(node, execution.context);
-          break;
-        case 'condition':
-          result = await this.executeCondition(node, execution.context);
-          break;
-        case 'delay':
-          result = await this.executeDelay(node, execution.context);
-          break;
-        case 'human_approval':
-          result = await this.executeHumanApproval(node, execution.context);
-          break;
-        case 'send_message':
-          result = await this.executeSendMessage(node, execution.context);
-          break;
-        case 'update_lead':
-          result = await this.executeUpdateLead(node, execution.context);
-          break;
-        default:
-          throw new Error(`Unknown node type: ${node.type}`);
-      }
-
-      // Update step as completed
-      await this.prisma.executionStep.update({
-        where: { id: step.id },
-        data: {
-          status: 'COMPLETED',
-          output: JSON.stringify(result),
-          completedAt: new Date()
-        }
-      });
-
-      // Update execution context
-      execution.context = { ...execution.context, ...result };
-
-      // Determine next node
-      const nextNode = this.getNextNode(node, result, execution.nodes);
-      
-      if (nextNode) {
-        // Continue to next node
-        await this.executeNode(executionId, nextNode.id);
-      } else {
-        // Workflow completed
-        await this.completeExecution(executionId, 'COMPLETED');
-      }
-
-    } catch (error) {
-      // Update step as failed
-      await this.prisma.executionStep.update({
-        where: { id: step.id },
-        data: {
-          status: 'FAILED',
-          error: error instanceof Error ? error.message : 'Unknown error',
-          completedAt: new Date()
-        }
-      });
-
-      // Fail execution
-      await this.completeExecution(executionId, 'FAILED', error instanceof Error ? error.message : 'Unknown error');
-    }
-  }
-
-  private async executeTrigger(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    // Trigger nodes just pass through the trigger data
-    return { triggered: true };
-  }
-
-  private async executeAIAgent(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    const agent = this.agentFactory.createAgent(node.config.agentType);
-    
-    const input = {
-      leadId: context.leadId,
-      prompt: node.config.prompt,
-      context: context.variables,
-      settings: node.config.settings || {}
+      steps: [],
+      nodes: [],
+      startTime: new Date()
     };
 
-    const result = await agent.execute(input);
+    // Store execution
+    this.activeExecutions.set(executionId, execution);
     
-    return {
-      aiResponse: result.response,
-      confidence: result.confidence,
-      variables: { ...context.variables, [`${node.id}_result`]: result.response }
-    };
-  }
-
-  private async executeCondition(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    const condition = node.config.condition;
-    const variables = context.variables;
-    
-    // Simple condition evaluation (in production, use a proper expression evaluator)
-    let result = false;
+    // Update status to running
+    execution.status = 'running';
     
     try {
-      // Replace variables in condition string
-      let conditionStr = condition;
-      Object.keys(variables).forEach(key => {
-        conditionStr = conditionStr.replace(new RegExp(`{{${key}}}`, 'g'), variables[key]);
-      });
+      // Execute workflow steps
+      await this.executeSteps(execution);
       
-      // Evaluate simple conditions like "confidence > 0.8"
-      result = eval(conditionStr);
+      execution.status = 'completed';
+      execution.endTime = new Date();
+      
+      this.emit('workflow:completed', execution);
+      
+      return executionId;
     } catch (error) {
-      console.error('Condition evaluation error:', error);
-      result = false;
-    }
-
-    return { conditionResult: result };
-  }
-
-  private async executeDelay(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    const delayMs = node.config.delay || 1000;
-    
-    return new Promise(resolve => {
+      execution.status = 'failed';
+      execution.error = error instanceof Error ? error.message : 'Unknown error';
+      execution.endTime = new Date();
+      
+      this.emit('workflow:failed', execution);
+      
+      throw error;
+    } finally {
+      // Clean up after some time
       setTimeout(() => {
-        resolve({ delayed: true });
-      }, delayMs);
-    });
+        this.activeExecutions.delete(executionId);
+      }, 60000); // 1 minute
+    }
   }
 
-  private async executeHumanApproval(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    // Create approval request
-    const approvalData = {
-      executionId: context.executionId,
-      nodeId: node.id,
-      message: node.config.message || 'Approval required',
-      context: context.variables
-    };
-
-    // Emit event for UI to show approval screen
-    this.emit('approval:required', approvalData);
-
-    // Return pending status - will be resumed when approval is given
-    return { approvalPending: true, approvalId: node.id };
+  private async executeSteps(execution: WorkflowExecution): Promise<void> {
+    // Simple sequential execution for now
+    for (const node of execution.nodes) {
+      await this.executeNode(execution, node);
+    }
   }
 
-  private async executeSendMessage(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    if (!context.leadId) {
-      throw new Error('No lead ID available for sending message');
+  private async executeNode(execution: WorkflowExecution, node: WorkflowNode): Promise<void> {
+    if (!node.agentType) {
+      throw new Error(`Node ${node.id} has no agent type`);
     }
 
-    // Get lead information
-    const lead = await this.prisma.lead.findUnique({
-      where: { id: context.leadId }
-    });
+    try {
+      const agent = await this.agentFactory.createAgent(node.agentType as any, node.config);
+      const result = await agent.execute({
+        context: execution.context,
+        nodeConfig: node.config
+      });
 
-    if (!lead) {
-      throw new Error('Lead not found');
-    }
-
-    // Replace variables in message template
-    let message = node.config.message || '';
-    Object.keys(context.variables).forEach(key => {
-      message = message.replace(new RegExp(`{{${key}}}`, 'g'), context.variables[key]);
-    });
-
-    // Create message record
-    const messageRecord = await this.prisma.message.create({
-      data: {
-        id: uuidv4(),
-        leadId: context.leadId,
-        content: message,
-        direction: 'OUTBOUND',
-        messageType: 'TEXT',
-        status: 'SENT',
-        timestamp: new Date()
+      if (!result.success) {
+        throw new Error(result.error || 'Agent execution failed');
       }
-    });
 
-    // Emit event for actual message sending (WhatsApp, email, etc.)
-    this.emit('message:send', {
-      leadId: context.leadId,
-      phone: lead.phone,
-      message,
-      messageId: messageRecord.id
-    });
+      // Store result in context
+      if (!execution.context.variables) {
+        execution.context.variables = {};
+      }
+      execution.context.variables[node.id] = result.data;
 
-    return { 
-      messageSent: true, 
-      messageId: messageRecord.id,
-      message 
-    };
+      this.emit('node:completed', { execution, node, result });
+    } catch (error) {
+      this.emit('node:failed', { execution, node, error });
+      throw error;
+    }
   }
 
-  private async executeUpdateLead(node: WorkflowNode, context: ExecutionContext): Promise<any> {
-    if (!context.leadId) {
-      throw new Error('No lead ID available for update');
-    }
-
-    const updates: any = {};
-    
-    // Apply updates from node config
-    if (node.config.status) {
-      updates.status = node.config.status;
-    }
-    if (node.config.priority) {
-      updates.priority = node.config.priority;
-    }
-    if (node.config.aiScore !== undefined) {
-      updates.aiScore = node.config.aiScore;
-    }
-
-    // Replace variables in update values
-    Object.keys(updates).forEach(key => {
-      if (typeof updates[key] === 'string') {
-        Object.keys(context.variables).forEach(varKey => {
-          updates[key] = updates[key].replace(new RegExp(`{{${varKey}}}`, 'g'), context.variables[varKey]);
-        });
-      }
-    });
-
-    // Update lead
-    const updatedLead = await this.prisma.lead.update({
-      where: { id: context.leadId },
-      data: {
-        ...updates,
-        updatedAt: new Date()
-      }
-    });
-
-    // Create interaction record
-    await this.prisma.interaction.create({
-      data: {
-        id: uuidv4(),
-        leadId: context.leadId,
-        type: 'STATUS_CHANGE',
-        description: `Lead updated by workflow: ${JSON.stringify(updates)}`,
-        completedAt: new Date()
-      }
-    });
-
-    return { 
-      leadUpdated: true, 
-      updates,
-      lead: updatedLead 
-    };
+  async getExecution(executionId: string): Promise<WorkflowExecution | null> {
+    return this.activeExecutions.get(executionId) || null;
   }
 
-  private getNextNode(currentNode: WorkflowNode, result: any, nodes: WorkflowNode[]): WorkflowNode | null {
-    // Handle different connection types
-    if (currentNode.type === 'condition') {
-      const nextNodeId = result.conditionResult ? currentNode.connections?.true : currentNode.connections?.false;
-      return nextNodeId ? nodes.find(n => n.id === nextNodeId) || null : null;
-    }
-
-    // Default: follow the 'next' connection
-    const nextNodeId = currentNode.connections?.next;
-    return nextNodeId ? nodes.find(n => n.id === nextNodeId) || null : null;
-  }
-
-  private async completeExecution(executionId: string, status: string, error?: string): Promise<void> {
-    const execution = this.activeExecutions.get(executionId);
-    
-    await this.prisma.workflowExecution.update({
-      where: { id: executionId },
-      data: {
-        status,
-        error,
-        result: execution ? JSON.stringify(execution.context) : null,
-        completedAt: new Date()
-      }
-    });
-
-    if (execution) {
-      execution.status = status;
-      this.activeExecutions.delete(executionId);
-    }
-
-    // Emit completion event
-    this.emit('workflow:completed', { 
-      executionId, 
-      status, 
-      error,
-      workflowId: execution?.workflowId 
-    });
-  }
-
-  // Public method to handle approvals
-  async approveWorkflowStep(executionId: string, nodeId: string, approved: boolean, modifiedData?: any): Promise<void> {
-    const execution = this.activeExecutions.get(executionId);
-    if (!execution) {
-      throw new Error('Execution not found');
-    }
-
-    if (approved) {
-      // Update context with approval data
-      execution.context.variables = {
-        ...execution.context.variables,
-        [`${nodeId}_approved`]: true,
-        ...modifiedData
-      };
-
-      // Find the node and continue execution
-      const node = execution.nodes.find(n => n.id === nodeId);
-      if (node) {
-        const nextNode = this.getNextNode(node, { approved: true }, execution.nodes);
-        if (nextNode) {
-          await this.executeNode(executionId, nextNode.id);
-        } else {
-          await this.completeExecution(executionId, 'COMPLETED');
-        }
-      }
-    } else {
-      // Handle rejection
-      await this.completeExecution(executionId, 'CANCELLED', 'Human approval rejected');
-    }
-
-    this.emit('approval:resolved', { executionId, nodeId, approved });
-  }
-
-  // Get active executions for monitoring
-  getActiveExecutions(): WorkflowExecution[] {
+  async getActiveExecutions(): Promise<WorkflowExecution[]> {
     return Array.from(this.activeExecutions.values());
   }
 
-  // Stop execution
+  async pauseExecution(executionId: string): Promise<void> {
+    const execution = this.activeExecutions.get(executionId);
+    if (execution) {
+      execution.status = 'paused';
+      this.emit('workflow:paused', execution);
+    }
+  }
+
+  async resumeExecution(executionId: string): Promise<void> {
+    const execution = this.activeExecutions.get(executionId);
+    if (execution) {
+      execution.status = 'running';
+      this.emit('workflow:resumed', execution);
+    }
+  }
+
   async stopExecution(executionId: string): Promise<void> {
-    await this.completeExecution(executionId, 'CANCELLED', 'Execution stopped by user');
+    const execution = this.activeExecutions.get(executionId);
+    if (execution) {
+      execution.status = 'failed';
+      execution.error = 'Stopped by user';
+      execution.endTime = new Date();
+      this.emit('workflow:stopped', execution);
+      this.activeExecutions.delete(executionId);
+    }
+  }
+
+  // Default workflow templates
+  getDefaultWorkflows(): any[] {
+    return [
+      {
+        id: 'lead_qualification',
+        name: 'Lead Qualification & Response',
+        description: 'Analyze and qualify incoming leads with automated response',
+        nodes: [
+          {
+            id: 'intent_recognition',
+            type: 'agent',
+            name: 'Intent Recognition',
+            agentType: 'intent_recognition',
+            position: { x: 100, y: 100 }
+          },
+          {
+            id: 'lead_qualification',
+            type: 'agent',
+            name: 'Lead Qualification',
+            agentType: 'lead_qualification',
+            position: { x: 300, y: 100 }
+          },
+          {
+            id: 'response_generation',
+            type: 'agent',
+            name: 'Response Generation',
+            agentType: 'response_generation',
+            position: { x: 500, y: 100 }
+          }
+        ]
+      },
+      {
+        id: 'follow_up_sequence',
+        name: 'Automated Follow-up Sequence',
+        description: 'Schedule and execute follow-up messages',
+        nodes: [
+          {
+            id: 'context_analysis',
+            type: 'agent',
+            name: 'Context Analysis',
+            agentType: 'context_memory',
+            position: { x: 100, y: 200 }
+          },
+          {
+            id: 'follow_up_scheduler',
+            type: 'agent',
+            name: 'Follow-up Scheduler',
+            agentType: 'follow_up_scheduler',
+            position: { x: 300, y: 200 }
+          }
+        ]
+      }
+    ];
   }
 }

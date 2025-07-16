@@ -1,14 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: {
-      userId: string;
-      email: string;
-    };
-  }
-}
-
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
     const token = request.headers.authorization?.replace('Bearer ', '');
@@ -19,7 +10,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     }
     
     const decoded = request.server.jwt.verify(token) as { userId: string; email: string };
-    request.user = decoded;
+    (request as any).user = decoded;
   } catch (error) {
     reply.status(401).send({ error: 'Invalid token' });
   }

@@ -1,10 +1,11 @@
-import { PrismaClient, SuggestionType, AISuggestion } from '@prisma/client';
+import { Pool } from 'pg';
+import { SuggestionType } from '../types/enums';
 import Anthropic from '@anthropic-ai/sdk';
 
 export class AIService {
   private anthropic: Anthropic | null = null;
   
-  constructor(private prisma: PrismaClient) {
+  constructor(private db: Pool) {
     if (process.env.ANTHROPIC_API_KEY) {
       this.anthropic = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY
@@ -12,21 +13,16 @@ export class AIService {
     }
   }
 
-  async generateSuggestion(leadId: string, type: SuggestionType, context?: string): Promise<AISuggestion> {
+  async generateSuggestion(leadId: string, type: SuggestionType, context?: string): Promise<any> {
     // Get lead context
-    const lead = await this.prisma.lead.findUnique({
-      where: { id: leadId },
-      include: {
-        messages: {
-          orderBy: { timestamp: 'desc' },
-          take: 10
-        },
-        interactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 5
-        }
-      }
-    });
+    const leadResult = await this.db.query(`
+      SELECT l.*, 
+        (SELECT json_agg(m ORDER BY m.timestamp DESC) FROM (SELECT * FROM messages WHERE lead_id = l.id ORDER BY timestamp DESC LIMIT 10) m) as messages,
+        (SELECT json_agg(i ORDER BY i.created_at DESC) FROM (SELECT * FROM interactions WHERE lead_id = l.id ORDER BY created_at DESC LIMIT 5) i) as interactions
+      FROM leads l 
+      WHERE l.id = $1
+    `, [leadId]);
+    const lead = leadResult.rows[0];
 
     if (!lead) {
       throw new Error('Lead not found');
@@ -46,15 +42,12 @@ export class AIService {
     }
 
     // Create and save suggestion
-    const suggestion = await this.prisma.aISuggestion.create({
-      data: {
-        leadId,
-        type,
-        content,
-        context: context || '',
-        confidence
-      }
-    });
+    const result = await this.db.query(`
+      INSERT INTO ai_suggestions (lead_id, type, content, context, confidence)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [leadId, type, content, context || '', confidence]);
+    const suggestion = result.rows[0];
 
     return suggestion;
   }
@@ -180,7 +173,7 @@ Rules:
     }
   }
 
-  async executeSuggestion(suggestion: AISuggestion): Promise<void> {
+  async executeSuggestion(suggestion: any): Promise<void> {
     try {
       switch (suggestion.type) {
         case 'MESSAGE':
@@ -199,25 +192,18 @@ Rules:
         
         case 'FOLLOW_UP':
           // Create a scheduled follow-up interaction
-          await this.prisma.interaction.create({
-            data: {
-              leadId: suggestion.leadId,
-              type: 'NOTE',
-              description: `AI Suggested Follow-up: ${suggestion.content}`,
-              scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
-            }
-          });
+          await this.db.query(`
+            INSERT INTO interactions (lead_id, type, description, scheduled_at)
+            VALUES ($1, $2, $3, $4)
+          `, [suggestion.lead_id, 'NOTE', `AI Suggested Follow-up: ${suggestion.content}`, new Date(Date.now() + 24 * 60 * 60 * 1000)]);
           break;
       }
 
       // Mark suggestion as executed
-      await this.prisma.aISuggestion.update({
-        where: { id: suggestion.id },
-        data: {
-          executed: true,
-          executedAt: new Date()
-        }
-      });
+      await this.db.query(`
+        UPDATE ai_suggestions SET executed = true, executed_at = NOW()
+        WHERE id = $1
+      `, [suggestion.id]);
     } catch (error) {
       console.error('Error executing suggestion:', error);
       throw error;

@@ -124,47 +124,40 @@ async function processIncomingMessage(
     const whatsappId = message.id;
     
     // Find or create lead
-    let lead = await fastify.prisma.lead.findUnique({
-      where: { phone }
-    });
+    let result = await fastify.db.query(
+      'SELECT * FROM leads WHERE phone = $1',
+      [phone]
+    );
+    let lead = result.rows[0];
     
     if (!lead) {
       // Create new lead from contact info
       const contactName = contacts?.find(c => c.wa_id === phone)?.profile?.name || `Lead ${phone}`;
       
-      lead = await fastify.prisma.lead.create({
-        data: {
-          name: contactName,
-          phone,
-          source: 'WhatsApp',
-          status: 'COLD'
-        }
-      });
+      const leadResult = await fastify.db.query(`
+        INSERT INTO leads (name, phone, source, status)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `, [contactName, phone, 'WhatsApp', 'COLD']);
+      lead = leadResult.rows[0];
       
       // Emit new lead event
       fastify.io.emit('lead:created', lead);
     }
     
     // Create message record
-    const messageRecord = await fastify.prisma.message.create({
-      data: {
-        leadId: lead.id,
-        content,
-        direction: 'INBOUND',
-        whatsappId,
-        status: 'READ'
-      }
-    });
+    const messageResult = await fastify.db.query(`
+      INSERT INTO messages (lead_id, content, direction, whatsapp_id, status)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [lead.id, content, 'INBOUND', whatsappId, 'READ']);
+    const messageRecord = messageResult.rows[0];
     
     // Create interaction record
-    await fastify.prisma.interaction.create({
-      data: {
-        leadId: lead.id,
-        type: 'WHATSAPP',
-        description: `Received message: ${content.substring(0, 50)}...`,
-        completedAt: new Date()
-      }
-    });
+    await fastify.db.query(`
+      INSERT INTO interactions (lead_id, type, description, completed_at)
+      VALUES ($1, $2, $3, NOW())
+    `, [lead.id, 'WHATSAPP', `Received message: ${content.substring(0, 50)}...`]);
     
     // Emit real-time events
     fastify.io.emit('message:received', messageRecord);
