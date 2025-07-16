@@ -7,14 +7,14 @@ const createLeadSchema = z.object({
   phone: z.string().min(10),
   email: z.string().email().optional(),
   source: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  priority: z.nativeEnum(Priority).optional(),
   businessProfile: z.string().optional()
 });
 
 const updateLeadSchema = z.object({
   name: z.string().optional(),
-  status: z.enum(['COLD', 'WARM', 'HOT', 'CONVERTED', 'LOST']).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  status: z.nativeEnum(LeadStatus).optional(),
+  priority: z.nativeEnum(Priority).optional(),
   assignedTo: z.string().optional(),
   businessProfile: z.string().optional()
 });

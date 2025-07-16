@@ -5,7 +5,7 @@ import { AIService } from '../services/ai.service';
 
 const generateSuggestionSchema = z.object({
   leadId: z.string(),
-  type: z.enum(['MESSAGE', 'FOLLOW_UP', 'STATUS_CHANGE', 'PRIORITY_UPDATE']),
+  type: z.nativeEnum(SuggestionType),
   context: z.string().optional()
 });
 
