@@ -20,8 +20,8 @@ const nextConfig = {
     images: {
       unoptimized: true,
     },
-    basePath: '',
-    assetPrefix: '',
+    basePath: '/crm-mvp',
+    assetPrefix: '/crm-mvp',
   } : {
     // Docker/Production configuration
     output: 'standalone',

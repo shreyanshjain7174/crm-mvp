@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, apiClient, LoginRequest, RegisterRequest } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { DEMO_MODE, demoAuthService } from '@/lib/demo-mode';
 
 interface AuthContextType {
   user: User | null;

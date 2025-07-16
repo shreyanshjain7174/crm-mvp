@@ -2,7 +2,10 @@ import { User, AuthResponse, LoginRequest, RegisterRequest } from './api';
 
 // Demo mode configuration - only enable when explicitly set or on GitHub Pages
 const isExplicitlyEnabled = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+const isGitHubPages = typeof window !== 'undefined' && (
+  window.location.hostname.includes('github.io') || 
+  window.location.hostname.includes('shreyanshjain7174.github.io')
+);
 
 export const DEMO_MODE = isExplicitlyEnabled || isGitHubPages;
 

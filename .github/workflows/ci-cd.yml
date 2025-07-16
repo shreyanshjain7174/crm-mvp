@@ -222,6 +222,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        npm ci
         cd apps/frontend
         npm ci
 
@@ -229,6 +230,11 @@ jobs:
       run: |
         cd apps/frontend
         npm run build
+        echo "Build completed, checking out directory..."
+        ls -la
+        ls -la out/ || echo "No out directory found"
+        # Add .nojekyll to prevent GitHub Pages from treating this as a Jekyll site
+        touch out/.nojekyll
       env:
         GITHUB_PAGES: true
         NEXT_PUBLIC_DEMO_MODE: true
