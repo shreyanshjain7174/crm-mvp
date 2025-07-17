@@ -44,13 +44,19 @@ COPY --from=deps /app/node_modules ./node_modules
 RUN ls -la apps/backend/src/types/ || echo "Types directory not found"
 RUN cat apps/backend/src/types/fastify.d.ts || echo "fastify.d.ts not found"
 
+# Debug: Check node_modules and dependencies
+RUN ls -la node_modules/@fastify/ || echo "@fastify directory not found in root"
+RUN ls -la apps/backend/node_modules/@fastify/ || echo "Backend @fastify directory not found"
+RUN cd apps/backend && npm list @fastify/jwt || echo "@fastify/jwt not found in package"
+
 # Debug: Show TypeScript config and source files
 RUN cd apps/backend && cat tsconfig.json
 RUN cd apps/backend && ls -la src/
 RUN cd apps/backend && head -10 src/index.ts
 
-# Build the backend from root directory using npm workspace
-RUN npm run build:backend
+# Build the backend - try both approaches
+RUN npm run build:backend || echo "Workspace build failed, trying direct build"
+RUN cd apps/backend && npm run build
 
 # Production dependencies stage
 FROM node:18-slim AS prod-deps
