@@ -27,6 +27,11 @@ COPY --from=deps /app/node_modules ./node_modules
 # Build the frontend using npm workspace from root directory
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 DOCKER_BUILD=true
+
+# Cache bust argument (used to invalidate cache for troubleshooting)
+ARG CACHE_BUST
+RUN echo "Cache bust: $CACHE_BUST"
+
 RUN npm run build:frontend
 
 # Production stage - Ultra lightweight

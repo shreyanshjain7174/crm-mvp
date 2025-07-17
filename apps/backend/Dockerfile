@@ -36,6 +36,10 @@ COPY . .
 # Copy node_modules from deps stage (includes workspace dependencies)
 COPY --from=deps /app/node_modules ./node_modules
 
+# Cache bust argument (used to invalidate cache for troubleshooting)
+ARG CACHE_BUST
+RUN echo "Cache bust: $CACHE_BUST"
+
 # Build the backend from root directory using npm workspace
 RUN npm run build:backend
 
