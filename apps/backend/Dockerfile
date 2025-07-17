@@ -30,15 +30,24 @@ RUN npx prisma generate
 FROM node:18-slim AS builder
 WORKDIR /app
 
+# Cache bust argument (used to invalidate cache for troubleshooting)
+ARG CACHE_BUST
+RUN echo "Cache bust: $CACHE_BUST"
+
 # Copy all source code
 COPY . .
 
 # Copy node_modules from deps stage (includes workspace dependencies)
 COPY --from=deps /app/node_modules ./node_modules
 
-# Cache bust argument (used to invalidate cache for troubleshooting)
-ARG CACHE_BUST
-RUN echo "Cache bust: $CACHE_BUST"
+# Verify TypeScript files are present
+RUN ls -la apps/backend/src/types/ || echo "Types directory not found"
+RUN cat apps/backend/src/types/fastify.d.ts || echo "fastify.d.ts not found"
+
+# Debug: Show TypeScript config and source files
+RUN cd apps/backend && cat tsconfig.json
+RUN cd apps/backend && ls -la src/
+RUN cd apps/backend && head -10 src/index.ts
 
 # Build the backend from root directory using npm workspace
 RUN npm run build:backend
