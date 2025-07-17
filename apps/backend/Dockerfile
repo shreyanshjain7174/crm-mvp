@@ -33,12 +33,11 @@ WORKDIR /app
 # Copy all source code
 COPY . .
 
-# Copy node_modules from deps stage
+# Copy node_modules from deps stage (includes workspace dependencies)
 COPY --from=deps /app/node_modules ./node_modules
 
-# Build the backend
-WORKDIR /app/apps/backend
-RUN npm run build
+# Build the backend from root directory using npm workspace
+RUN npm run build:backend
 
 # Production dependencies stage
 FROM node:18-slim AS prod-deps
