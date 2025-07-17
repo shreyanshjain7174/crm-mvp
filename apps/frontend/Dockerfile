@@ -24,10 +24,10 @@ COPY . .
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Build the frontend
-WORKDIR /app/apps/frontend
+# Build the frontend using npm workspace from root directory
+WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 DOCKER_BUILD=true
-RUN npm run build
+RUN npm run build:frontend
 
 # Production stage - Ultra lightweight
 FROM node:18-alpine AS runner
