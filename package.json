@@ -22,6 +22,8 @@
     "setup:ai": "cd apps/ai-service && python setup.py",
     "db:migrate": "cd apps/backend && npm run db:migrate",
     "db:seed": "cd apps/backend && npm run db:seed",
+    "dev:setup": "./scripts/dev-start.sh",
+    "dev:teardown": "./scripts/dev-teardown.sh",
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd apps/frontend && npm run test",
     "test:backend": "cd apps/backend && npm run test",
