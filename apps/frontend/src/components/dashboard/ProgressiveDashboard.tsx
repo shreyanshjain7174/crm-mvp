@@ -7,6 +7,7 @@ import { NewUserStage } from './stages/NewUserStage';
 import { BeginnerStage } from './stages/BeginnerStage';
 import { IntermediateStage } from './stages/IntermediateStage';
 import { AdvancedStage } from './stages/AdvancedStage';
+import { ExpertStage } from './stages/ExpertStage';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 
 // Import existing dashboard components
@@ -57,6 +58,13 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   if (stage === 'advanced') {
     return (
       <AdvancedStage />
+    );
+  }
+  
+  // Show expert stage for CRM masters
+  if (stage === 'expert') {
+    return (
+      <ExpertStage />
     );
   }
   
