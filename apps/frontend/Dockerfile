@@ -8,11 +8,12 @@ WORKDIR /app
 # Copy root package.json and lock file first
 COPY package*.json ./
 
-# Copy frontend-specific package.json
+# Create apps directory and copy frontend package.json
+RUN mkdir -p apps/frontend
 COPY apps/frontend/package*.json ./apps/frontend/
 
 # Install dependencies using workspace with better caching
-RUN npm ci --frozen-lockfile --prefer-offline && npm cache clean --force
+RUN npm ci --workspaces=false --frozen-lockfile --prefer-offline && npm cache clean --force
 
 # Build stage
 FROM node:18-alpine AS builder

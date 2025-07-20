@@ -12,11 +12,12 @@ WORKDIR /app
 # Copy root package.json and lock file first
 COPY package*.json ./
 
-# Copy backend-specific package.json
+# Create apps directory and copy backend package.json
+RUN mkdir -p apps/backend
 COPY apps/backend/package*.json ./apps/backend/
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm ci --frozen-lockfile --prefer-offline && \
+RUN npm ci --workspaces=false --frozen-lockfile --prefer-offline && \
     npm cache clean --force
 
 # Build stage
@@ -57,11 +58,12 @@ WORKDIR /app
 # Copy root package.json and lock file first
 COPY package*.json ./
 
-# Copy backend-specific package.json
+# Create apps directory and copy backend package.json
+RUN mkdir -p apps/backend
 COPY apps/backend/package*.json ./apps/backend/
 
 # Install only production dependencies
-RUN npm ci --only=production --frozen-lockfile --prefer-offline && \
+RUN npm ci --only=production --workspaces=false --frozen-lockfile --prefer-offline && \
     npm cache clean --force
 
 # Production stage - Ultra lightweight
