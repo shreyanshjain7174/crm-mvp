@@ -1,0 +1,201 @@
+name: Version Bump
+
+on:
+  schedule:
+    # Run every Monday at 8:00 AM UTC (before Dependabot)
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      target:
+        description: 'Target package'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - frontend
+          - backend
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Determine bump type
+        id: bump
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.bump_type }}" >> $GITHUB_OUTPUT
+            echo "target=${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-determine based on commits since last release
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            COMMITS_SINCE_TAG=$(git rev-list ${LAST_TAG}..HEAD --count)
+            
+            if [ $COMMITS_SINCE_TAG -gt 20 ]; then
+              echo "type=minor" >> $GITHUB_OUTPUT
+            else
+              echo "type=patch" >> $GITHUB_OUTPUT
+            fi
+            echo "target=all" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bump frontend version
+        if: steps.bump.outputs.target == 'all' || steps.bump.outputs.target == 'frontend'
+        run: |
+          cd apps/frontend
+          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "FRONTEND_VERSION=v${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Bump backend version
+        if: steps.bump.outputs.target == 'all' || steps.bump.outputs.target == 'backend'
+        run: |
+          cd apps/backend
+          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "BACKEND_VERSION=v${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Update root package.json version
+        if: steps.bump.outputs.target == 'all'
+        run: |
+          npm version ${{ steps.bump.outputs.type }} --no-git-tag-version
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          echo "ROOT_VERSION=v${ROOT_VERSION}" >> $GITHUB_ENV
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            CHANGES=$(git log --oneline --pretty=format:"- %s" --max-count=10)
+          else
+            CHANGES=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
+          fi
+          
+          echo "## Changes since last release" > changelog.md
+          echo "" >> changelog.md
+          echo "$CHANGES" >> changelog.md
+          
+          # Create a safe version for PR body
+          CHANGELOG_CONTENT=$(cat changelog.md | sed 's/"/\\"/g' | tr '\n' ' ')
+          echo "content=$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore: bump version to ${{ env.ROOT_VERSION || env.FRONTEND_VERSION || env.BACKEND_VERSION }}
+            
+            - Automated version bump (${{ steps.bump.outputs.type }})
+            - Target: ${{ steps.bump.outputs.target }}
+            - Frontend: ${{ env.FRONTEND_VERSION || 'unchanged' }}
+            - Backend: ${{ env.BACKEND_VERSION || 'unchanged' }}
+          title: "chore: automated version bump (${{ steps.bump.outputs.type }})"
+          body: |
+            ## 🤖 Automated Version Bump
+            
+            **Bump Type:** ${{ steps.bump.outputs.type }}
+            **Target:** ${{ steps.bump.outputs.target }}
+            
+            ### Version Changes
+            - Frontend: ${{ env.FRONTEND_VERSION || 'unchanged' }}
+            - Backend: ${{ env.BACKEND_VERSION || 'unchanged' }}
+            - Root: ${{ env.ROOT_VERSION || 'unchanged' }}
+            
+            ### Changelog
+            ${{ steps.changelog.outputs.content }}
+            
+            ### Automated Checks
+            - [ ] All tests pass
+            - [ ] No breaking changes detected
+            - [ ] Dependencies are compatible
+            
+            This PR was automatically created by the version bump workflow.
+          branch: automated/version-bump-${{ steps.bump.outputs.type }}
+          delete-branch: true
+          labels: |
+            version-bump
+            automated
+            ${{ steps.bump.outputs.type }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.bump_type == 'major'
+    needs: version-bump
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## CRM MVP Release ${{ steps.version.outputs.version }}
+            
+            This is an automated release created by the version bump workflow.
+            
+            ### What's Changed
+            - Major version bump with new features and improvements
+            - See merged PRs and commits for detailed changes
+            
+            ### Docker Images
+            - Frontend: `ghcr.io/shreyanshjain7174/crm-mvp/frontend:${{ steps.version.outputs.version }}`
+            - Backend: `ghcr.io/shreyanshjain7174/crm-mvp/backend:${{ steps.version.outputs.version }}`
+            
+            ### Deployment
+            - GitHub Pages: https://shreyanshjain7174.github.io/crm-mvp/
+          draft: false
+          prerelease: false

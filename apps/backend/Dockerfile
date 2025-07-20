@@ -15,16 +15,9 @@ COPY package*.json ./
 # Copy backend-specific package.json
 COPY apps/backend/package*.json ./apps/backend/
 
-# Copy prisma schema
-COPY apps/backend/prisma ./apps/backend/prisma/
-
 # Install all dependencies (including dev dependencies for build)
 RUN npm ci --frozen-lockfile --prefer-offline && \
     npm cache clean --force
-
-# Generate Prisma client
-WORKDIR /app/apps/backend
-RUN npx prisma generate
 
 # Build stage
 FROM node:18-slim AS builder
@@ -44,13 +37,12 @@ COPY --from=deps /app/node_modules ./node_modules
 RUN ls -la apps/backend/src/types/ || echo "Types directory not found"
 RUN cat apps/backend/src/types/fastify.d.ts || echo "fastify.d.ts not found"
 
-# Debug: Show TypeScript config and source files
-RUN cd apps/backend && cat tsconfig.json
-RUN cd apps/backend && ls -la src/
-RUN cd apps/backend && head -10 src/index.ts
+# Install dependencies for the backend specifically
+WORKDIR /app/apps/backend
+RUN npm ci --frozen-lockfile
 
-# Build the backend from root directory using npm workspace
-RUN npm run build:backend
+# Build the backend
+RUN npm run build
 
 # Production dependencies stage
 FROM node:18-slim AS prod-deps
@@ -68,16 +60,9 @@ COPY package*.json ./
 # Copy backend-specific package.json
 COPY apps/backend/package*.json ./apps/backend/
 
-# Copy prisma schema
-COPY apps/backend/prisma ./apps/backend/prisma/
-
 # Install only production dependencies
 RUN npm ci --only=production --frozen-lockfile --prefer-offline && \
     npm cache clean --force
-
-# Generate Prisma client
-WORKDIR /app/apps/backend
-RUN npx prisma generate
 
 # Production stage - Ultra lightweight
 FROM node:18-slim AS runner
@@ -93,15 +78,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy files and generate Prisma client
+# Copy files
 COPY --from=prod-deps --chown=appuser:appuser /app/node_modules ./node_modules
-COPY --from=prod-deps --chown=appuser:appuser /app/apps/backend/prisma ./apps/backend/prisma
 COPY --from=builder --chown=appuser:appuser /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder --chown=appuser:appuser /app/apps/backend/package*.json ./apps/backend/
 
-# Generate Prisma client
 WORKDIR /app/apps/backend
-RUN npx prisma generate
 
 # Switch to non-root user
 USER appuser

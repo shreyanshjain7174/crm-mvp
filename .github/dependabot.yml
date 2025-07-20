@@ -1,0 +1,99 @@
+# GitHub Dependabot configuration for automatic dependency updates
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/apps/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "shreyanshjain7174"
+    assignees:
+      - "shreyanshjain7174"
+    commit-message:
+      prefix: "feat(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "auto-update"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Backend dependencies  
+  - package-ecosystem: "npm"
+    directory: "/apps/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "shreyanshjain7174"
+    assignees:
+      - "shreyanshjain7174"
+    commit-message:
+      prefix: "feat(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "auto-update"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Root workspace dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"  
+      time: "11:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "shreyanshjain7174"
+    assignees:
+      - "shreyanshjain7174"
+    commit-message:
+      prefix: "feat(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "workspace"
+      - "auto-update"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "shreyanshjain7174"
+    assignees:
+      - "shreyanshjain7174"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "auto-update"

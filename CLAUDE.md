@@ -486,7 +486,27 @@ const ANIMATIONS = {
 - For now other than the sensitive information push the changes in the main branch, after this point we will use one staging branch and the main branch will be our production branch
 
 ## Commit Guidelines
-- Never use co-authored commits only user signed off commits.
+- Always use user signed commits with -s flag, never use co-authored commits
+- PRs created by Claude should not contain co-authored commits
+- All commits must be signed off by the user only
+
+## GitHub Project Board Management
+- Always update task status in GitHub project board using gh CLI
+- Use project ID: PVT_kwHOApp2eM4A-WnZ for all project board operations
+- Update item status when PRs are created, merged, or when significant progress is made
+- Available statuses: Backlog, Ready, In progress, In review, Done
+- Available priorities: P0 (Critical), P1 (High), P2 (Medium)
+- Commands:
+  ```bash
+  # Add items to project
+  gh project item-add 1 --owner shreyanshjain7174 --url <GITHUB_URL>
+  
+  # Update status
+  gh project item-edit --project-id PVT_kwHOApp2eM4A-WnZ --id <ITEM_ID> --field-id PVTSSF_lAHOApp2eM4A-WnZzgxyDJs --single-select-option-id <STATUS_ID>
+  
+  # Update priority  
+  gh project item-edit --project-id PVT_kwHOApp2eM4A-WnZ --id <ITEM_ID> --field-id PVTSSF_lAHOApp2eM4A-WnZzgxyDOY --single-select-option-id <PRIORITY_ID>
+  ```
 
 ## Secrets and API Keys
 - Pinecone API Key: pcsk_6jpGA2_6ZDynb5Up9bqCaNdbz7oVVuBTLDQupJCZ3piQBSFkNe9k7C2HnSfqh65fQwcPSN

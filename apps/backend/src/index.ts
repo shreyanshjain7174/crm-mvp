@@ -2,8 +2,6 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
-import websocket from '@fastify/websocket';
-import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { pool, initializeDatabase } from './db/connection';
@@ -17,15 +15,6 @@ import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 
 dotenv.config();
-const app = fastify({ logger: true });
-
-const server = createServer();
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
-});
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -36,26 +25,71 @@ declare module 'fastify' {
 }
 
 async function buildApp() {
+  const app = fastify({ 
+    logger: true,
+    disableRequestLogging: false 
+  });
+
   // Register plugins
   await app.register(cors, {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000"
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true
   });
   
-  await app.register(helmet);
+  await app.register(helmet, {
+    contentSecurityPolicy: false // Allow Socket.io
+  });
   
   await app.register(jwt, {
     secret: process.env.JWT_SECRET || 'fallback-secret'
   });
-  
-  await app.register(websocket);
 
   // Initialize database
   await initializeDatabase();
   
+  // Initialize Socket.io after server is ready
+  let io: Server;
+  
   // Decorate fastify instance
   app.decorate('db', pool);
-  app.decorate('io', io);
   app.decorate('authenticate', authenticate);
+  
+  // Add Socket.io setup hook
+  app.addHook('onReady', async () => {
+    io = new Server(app.server, {
+      cors: {
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        methods: ["GET", "POST"],
+        credentials: true
+      },
+      path: '/socket.io/',
+      transports: ['websocket', 'polling']
+    });
+
+    // Socket.io connection handling
+    io.on('connection', (socket) => {
+      logger.info(`Client connected: ${socket.id}`);
+      
+      socket.on('authenticate', (token) => {
+        try {
+          const decoded = app.jwt.verify(token);
+          socket.data.user = decoded;
+          socket.join(`user_${socket.data.user.userId}`);
+          logger.info(`User authenticated: ${socket.data.user.email}`);
+        } catch (error) {
+          logger.error('Socket authentication failed:', error);
+          socket.emit('auth_error', { message: 'Authentication failed' });
+        }
+      });
+
+      socket.on('disconnect', () => {
+        logger.info(`Client disconnected: ${socket.id}`);
+      });
+    });
+
+    app.decorate('io', io);
+    logger.info('Socket.io server initialized');
+  });
 
   // Health check
   app.get('/health', async (_request, _reply) => {
@@ -81,11 +115,7 @@ async function start() {
     
     await app.listen({ port, host: '0.0.0.0' });
     
-    server.listen(port + 1, () => {
-      logger.info(`Socket.io server listening on port ${port + 1}`);
-    });
-    
-    logger.info(`Backend server listening on port ${port}`);
+    logger.info(`Backend server with Socket.io listening on port ${port}`);
   } catch (err) {
     logger.error('Error starting server:', err);
     process.exit(1);

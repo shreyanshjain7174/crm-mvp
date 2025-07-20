@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('whatsapp');
+  const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -29,6 +29,7 @@ export default function SettingsPage() {
   };
 
   const tabs = [
+    { id: 'profile', name: 'Profile', icon: Users },
     { id: 'whatsapp', name: 'WhatsApp', icon: Smartphone },
     { id: 'ai', name: 'AI Assistant', icon: Bot },
     { id: 'notifications', name: 'Notifications', icon: Bell },
@@ -85,6 +86,114 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <div className="lg:col-span-3">
+          {activeTab === 'profile' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-2xl font-medium">
+                      DU
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium">Demo User</h3>
+                    <p className="text-gray-600">demo@crm.dev</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      Change Avatar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="Demo User"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue="demo@crm.dev"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="CRM Demo"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      defaultValue="+91 98765 43210"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    rows={3}
+                    defaultValue="Tell us about yourself and your business..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium mb-4">Change Password</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSave} className="bg-primary text-white">
+                    Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === 'whatsapp' && (
             <Card>
               <CardHeader>
@@ -96,7 +205,7 @@ export default function SettingsPage() {
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <div>
                       <p className="font-medium text-green-900">WhatsApp Business API</p>
-                      <p className="text-sm text-green-700">Connected via 360dialog</p>
+                      <p className="text-sm text-green-700">Connected via Meta Cloud API</p>
                     </div>
                   </div>
                   <Badge className="bg-green-100 text-green-800">Active</Badge>
@@ -137,10 +246,55 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium mb-4">Meta Business Account</h4>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium text-blue-900">Connected to Meta Business Manager</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Your WhatsApp Business Account is connected and verified. All message templates and webhook endpoints are configured.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Business Account ID
+                      </label>
+                      <input
+                        type="text"
+                        value="your-business-account-id"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number ID
+                      </label>
+                      <input
+                        type="text"
+                        value="your-phone-number-id"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-3">
                   <input type="checkbox" id="auto-reply" defaultChecked />
                   <label htmlFor="auto-reply" className="text-sm text-gray-700">
                     Enable automatic welcome messages for new conversations
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input type="checkbox" id="webhook-status" defaultChecked />
+                  <label htmlFor="webhook-status" className="text-sm text-gray-700">
+                    Real-time message webhook notifications
                   </label>
                 </div>
 

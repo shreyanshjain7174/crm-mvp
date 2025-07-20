@@ -1,0 +1,211 @@
+name: AI PR Review Bot (Disabled)
+
+on:
+  # Temporarily disabled - insufficient API credits
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  # issue_comment:
+  #   types: [created]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/review'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd apps/frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Get PR details
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+            echo "body=${{ github.event.pull_request.body }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "title=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+            echo "body=Manual review requested" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get changed files
+        id: files
+        run: |
+          # Get list of changed files
+          gh pr diff ${{ steps.pr.outputs.number }} --name-only > changed_files.txt
+          
+          # Get diff content for analysis
+          gh pr diff ${{ steps.pr.outputs.number }} > pr_diff.txt
+          
+          echo "changed_files=$(cat changed_files.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read project context
+        id: context
+        run: |
+          # Read project documentation
+          PROJECT_CONTEXT=""
+          
+          if [ -f "CLAUDE.md" ]; then
+            PROJECT_CONTEXT="$PROJECT_CONTEXT\n## Project Guidelines (CLAUDE.md)\n$(cat CLAUDE.md)\n"
+          fi
+          
+          if [ -f "README.md" ]; then
+            PROJECT_CONTEXT="$PROJECT_CONTEXT\n## Project Overview (README.md)\n$(head -50 README.md)\n"
+          fi
+          
+          if [ -f "package.json" ]; then
+            PROJECT_CONTEXT="$PROJECT_CONTEXT\n## Dependencies\n$(cat package.json | jq '.dependencies // {}')\n"
+          fi
+          
+          # Save to file for AI analysis
+          echo -e "$PROJECT_CONTEXT" > project_context.txt
+
+      - name: Generate AI Review
+        id: ai_review
+        run: |
+          # Create review prompt
+          cat > review_prompt.txt << 'EOF'
+          You are an expert code reviewer for an Agentic CRM system built with Next.js 14, FastAPI, PostgreSQL, and AI agents.
+
+          ## Project Context:
+          $(cat project_context.txt)
+
+          ## PR Information:
+          - **Title**: ${{ steps.pr.outputs.title }}
+          - **Description**: ${{ steps.pr.outputs.body }}
+          - **Changed Files**: ${{ steps.files.outputs.changed_files }}
+
+          ## Code Changes:
+          ```diff
+          $(cat pr_diff.txt)
+          ```
+
+          Please provide a comprehensive code review focusing on:
+
+          1. **Architecture & Design**: Does this align with the microservices architecture?
+          2. **Code Quality**: Are there any issues with code style, patterns, or best practices?
+          3. **Security**: Any security vulnerabilities or concerns?
+          4. **Performance**: Potential performance issues or optimizations?
+          5. **Testing**: Are tests adequate or missing?
+          6. **Dependencies**: Are new dependencies necessary and secure?
+          7. **Documentation**: Is code well-documented?
+
+          ## Review Format:
+          Please structure your review as:
+
+          ### 🎯 Summary
+          Brief overview of the changes and overall assessment.
+
+          ### ✅ Positive Aspects
+          What's good about this PR.
+
+          ### ⚠️ Issues Found
+          Any problems that need to be addressed.
+
+          ### 🔧 Recommendations
+          Specific suggestions for improvement.
+
+          ### 📋 Action Items
+          - [ ] Specific tasks that need to be completed
+
+          Be constructive and specific. If no issues are found, say so clearly.
+          EOF
+
+          # Call Anthropic API for review
+          curl -X POST "https://api.anthropic.com/v1/messages" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${{ secrets.ANTHROPIC_API_KEY }}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "{
+              \"model\": \"claude-3-sonnet-20240229\",
+              \"max_tokens\": 4000,
+              \"messages\": [
+                {
+                  \"role\": \"user\",
+                  \"content\": \"$(cat review_prompt.txt | sed 's/"/\\"/g' | tr -d '\n')\"
+                }
+              ]
+            }" > ai_response.json
+
+          # Extract the review content
+          REVIEW_CONTENT=$(cat ai_response.json | jq -r '.content[0].text // "Error: Could not generate review"')
+          
+          # Save review to file
+          echo "$REVIEW_CONTENT" > ai_review.md
+          
+          # Set output for use in next step
+          echo "review_generated=true" >> $GITHUB_OUTPUT
+
+      - name: Post AI Review Comment
+        if: steps.ai_review.outputs.review_generated == 'true'
+        run: |
+          # Create the review comment
+          REVIEW_BODY="## 🤖 AI Code Review
+
+          $(cat ai_review.md)
+
+          ---
+          *This review was automatically generated using Claude 3 Sonnet. Please review the suggestions and make your own judgment.*
+
+          **Commands:**
+          - Comment \`/review\` to trigger a new AI review
+          - The AI has access to project context from CLAUDE.md and recent changes"
+
+          # Post the review comment
+          gh pr comment ${{ steps.pr.outputs.number }} --body "$REVIEW_BODY"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update project board
+        run: |
+          # Add PR to project board if not already added
+          gh project item-add 1 --owner ${{ github.repository_owner }} --url "${{ github.event.pull_request.html_url || github.event.issue.html_url }}" || true
+          
+          # Set status to "In Review" 
+          echo "PR added to project board for tracking"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Handle API errors
+        if: failure()
+        run: |
+          echo "⚠️ AI review failed. This could be due to:"
+          echo "1. Missing ANTHROPIC_API_KEY secret"
+          echo "2. API rate limits"
+          echo "3. Network issues"
+          echo ""
+          echo "Please check the workflow logs and ensure the Anthropic API key is configured."
+          
+          # Post fallback comment
+          gh pr comment ${{ steps.pr.outputs.number }} --body "🤖 **AI Review Bot**
+
+          I encountered an issue while generating the AI review. Please ensure:
+          - The \`ANTHROPIC_API_KEY\` secret is properly configured
+          - The API key has sufficient credits
+          
+          You can trigger a manual review by commenting \`/review\` on this PR." || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
