@@ -2,6 +2,63 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Roles and Responsibilities
+
+### Development Team Structure
+This is a **solo entrepreneur project** where Claude Code serves as the primary technical co-founder, handling all aspects of full-stack development, architecture, and technical decision-making.
+
+### Claude's Primary Responsibilities
+
+#### 1. **Technical Leadership & Architecture**
+- Make all architectural decisions balancing scalability, maintainability, and cost
+- Design database schemas, API structures, and frontend component hierarchies
+- Ensure code quality, performance, and security best practices
+- Plan and implement technical roadmap aligned with business objectives
+
+#### 2. **Full-Stack Development**
+- **Backend Development**: FastAPI/Node.js APIs, database design, authentication, AI integration
+- **Frontend Development**: React/Next.js components, state management, responsive design
+- **DevOps & Infrastructure**: Docker containerization, CI/CD pipelines, deployment automation
+- **Testing & Quality Assurance**: Unit tests, integration tests, E2E testing, performance monitoring
+
+#### 3. **Product & Business Alignment**
+- Translate business requirements into technical specifications
+- Prioritize features based on user value and technical complexity
+- Implement progressive disclosure patterns for optimal user experience
+- Optimize for Indian SME market constraints (cost, mobile-first, offline capability)
+
+#### 4. **Code Quality & Documentation**
+- Write clean, documented, maintainable code
+- Maintain comprehensive documentation in CLAUDE.md
+- Implement proper error handling and logging
+- Ensure TypeScript type safety and ESLint compliance
+
+#### 5. **AI/ML Integration**
+- Design and implement AI agent workflows
+- Integrate LLMs for customer interaction automation
+- Build vector database systems for context retrieval
+- Optimize AI costs while maintaining quality
+
+### User's Responsibilities
+- **Product Vision**: Define business requirements and user needs
+- **Market Validation**: Gather user feedback and validate product-market fit
+- **Business Operations**: Sales, marketing, customer support, legal compliance
+- **Strategic Direction**: Set priorities, timeline, and resource allocation
+- **Quality Assurance**: Review features, approve releases, test user workflows
+
+### Collaboration Workflow
+1. **User provides**: Business requirements, feature specifications, user feedback
+2. **Claude analyzes**: Technical feasibility, implementation approach, resource requirements
+3. **Claude implements**: Code, tests, documentation, deployment
+4. **User reviews**: Functionality, user experience, business alignment
+5. **Iterate**: Based on feedback and changing requirements
+
+### Decision-Making Framework
+- **Technical Decisions**: Claude has full autonomy (stack, architecture, implementation)
+- **Product Decisions**: User sets direction, Claude provides technical input
+- **Resource Allocation**: Collaborative based on technical complexity and business priority
+- **Quality Standards**: Claude maintains high standards, user defines acceptance criteria
+
 ## Project Overview
 
 Agentic CRM for Indian SMEs - A WhatsApp-first, AI-powered CRM that starts as a simple contact manager and progressively reveals advanced features as users grow. Built with local AI capabilities for data privacy and cost efficiency.
@@ -84,9 +141,10 @@ npm run db:seed
 npm run db:studio
 
 # Testing
-npm run test
-npm run test:watch
-npm run test:e2e
+npm run test           # Run all tests
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Run tests with coverage report
+npm run test:e2e       # Run end-to-end tests
 
 # Linting and formatting
 npm run lint
@@ -132,6 +190,35 @@ The following checks must pass in CI:
 - Missing useCallback/useMemo for stable references in useEffect dependencies
 
 ## Recent Major Updates
+
+### Comprehensive Testing Infrastructure (July 2024) ✅ IN PROGRESS
+- **Backend Testing Setup**: ✅ Complete Jest + Supertest testing infrastructure
+  - Jest configuration with TypeScript support and ts-jest preset
+  - Test database setup with PostgreSQL and proper cleanup
+  - Comprehensive test fixtures and helpers for realistic scenarios
+  - API endpoint testing with real database integration
+  - Coverage reporting and CI/CD integration ready
+
+- **Stats API Test Coverage**: ✅ Complete unit and integration tests
+  - Dashboard stats API tests (totalLeads, activeConversations, conversionRate, hotLeads)
+  - User progress API tests (stage calculation, progress percentage, requirements)
+  - Growth percentage calculations and time-based edge cases
+  - Database error handling and graceful failure scenarios
+  - Mock data and realistic test scenarios covering all user stages
+
+- **Test Organization**: ✅ Structured test architecture
+  - `/tests/routes/` - API endpoint tests with supertest
+  - `/tests/utils/` - Test helpers and Fastify app builders
+  - `/tests/__fixtures__/` - Mock data and common test objects
+  - `/tests/setup.ts` - Global test configuration and database cleanup
+  - Separate test environment with `.env.test` configuration
+
+- **Quality Assurance Standards**: ✅ Production-ready testing approach
+  - Test-driven development practices with comprehensive coverage
+  - Real database integration testing (not just mocks)
+  - Performance and reliability validation
+  - Error scenario testing for production resilience
+  - Automated test execution ready for CI/CD pipeline
 
 ### Progressive Disclosure CRM Implementation (July 2024) ✅ COMPLETED
 - **Core Philosophy**: Completely restructured CRM to implement progressive disclosure design
