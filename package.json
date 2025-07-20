@@ -42,6 +42,7 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "framer-motion": "^12.23.6"
   }
 }

@@ -4,20 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Progressive Disclosure CRM for Indian SMEs** - A no-code, self-discovering customer relationship management platform that starts completely blank and progressively reveals features as users achieve milestones. The system transforms from a simple contact manager to a full AI-powered CRM through natural user progression.
+Agentic CRM for Indian SMEs - A WhatsApp-first, AI-powered CRM that starts as a simple contact manager and progressively reveals advanced features as users grow. Built with local AI capabilities for data privacy and cost efficiency.
 
-### Design Philosophy
-1. **Start with Zero**: Blank dashboard, single CTA - no overwhelming features
-2. **Reveal on Achievement**: Features unlock based on user actions and milestones
-3. **No Training Required**: Context-sensitive hints and natural discovery patterns
-4. **Progressive Complexity**: Contact Manager → WhatsApp Hub → AI Assistant → Full CRM
+## Core Philosophy
 
-### Target User Journey
-- **Minute 1-5**: Add first contact → unlock contact list
-- **Minute 5-30**: Send first WhatsApp → unlock chat interface
-- **Day 1-3**: 10+ contacts → unlock pipeline and organization tools
-- **Week 1**: 50+ messages → unlock AI assistant
-- **Week 2+**: 10+ AI approvals → unlock automation and advanced agents
+**"Progressive Disclosure"** - The CRM starts completely blank and reveals features based on user achievements:
+- Day 1: Simple contact manager
+- Week 1: WhatsApp communication hub  
+- Week 2: AI-powered assistant
+- Month 1: Full automation platform
+
+## Implementation Strategy
+
+### Phase 1: Blank Slate Dashboard (Priority 1)
+
+The dashboard should start completely empty with a single CTA. Features unlock based on user actions.
+
+```typescript
+// User Journey Stages
+Stage 1: "First Contact" → Unlocks contact list
+Stage 2: "First Message" → Unlocks chat interface  
+Stage 3: "Growing Contacts" (10+) → Unlocks pipeline view
+Stage 4: "Busy User" (50+ messages) → Unlocks AI assistant
+Stage 5: "Power User" (10+ AI approvals) → Unlocks automation
+```
 
 ## Architecture
 
