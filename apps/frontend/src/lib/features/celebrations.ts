@@ -73,6 +73,11 @@ export class CelebrationEngine {
       description: template.description,
       icon: template.icon,
       category: 'milestone',
+      points: 25,
+      rarity: 'common',
+      requirements: [
+        { type: 'action', condition: 'template_triggered' }
+      ],
       unlockedAt: new Date(),
       ...customData
     };

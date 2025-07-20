@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import { UserStage, USER_STAGES, FeatureKey, FEATURE_GATES } from '@/lib/constants/user-stages';
 import { checkAchievements, Achievement } from '@/lib/constants/achievements';
 
+// Re-export Achievement interface for other components
+export type { Achievement };
+
 
 export interface UserStats {
   contactsAdded: number;
@@ -178,7 +181,10 @@ export const useUserProgressStore = create<UserProgressStore>()(
               icon: nextStageConfig.icon,
               category: 'milestone',
               points: 50,
-              rarity: 'rare'
+              rarity: 'rare',
+              requirements: [
+                { type: 'stage', condition: `stage === '${nextStage}'` }
+              ]
             });
           }
         }

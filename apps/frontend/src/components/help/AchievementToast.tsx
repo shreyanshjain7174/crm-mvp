@@ -17,14 +17,16 @@ const ACHIEVEMENT_ICONS = {
   milestone: Trophy,
   feature: Star,
   usage: Zap,
-  social: Users
+  social: Users,
+  efficiency: Bot
 };
 
 const ACHIEVEMENT_COLORS = {
   milestone: 'from-yellow-400 to-orange-500',
   feature: 'from-blue-400 to-purple-500',
   usage: 'from-green-400 to-emerald-500',
-  social: 'from-pink-400 to-rose-500'
+  social: 'from-pink-400 to-rose-500',
+  efficiency: 'from-purple-400 to-indigo-500'
 };
 
 export function AchievementToast({ 
@@ -51,8 +53,8 @@ export function AchievementToast({
     }, 300);
   };
   
-  const IconComponent = ACHIEVEMENT_ICONS[achievement.category];
-  const gradientColor = ACHIEVEMENT_COLORS[achievement.category];
+  const IconComponent = ACHIEVEMENT_ICONS[achievement.category as keyof typeof ACHIEVEMENT_ICONS];
+  const gradientColor = ACHIEVEMENT_COLORS[achievement.category as keyof typeof ACHIEVEMENT_COLORS];
   
   if (!isVisible) return null;
   
@@ -106,7 +108,7 @@ export function AchievementToast({
               </Badge>
               
               <p className="text-xs text-slate-500">
-                {new Date(achievement.unlockedAt).toLocaleDateString()}
+                {achievement.unlockedAt ? new Date(achievement.unlockedAt).toLocaleDateString() : 'Just now'}
               </p>
             </div>
           </div>

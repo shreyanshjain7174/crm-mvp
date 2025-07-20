@@ -46,7 +46,7 @@ export default function AchievementsPage() {
     if (achievement.requirements.length === 1 && achievement.requirements[0].type === 'stat') {
       const req = achievement.requirements[0];
       const [statName, , value] = req.condition.split(/\s*(>=|<=|>|<|==)\s*/);
-      const statValue = stats[statName] || 0;
+      const statValue = stats[statName as keyof typeof stats] || 0;
       const targetValue = parseInt(value);
       
       return Math.min((statValue / targetValue) * 100, 99); // Never show 100% unless unlocked

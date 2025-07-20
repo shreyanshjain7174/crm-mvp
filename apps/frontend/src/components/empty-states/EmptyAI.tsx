@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 interface EmptyAIProps {
   onStartAI?: () => void;
   onSendMessages?: () => void;
+  onViewPipeline?: () => void;
   messageCount?: number;
   requiredMessages?: number;
   isLocked?: boolean;
@@ -17,6 +18,7 @@ interface EmptyAIProps {
 export function EmptyAI({ 
   onStartAI,
   onSendMessages,
+  onViewPipeline,
   messageCount = 0,
   requiredMessages = 50,
   isLocked = false

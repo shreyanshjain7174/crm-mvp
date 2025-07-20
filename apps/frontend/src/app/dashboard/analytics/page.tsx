@@ -328,7 +328,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </CardContent>
-          </div>
+      </Card>
         </TabsContent>
         
         {/* Pipeline Tab */}
