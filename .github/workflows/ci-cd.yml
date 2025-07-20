@@ -175,11 +175,11 @@ jobs:
           docker compose -f docker-compose.dev.yml up -d
           docker system prune -f
 
-  # Deploy to Production
+  # Deploy to Production (disabled until production server is configured)
   deploy-prod:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: false # Disabled until production server credentials are configured
     environment: production
 
     steps:
