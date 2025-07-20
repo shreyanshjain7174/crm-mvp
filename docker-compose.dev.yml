@@ -62,6 +62,15 @@ services:
       WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
       WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
       WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-dev-webhook-verify}
+      # Open Source AI Services
+      OLLAMA_BASE_URL: http://ollama:11434
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      CHROMA_BASE_URL: http://chroma:8000
+      # Disable paid AI services
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      PINECONE_API_KEY: ""
     ports:
       - "3001:3001"
       - "3002:3002"
@@ -70,6 +79,10 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      chroma:
         condition: service_healthy
     volumes:
       - ./apps/backend:/app
@@ -123,11 +136,55 @@ services:
     networks:
       - crm-dev-network
 
+  # Ollama - Open Source LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: crm-dev-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - crm-dev-network
+
+  # Chroma - Open Source Vector Database
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: crm-dev-chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - PERSIST_DIRECTORY=/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - crm-dev-network
+
 volumes:
   postgres_dev_data:
   redis_dev_data:
   backend_uploads:
   pgadmin_data:
+  ollama_data:
+  chroma_data:
 
 networks:
   crm-dev-network:

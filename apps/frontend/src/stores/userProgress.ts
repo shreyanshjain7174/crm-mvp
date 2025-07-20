@@ -1,15 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserStage, USER_STAGES, FeatureKey, FEATURE_GATES } from '@/lib/constants/user-stages';
+import { checkAchievements, Achievement } from '@/lib/constants/achievements';
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  unlockedAt: Date;
-  category: 'milestone' | 'feature' | 'usage' | 'social';
-}
 
 export interface UserStats {
   contactsAdded: number;
@@ -49,6 +42,7 @@ interface UserProgressStore extends UserProgress {
   unlockFeature: (feature: FeatureKey) => void;
   addAchievement: (achievement: Omit<Achievement, 'unlockedAt'>) => void;
   checkStageProgression: () => void;
+  checkAchievements: () => void;
   markFeatureAsSeen: (feature: FeatureKey) => void;
   dismissHint: () => void;
   setCurrentHint: (hint: string) => void;
@@ -182,10 +176,24 @@ export const useUserProgressStore = create<UserProgressStore>()(
               title: `${nextStageConfig.title} Unlocked!`,
               description: nextStageConfig.description,
               icon: nextStageConfig.icon,
-              category: 'milestone'
+              category: 'milestone',
+              points: 50,
+              rarity: 'rare'
             });
           }
         }
+        
+        // Check for new achievements
+        get().checkAchievements();
+      },
+      
+      checkAchievements: () => {
+        const state = get();
+        const newAchievements = checkAchievements(state.stats, state.stage, state);
+        
+        newAchievements.forEach(achievement => {
+          get().addAchievement(achievement);
+        });
       },
       
       markFeatureAsSeen: (feature) => {

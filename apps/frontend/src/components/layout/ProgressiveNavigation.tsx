@@ -59,7 +59,7 @@ const allNavigationItems: NavigationItem[] = [
   },
   { 
     name: 'AI Assistant', 
-    href: '/dashboard/ai', 
+    href: '/dashboard/ai-assistant', 
     icon: Bot,
     feature: 'ai:suggestions',
     requiredStage: 'advanced',
@@ -72,6 +72,12 @@ const allNavigationItems: NavigationItem[] = [
     feature: 'analytics:full',
     requiredStage: 'expert',
     description: 'Advanced analytics'
+  },
+  { 
+    name: 'Achievements', 
+    href: '/dashboard/achievements', 
+    icon: Star,
+    description: 'Track your progress and unlock rewards'
   },
   { 
     name: 'Settings', 

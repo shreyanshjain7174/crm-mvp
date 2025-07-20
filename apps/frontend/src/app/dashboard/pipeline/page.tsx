@@ -1,0 +1,223 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { EmptyPipeline } from '@/components/empty-states/EmptyPipeline';
+import { PipelineView, PipelineStage, PipelineLead } from '@/components/pipeline/PipelineView';
+import { SimpleFeatureReveal } from '@/components/animations/SimpleFeatureReveal';
+import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
+import { useLeads } from '@/hooks/use-api';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+
+// Convert API leads to pipeline format
+function convertLeadsToPipelineData(leads: any[]): PipelineStage[] {
+  const stages: PipelineStage[] = [
+    {
+      id: 'new-leads',
+      title: 'New Leads',
+      color: 'from-blue-500 to-blue-600',
+      icon: null,
+      leads: []
+    },
+    {
+      id: 'contacted',
+      title: 'Contacted',
+      color: 'from-purple-500 to-purple-600',
+      icon: null,
+      leads: []
+    },
+    {
+      id: 'qualified',
+      title: 'Qualified',
+      color: 'from-orange-500 to-orange-600',
+      icon: null,
+      leads: []
+    },
+    {
+      id: 'proposal',
+      title: 'Proposal',
+      color: 'from-pink-500 to-pink-600',
+      icon: null,
+      leads: []
+    },
+    {
+      id: 'won',
+      title: 'Won',
+      color: 'from-green-500 to-green-600',
+      icon: null,
+      leads: []
+    }
+  ];
+
+  // Map lead status to pipeline stages
+  leads.forEach(lead => {
+    const pipelineLead: PipelineLead = {
+      id: lead.id,
+      name: lead.name,
+      phone: lead.phone,
+      email: lead.email,
+      company: lead.businessProfile,
+      value: lead.estimatedValue || Math.floor(Math.random() * 100000) + 10000,
+      lastContact: lead.updatedAt ? new Date(lead.updatedAt) : undefined,
+      priority: lead.priority || 'MEDIUM',
+      aiScore: lead.aiScore,
+      tags: lead.tags || []
+    };
+
+    // Map lead status to stage
+    switch (lead.status) {
+      case 'COLD':
+        stages[0].leads.push(pipelineLead); // New Leads
+        break;
+      case 'WARM':
+        stages[1].leads.push(pipelineLead); // Contacted
+        break;
+      case 'HOT':
+        stages[2].leads.push(pipelineLead); // Qualified
+        break;
+      case 'CONVERTED':
+        stages[4].leads.push(pipelineLead); // Won
+        break;
+      case 'LOST':
+        // Don't show lost leads in pipeline
+        break;
+      default:
+        stages[0].leads.push(pipelineLead); // Default to New Leads
+    }
+  });
+
+  return stages;
+}
+
+export default function PipelinePage() {
+  const router = useRouter();
+  const canAccessPipeline = useCanAccessFeature()('pipeline:view');
+  const { stats, incrementStat, pendingCelebrations, completePendingCelebration } = useUserProgressStore();
+  const { data: leads = [], isLoading } = useLeads();
+  
+  const [showFeatureReveal, setShowFeatureReveal] = useState(false);
+  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
+
+  // Check if this is the first time accessing the pipeline
+  useEffect(() => {
+    const pipelineCelebration = pendingCelebrations.find(c => c === 'feature-pipeline:view');
+    if (pipelineCelebration && canAccessPipeline) {
+      setShowFeatureReveal(true);
+      completePendingCelebration(pipelineCelebration);
+    }
+  }, [pendingCelebrations, canAccessPipeline, completePendingCelebration]);
+
+  // Convert leads to pipeline format
+  useEffect(() => {
+    if (leads.length > 0) {
+      setPipelineStages(convertLeadsToPipelineData(leads));
+    }
+  }, [leads]);
+
+  const handleAddContact = () => {
+    router.push('/dashboard/contacts');
+  };
+
+  const handleSetupPipeline = () => {
+    // This would open a pipeline setup modal or guide
+    console.log('Setting up pipeline...');
+  };
+
+  const handleLeadMove = (leadId: string, sourceStageId: string, destStageId: string, newIndex: number) => {
+    // Here you would update the lead status in your backend
+    console.log('Lead moved:', { leadId, sourceStageId, destStageId, newIndex });
+    
+    // Update local state
+    const newStages = [...pipelineStages];
+    const sourceStage = newStages.find(s => s.id === sourceStageId);
+    const destStage = newStages.find(s => s.id === destStageId);
+    
+    if (sourceStage && destStage) {
+      const leadIndex = sourceStage.leads.findIndex(l => l.id === leadId);
+      if (leadIndex !== -1) {
+        const [lead] = sourceStage.leads.splice(leadIndex, 1);
+        destStage.leads.splice(newIndex, 0, lead);
+        setPipelineStages(newStages);
+      }
+    }
+  };
+
+  const handleLeadClick = (lead: PipelineLead) => {
+    router.push(`/dashboard/leads/${lead.id}`);
+  };
+
+  const handleAddLead = (stageId: string) => {
+    router.push(`/dashboard/leads?stage=${stageId}`);
+  };
+
+  // Show empty state if pipeline is locked
+  if (!canAccessPipeline) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <EmptyPipeline
+          onCreatePipeline={handleSetupPipeline}
+          onViewContacts={handleAddContact}
+          contactCount={stats.contactsAdded}
+          requiredContacts={10}
+          isLocked={true}
+        />
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // Show feature reveal if it's the first time
+  if (showFeatureReveal) {
+    return (
+      <SimpleFeatureReveal
+        featureName="Pipeline View"
+        description="Organize your leads visually and track their progress through your sales process!"
+        onContinue={() => setShowFeatureReveal(false)}
+      />
+    );
+  }
+
+  // Show empty state if no leads
+  if (leads.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-2">Sales Pipeline</h1>
+        <p className="text-gray-600 mb-8">Visualize and manage your leads through the sales process</p>
+        
+        <EmptyPipeline
+          onCreatePipeline={handleSetupPipeline}
+          onViewContacts={handleAddContact}
+          contactCount={stats.contactsAdded}
+          requiredContacts={10}
+          isLocked={false}
+        />
+      </div>
+    );
+  }
+
+  // Show pipeline view
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Sales Pipeline</h1>
+        <p className="text-gray-600">Drag and drop leads to move them through your sales process</p>
+      </div>
+      
+      <PipelineView
+        stages={pipelineStages}
+        onLeadMove={handleLeadMove}
+        onLeadClick={handleLeadClick}
+        onAddLead={handleAddLead}
+      />
+    </div>
+  );
+}

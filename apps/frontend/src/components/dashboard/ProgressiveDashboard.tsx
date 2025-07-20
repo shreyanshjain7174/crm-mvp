@@ -5,6 +5,8 @@ import { useUserProgressStore } from '@/stores/userProgress';
 import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { NewUserStage } from './stages/NewUserStage';
 import { BeginnerStage } from './stages/BeginnerStage';
+import { IntermediateStage } from './stages/IntermediateStage';
+import { AdvancedStage } from './stages/AdvancedStage';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 
 // Import existing dashboard components
@@ -41,6 +43,20 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
         onSendMessage={() => {/* Navigate to messages */}}
         onViewContacts={() => {/* Navigate to contacts */}}
       />
+    );
+  }
+  
+  // Show intermediate stage for users building their network
+  if (stage === 'intermediate') {
+    return (
+      <IntermediateStage />
+    );
+  }
+  
+  // Show advanced stage for AI-powered users
+  if (stage === 'advanced') {
+    return (
+      <AdvancedStage />
     );
   }
   
