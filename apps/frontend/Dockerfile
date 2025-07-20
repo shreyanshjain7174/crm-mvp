@@ -13,7 +13,7 @@ RUN mkdir -p apps/frontend
 COPY apps/frontend/package*.json ./apps/frontend/
 
 # Install dependencies using workspace with better caching
-RUN npm ci --workspaces=false --frozen-lockfile --prefer-offline && npm cache clean --force
+RUN npm ci --frozen-lockfile --prefer-offline && npm cache clean --force
 
 # Build stage
 FROM node:18-alpine AS builder
@@ -24,6 +24,7 @@ COPY . .
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
 # Build the frontend using npm workspace from root directory
 WORKDIR /app
