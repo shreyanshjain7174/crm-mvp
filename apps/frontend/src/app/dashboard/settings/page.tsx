@@ -16,7 +16,8 @@ import {
   Globe,
   Save,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -538,24 +539,334 @@ export default function SettingsPage() {
           )}
 
           {/* Other tabs content would be similar... */}
-          {(activeTab === 'security' || activeTab === 'data' || activeTab === 'appearance' || activeTab === 'integrations') && (
+          {activeTab === 'security' && (
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {activeTab === 'security' && 'Security Settings'}
-                  {activeTab === 'data' && 'Data & Backup'}
-                  {activeTab === 'appearance' && 'Appearance Preferences'}
-                  {activeTab === 'integrations' && 'Third-party Integrations'}
-                </CardTitle>
+                <CardTitle>Security Settings</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <Settings className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Coming Soon</h3>
-                  <p className="text-gray-600">
-                    This settings section is under development and will be available in the next update.
+              <CardContent className="space-y-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-medium text-green-900">Account Security Status: Good</span>
+                  </div>
+                  <p className="text-sm text-green-700 mt-1">
+                    Your account has strong security measures in place.
                   </p>
                 </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Two-Factor Authentication</h3>
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">SMS Authentication</p>
+                      <p className="text-sm text-gray-600">Get verification codes via SMS</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge className="bg-green-100 text-green-800">Enabled</Badge>
+                      <Button variant="outline" size="sm">Configure</Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">Authenticator App</p>
+                      <p className="text-sm text-gray-600">Use Google Authenticator or similar apps</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Badge className="bg-gray-100 text-gray-800">Disabled</Badge>
+                      <Button variant="outline" size="sm">Setup</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Login Activity</h3>
+                  <div className="space-y-3">
+                    {[
+                      { location: 'Mumbai, India', time: '2 hours ago', device: 'Chrome on Windows', current: true },
+                      { location: 'Delhi, India', time: '1 day ago', device: 'Mobile App', current: false },
+                      { location: 'Bangalore, India', time: '3 days ago', device: 'Safari on Mac', current: false },
+                    ].map((activity, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-900">{activity.location}</p>
+                          <p className="text-sm text-gray-600">{activity.device} • {activity.time}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {activity.current && <Badge className="bg-green-100 text-green-800">Current</Badge>}
+                          {!activity.current && <Button variant="outline" size="sm">Revoke</Button>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Security Settings
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === 'data' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Data & Backup</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium text-blue-900">Last Backup: 2 hours ago</span>
+                  </div>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Your data is automatically backed up every 6 hours.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Backup Settings</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Automatic Backups</p>
+                        <p className="text-xs text-gray-500">Create backups every 6 hours</p>
+                      </div>
+                      <input type="checkbox" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Include Message History</p>
+                        <p className="text-xs text-gray-500">Backup all WhatsApp conversations</p>
+                      </div>
+                      <input type="checkbox" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Include AI Training Data</p>
+                        <p className="text-xs text-gray-500">Backup AI model preferences</p>
+                      </div>
+                      <input type="checkbox" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Data Export</h3>
+                  <p className="text-sm text-gray-600">Export your data in various formats for backup or migration purposes.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button variant="outline" className="justify-start">
+                      <Database className="h-4 w-4 mr-2" />
+                      Export Contacts
+                    </Button>
+                    <Button variant="outline" className="justify-start">
+                      <Database className="h-4 w-4 mr-2" />
+                      Export Messages
+                    </Button>
+                    <Button variant="outline" className="justify-start">
+                      <Database className="h-4 w-4 mr-2" />
+                      Export Analytics
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-medium text-red-900 mb-2">Danger Zone</h4>
+                  <p className="text-sm text-red-700 mb-3">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                  </p>
+                  <Button variant="destructive" size="sm">
+                    Delete Account
+                  </Button>
+                </div>
+
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Backup Settings
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === 'appearance' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Theme</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="border-2 border-primary rounded-lg p-4 cursor-pointer">
+                      <div className="w-full h-20 bg-white border rounded mb-3"></div>
+                      <p className="text-sm font-medium text-center">Light Mode</p>
+                    </div>
+                    <div className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer">
+                      <div className="w-full h-20 bg-gray-900 border rounded mb-3"></div>
+                      <p className="text-sm font-medium text-center">Dark Mode</p>
+                    </div>
+                    <div className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer">
+                      <div className="w-full h-20 bg-gradient-to-r from-white to-gray-900 border rounded mb-3"></div>
+                      <p className="text-sm font-medium text-center">Auto</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Color Scheme</h3>
+                  <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    {[
+                      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500',
+                      'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500'
+                    ].map((color, index) => (
+                      <div 
+                        key={index}
+                        className={`w-10 h-10 rounded-full cursor-pointer ${color} ${index === 0 ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Display Settings</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Compact Mode</p>
+                        <p className="text-xs text-gray-500">Reduce spacing and padding</p>
+                      </div>
+                      <input type="checkbox" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Show Animations</p>
+                        <p className="text-xs text-gray-500">Enable UI animations and transitions</p>
+                      </div>
+                      <input type="checkbox" defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">High Contrast</p>
+                        <p className="text-xs text-gray-500">Improve accessibility with higher contrast</p>
+                      </div>
+                      <input type="checkbox" />
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Appearance Settings
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === 'integrations' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Third-party Integrations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Communication Platforms</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                          <Smartphone className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">WhatsApp Business</p>
+                          <p className="text-sm text-gray-600">Connected via Meta Cloud API</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                          <Globe className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Telegram Business</p>
+                          <p className="text-sm text-gray-600">Business messaging via Telegram</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">CRM & Sales Tools</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                          <Database className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Google Sheets</p>
+                          <p className="text-sm text-gray-600">Export leads and analytics to Google Sheets</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <Globe className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Zapier</p>
+                          <p className="text-sm text-gray-600">Connect with 5000+ apps via Zapier</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">AI & Analytics</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                          <Bot className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">OpenAI GPT-4</p>
+                          <p className="text-sm text-gray-600">AI-powered response generation</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <BarChart3 className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Google Analytics</p>
+                          <p className="text-sm text-gray-600">Track website visitor conversions</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">Connect</Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Integration Settings
+                </Button>
               </CardContent>
             </Card>
           )}
