@@ -114,7 +114,7 @@ export function ContextualGuide({ hints, onDismiss, className }: ContextualGuide
   };
   
   return (
-    <div className={cn(getPlacementStyles(), className)}>
+    <div className={cn(getPlacementStyles(), className)} data-testid="contextual-guide">
       <Card className="w-80 shadow-xl border-2 border-blue-200 bg-white/95 backdrop-blur-sm animate-in slide-in-from-right duration-300">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">

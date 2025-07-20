@@ -142,11 +142,12 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
   };
   
   return (
-    <Card className={cn(
-      'border-2 shadow-md animate-in slide-in-from-right duration-500',
-      getUrgencyColor(activePrompt.urgency),
-      className
-    )}>
+    <div data-testid="discovery-prompt">
+      <Card className={cn(
+        'border-2 shadow-md animate-in slide-in-from-right duration-500',
+        getUrgencyColor(activePrompt.urgency),
+        className
+      )}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-1">
@@ -174,6 +175,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
               <Button
                 size="sm"
                 onClick={handleAction}
+                data-action={activePrompt.actionType}
                 className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white"
               >
                 {activePrompt.actionText}
@@ -202,6 +204,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 

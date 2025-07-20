@@ -151,7 +151,17 @@ export const useUserProgressStore = create<UserProgressStore>()(
           const nextStageConfig = USER_STAGES[nextStage];
           
           const meetsRequirements = nextStageConfig.requirements.every(req => {
-            const statValue = state.stats[req.type as keyof UserStats] || 0;
+            // Map requirement types to actual stat names
+            const statMapping: Record<string, keyof UserStats> = {
+              'contact_count': 'contactsAdded',
+              'message_count': 'messagesSent',
+              'ai_interactions': 'aiInteractions',
+              'pipeline_actions': 'pipelineActions',
+              'templates_used': 'templatesUsed'
+            };
+            
+            const statKey = statMapping[req.type] || req.type as keyof UserStats;
+            const statValue = state.stats[statKey] || 0;
             
             switch (req.condition) {
               case 'gte':

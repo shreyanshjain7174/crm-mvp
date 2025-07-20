@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('whatsapp');
+  const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -29,6 +29,7 @@ export default function SettingsPage() {
   };
 
   const tabs = [
+    { id: 'profile', name: 'Profile', icon: Users },
     { id: 'whatsapp', name: 'WhatsApp', icon: Smartphone },
     { id: 'ai', name: 'AI Assistant', icon: Bot },
     { id: 'notifications', name: 'Notifications', icon: Bell },
@@ -85,21 +86,146 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <div className="lg:col-span-3">
+          {activeTab === 'profile' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-2xl font-medium">
+                      DU
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium">Demo User</h3>
+                    <p className="text-gray-600">demo@crm.dev</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      Change Avatar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="Demo User"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue="demo@crm.dev"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="CRM Demo"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="+91 98765 43210"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Tell us about yourself and your business..."
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleSave}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Profile
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === 'whatsapp' && (
             <Card>
               <CardHeader>
                 <CardTitle>WhatsApp Integration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                     <div>
-                      <p className="font-medium text-green-900">WhatsApp Business API</p>
-                      <p className="text-sm text-green-700">Connected via 360dialog</p>
+                      <p className="font-medium text-yellow-900">Meta WhatsApp Cloud API</p>
+                      <p className="text-sm text-yellow-700">Ready to connect your business account</p>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-800">Setup Required</Badge>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <AlertCircle className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-medium text-blue-900">Connect Your WhatsApp Business Account</h3>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Connect your Meta WhatsApp Business account to start sending and receiving messages directly from your CRM.
+                  </p>
+                  <Button className="bg-green-600 hover:bg-green-700 text-white">
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    Connect WhatsApp Business
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

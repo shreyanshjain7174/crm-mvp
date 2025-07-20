@@ -60,7 +60,7 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
 
   if (!showDetails) {
     return (
-      <div className={`flex items-center space-x-1 ${className}`}>
+      <div className={`flex items-center space-x-1 ${className}`} data-testid="connection-status">
         <div className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : error ? 'bg-red-500' : 'bg-yellow-500'}`} />
         {connected && latency > 0 && (
           <span className="text-xs text-gray-500">{latency}ms</span>

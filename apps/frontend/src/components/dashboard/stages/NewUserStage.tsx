@@ -6,18 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, ArrowRight, CheckCircle } from 'lucide-react';
 import { useUserProgressStore } from '@/stores/userProgress';
-import { useFeatureTracker } from '@/hooks/useFeatureGate';
 
 interface NewUserStageProps {
   onAddContact: () => void;
 }
 
 export function NewUserStage({ onAddContact }: NewUserStageProps) {
-  const { trackFeatureUsage } = useFeatureTracker();
   const currentHint = useUserProgressStore(state => state.currentHint);
   
   const handleGetStarted = () => {
-    trackFeatureUsage('contacts:create');
+    // Just trigger the add contact flow (tracking will happen on actual creation)
     onAddContact();
   };
   
@@ -89,7 +87,7 @@ export function NewUserStage({ onAddContact }: NewUserStageProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {steps.map((step, index) => {
+            {steps.map((step) => {
               const IconComponent = step.icon;
               const isCompleted = false; // For now, steps are never completed in NewUserStage
               const isCurrent = step.status === 'current';

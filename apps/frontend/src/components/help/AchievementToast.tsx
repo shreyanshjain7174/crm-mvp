@@ -135,7 +135,7 @@ export function AchievementSystem() {
   };
   
   return (
-    <div className="fixed top-0 right-0 z-50 space-y-4 p-4">
+    <div className="fixed top-0 right-0 z-50 space-y-4 p-4" data-testid="achievement-system">
       {newAchievements.map((achievement, index) => (
         <div
           key={achievement.id}

@@ -27,9 +27,8 @@ export async function leadRoutes(fastify: FastifyInstance) {
     try {
       const result = await fastify.db.query(`
         SELECT l.*, 
-          (SELECT row_to_json(m) FROM (SELECT * FROM messages WHERE lead_id = l.id ORDER BY timestamp DESC LIMIT 1) m) as latest_message,
-          (SELECT json_agg(i ORDER BY i.created_at DESC) FROM (SELECT * FROM interactions WHERE lead_id = l.id ORDER BY created_at DESC LIMIT 3) i) as interactions,
-          (SELECT row_to_json(s) FROM (SELECT * FROM ai_suggestions WHERE lead_id = l.id AND approved = false ORDER BY created_at DESC LIMIT 1) s) as pending_suggestion
+          (SELECT row_to_json(m) FROM (SELECT * FROM messages WHERE leadid = l.id ORDER BY timestamp DESC LIMIT 1) m) as latest_message,
+          (SELECT json_agg(i ORDER BY i.createdat DESC) FROM (SELECT * FROM interactions WHERE leadid = l.id ORDER BY createdat DESC LIMIT 3) i) as interactions
         FROM leads l 
         WHERE l.user_id = $1 
         ORDER BY l.updated_at DESC
@@ -38,7 +37,8 @@ export async function leadRoutes(fastify: FastifyInstance) {
       
       return leads;
     } catch (error) {
-      fastify.log.error('Error fetching leads:', error);
+      fastify.log.error('Error fetching leads:');
+      fastify.log.error(error);
       reply.status(500).send({ error: 'Failed to fetch leads' });
     }
   });
@@ -81,7 +81,7 @@ export async function leadRoutes(fastify: FastifyInstance) {
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
       `, [data.name, data.phone, data.email, data.source, data.priority || 'MEDIUM', data.businessProfile, (request as any).user.userId]);
-      const lead = { ...result.rows[0], messages: [], interactions: [], ai_suggestions: [] };
+      const lead = { ...result.rows[0], messages: [], interactions: [] };
       
       // Emit real-time event
       fastify.io.emit('lead:created', lead);
@@ -135,7 +135,7 @@ export async function leadRoutes(fastify: FastifyInstance) {
         WHERE id = $${paramIndex}
         RETURNING *
       `, values);
-      const lead = { ...result.rows[0], messages: [], interactions: [], ai_suggestions: [] };
+      const lead = { ...result.rows[0], messages: [], interactions: [] };
       
       // Create interaction for status change
       if (data.status) {
