@@ -101,6 +101,36 @@ npm run deploy:staging
 npm run deploy:prod
 ```
 
+## Critical Development Guidelines
+
+### Package Management & Dependencies
+- **ALWAYS** update package.json when importing new modules or libraries
+- **NEVER** commit code with missing dependencies that exist in node_modules but not in package.json
+- When adding new npm packages, use `npm install <package>` to ensure package.json and package-lock.json are updated
+- For TypeScript types, add to devDependencies: `npm install --save-dev @types/<package>`
+
+### Pre-Commit Requirements
+- **ALWAYS** run `npm run lint` before pushing any changes
+- **ALWAYS** run `npm run typecheck` before pushing any changes
+- Fix all ESLint errors and warnings before committing
+- Resolve all TypeScript compilation errors before pushing
+- Both frontend and backend must pass lint and typecheck
+
+### CI/CD Pipeline Requirements
+The following checks must pass in CI:
+1. TypeScript compilation (frontend & backend)
+2. ESLint checks (frontend & backend)  
+3. Unit tests (when available)
+4. Build process completion
+
+### Common Issues to Avoid
+- Missing dependencies causing "Module not found" errors in CI
+- Implicit 'any' types causing TypeScript compilation failures
+- React Hook violations (conditional hooks, missing dependencies)
+- Unescaped entities in JSX (use &apos; instead of ')
+- Unused variables and imports
+- Missing useCallback/useMemo for stable references in useEffect dependencies
+
 ## Recent Major Updates
 
 ### Progressive Disclosure CRM Implementation (July 2024) ✅ COMPLETED
@@ -177,6 +207,11 @@ npm run deploy:prod
   - Added proper TypeScript type checking and compilation
   - Resolved switch statement block scoping issues
   - Fixed parameter naming conventions with underscore prefixes
+  - Added @hello-pangea/dnd dependency for drag-and-drop functionality
+  - Fixed TypeScript implicit 'any' type errors with proper type annotations
+  - Resolved React Hook violations (conditional hooks, missing dependencies)
+  - Fixed unescaped entities in JSX components
+  - Added useCallback/useMemo for stable function references
   - All code now passes ESLint and TypeScript checks
 
 ### Current System Status
@@ -470,12 +505,15 @@ const ANIMATIONS = {
 - [x] Add empty states for all sections
 - [x] Build feature reveal animations
 
-#### Phase 3: Advanced Features (Week 5-6)
-- [ ] Implement Stage 3: Pipeline management
-- [ ] Implement Stage 4: AI assistant integration
-- [ ] Add no-code workflow builders
-- [ ] Create achievement system
-- [ ] Implement progress indicators
+#### Phase 3: Advanced Features (Week 5-6) ✅ COMPLETED
+- [x] Implement Stage 3: Pipeline management
+- [x] Implement Stage 4: AI assistant integration
+- [x] Add no-code workflow builders
+- [x] Create achievement system
+- [x] Implement progress indicators
+- [x] Add system monitoring dashboard
+- [x] Implement automation rules engine
+- [x] Build real-time notifications system
 
 #### Phase 4: Polish & Testing (Week 7-8)
 - [ ] Add micro-interactions and polish
