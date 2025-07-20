@@ -71,6 +71,17 @@ Agentic CRM for Indian SMEs - A WhatsApp-first, AI-powered CRM that starts as a 
 - Week 2: AI-powered assistant
 - Month 1: Full automation platform
 
+### Business-First Development Mantra
+**"Ship fast, iterate faster, but never compromise on user experience or data security."**
+
+Every line of code should either:
+- Solve a real user problem
+- Reduce operational costs  
+- Improve system reliability
+- Enable future growth
+
+When in doubt, choose the solution that gets us to market faster while maintaining quality. We can always refactor later, but we can't get back lost time-to-market.
+
 ## Implementation Strategy
 
 ### Phase 1: Blank Slate Dashboard (Priority 1)
@@ -158,6 +169,42 @@ npm run docker:build
 npm run deploy:staging
 npm run deploy:prod
 ```
+
+## Test-Driven Development Workflow
+
+### Feature Development Process
+```bash
+# 1. Create feature branch
+git checkout -b feature/whatsapp-templates
+
+# 2. Write tests first (TDD)
+npm run test:watch
+
+# 3. Implement feature
+# - Start with the simplest case
+# - Add complexity incrementally
+# - Refactor as you go
+
+# 4. Update documentation
+# - Add JSDoc comments
+# - Update README if needed
+# - Add to changelog
+
+# 5. Submit PR with:
+# - Clear description
+# - Screenshots/videos
+# - Test coverage report
+# - Performance impact
+```
+
+### Development Principles
+- **You're not just writing code - you're building a business**
+- Write tests first, then implement (TDD approach)
+- Start with the simplest case, add complexity incrementally
+- Refactor continuously as you go
+- Every feature should solve a real user problem
+- Prioritize time-to-market while maintaining quality
+- Document as you build, not after
 
 ## Critical Development Guidelines
 
