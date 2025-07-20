@@ -96,7 +96,7 @@ export default function SettingsPage() {
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <div>
                       <p className="font-medium text-green-900">WhatsApp Business API</p>
-                      <p className="text-sm text-green-700">Connected via 360dialog</p>
+                      <p className="text-sm text-green-700">Connected via Meta Cloud API</p>
                     </div>
                   </div>
                   <Badge className="bg-green-100 text-green-800">Active</Badge>
@@ -137,10 +137,55 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium mb-4">Meta Business Account</h4>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium text-blue-900">Connected to Meta Business Manager</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Your WhatsApp Business Account is connected and verified. All message templates and webhook endpoints are configured.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Business Account ID
+                      </label>
+                      <input
+                        type="text"
+                        value="your-business-account-id"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number ID
+                      </label>
+                      <input
+                        type="text"
+                        value="your-phone-number-id"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-3">
                   <input type="checkbox" id="auto-reply" defaultChecked />
                   <label htmlFor="auto-reply" className="text-sm text-gray-700">
                     Enable automatic welcome messages for new conversations
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input type="checkbox" id="webhook-status" defaultChecked />
+                  <label htmlFor="webhook-status" className="text-sm text-gray-700">
+                    Real-time message webhook notifications
                   </label>
                 </div>
 
