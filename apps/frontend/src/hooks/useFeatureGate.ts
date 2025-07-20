@@ -92,7 +92,12 @@ export function useFeatureTracker() {
       title,
       description,
       icon,
-      category: 'milestone'
+      category: 'milestone',
+      points: 25,
+      rarity: 'common',
+      requirements: [
+        { type: 'action', condition: 'milestone_triggered' }
+      ]
     });
   };
   
