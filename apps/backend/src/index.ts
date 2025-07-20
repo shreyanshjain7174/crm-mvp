@@ -11,6 +11,7 @@ import { whatsappRoutes } from './routes/whatsapp';
 import { aiRoutes } from './routes/ai';
 import { aiIntegrationRoutes } from './routes/ai-integration';
 import { authRoutes } from './routes/auth';
+import { statsRoutes } from './routes/stats';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 
@@ -103,6 +104,7 @@ async function buildApp() {
   await app.register(whatsappRoutes, { prefix: '/api/whatsapp' });
   await app.register(aiRoutes, { prefix: '/api/ai' });
   await app.register(aiIntegrationRoutes, { prefix: '/api/ai-workflows' });
+  await app.register(statsRoutes, { prefix: '/api/stats' });
 
   return app;
 }

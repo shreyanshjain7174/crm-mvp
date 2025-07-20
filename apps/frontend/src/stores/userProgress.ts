@@ -52,6 +52,7 @@ interface UserProgressStore extends UserProgress {
   celebrateFeature: (feature: FeatureKey) => void;
   completePendingCelebration: (celebrationId: string) => void;
   resetProgress: () => void;
+  syncWithBackend: () => Promise<void>;
   
   // Getters
   canAccessFeature: (feature: FeatureKey) => boolean;
@@ -232,6 +233,38 @@ export const useUserProgressStore = create<UserProgressStore>()(
       
       resetProgress: () => {
         set(initialState);
+      },
+      
+      syncWithBackend: async () => {
+        try {
+          const response = await fetch('/api/stats/user/progress');
+          
+          if (!response.ok) {
+            console.error('Failed to sync user progress with backend');
+            return;
+          }
+          
+          const backendData = await response.json();
+          
+          // Update stats from backend
+          set((state) => ({
+            stats: {
+              ...state.stats,
+              contactsAdded: backendData.stats.contactsAdded,
+              messagesSent: backendData.stats.messagesSent,
+              aiInteractions: backendData.stats.aiInteractions,
+              templatesUsed: backendData.stats.templatesUsed,
+              pipelineActions: backendData.stats.pipelineActions
+            },
+            stage: backendData.stage as UserStage,
+            lastActiveDate: new Date()
+          }));
+          
+          // Check for stage progression after sync
+          setTimeout(() => get().checkStageProgression(), 0);
+        } catch (error) {
+          console.error('Error syncing with backend:', error);
+        }
       },
       
       // Getters

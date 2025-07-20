@@ -14,7 +14,6 @@ import { useFeatureTracker } from '@/hooks/useFeatureGate';
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [showAddContactModal, setShowAddContactModal] = useState(false);
   
   const { hints } = useContextualHints();
   const { trackFeatureUsage } = useFeatureTracker();
@@ -24,15 +23,9 @@ export default function DashboardPage() {
   const handleAddContact = () => {
     // Track the feature usage
     trackFeatureUsage('contacts:create');
-    incrementStat('contactsAdded');
     
-    // Show add contact modal or navigate to contacts page
-    setShowAddContactModal(true);
-    // For now, we'll simulate adding a contact
-    setTimeout(() => {
-      setShowAddContactModal(false);
-      // Could navigate to contacts page or refresh data
-    }, 2000);
+    // Navigate to leads page with modal trigger
+    router.push('/dashboard/leads?add=true');
   };
   
   const handleDiscoveryAction = (actionType: string) => {
@@ -70,19 +63,6 @@ export default function DashboardPage() {
       {(stage === 'advanced' || stage === 'expert') && (
         <div className="fixed bottom-4 right-4">
           <ConnectionStatus showDetails={false} />
-        </div>
-      )}
-      
-      {/* Add Contact Modal (simple placeholder) */}
-      {showAddContactModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
-            <h3 className="text-lg font-semibold mb-4">Adding Your First Contact...</h3>
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p className="text-slate-600">This will unlock your contact list and messaging features!</p>
-            </div>
-          </div>
         </div>
       )}
     </>

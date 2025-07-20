@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUserProgressStore } from '@/stores/userProgress';
 import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { NewUserStage } from './stages/NewUserStage';
@@ -23,10 +23,16 @@ interface ProgressiveDashboardProps {
 export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps) {
   const stage = useUserProgressStore(state => state.stage);
   const stats = useUserProgressStore(state => state.stats);
+  const syncWithBackend = useUserProgressStore(state => state.syncWithBackend);
   const { canAccess: hasAnyContacts } = useFeatureGate('contacts:list');
   const { canAccess: hasPipeline } = useFeatureGate('pipeline:view');
   const { canAccess: hasAI } = useFeatureGate('ai:suggestions');
   const { canAccess: hasAdvancedFeatures } = useFeatureGate('monitoring:system');
+  
+  // Sync user progress with backend on component mount
+  useEffect(() => {
+    syncWithBackend();
+  }, [syncWithBackend]);
   
   // Show stage-specific components based on user progression
   if (stage === 'new' || stats.contactsAdded === 0) {
@@ -107,7 +113,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
         fallback={
           <AITeaser 
             messageCount={stats.messagesSent}
-            requiredCount={50}
+            requiredCount={5}
           />
         }
       >

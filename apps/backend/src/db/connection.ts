@@ -53,17 +53,17 @@ export async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS messages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        leadId UUID NOT NULL,
+        lead_id UUID NOT NULL,
         content TEXT NOT NULL,
         direction VARCHAR(50) NOT NULL,
-        messageType VARCHAR(50) DEFAULT 'TEXT',
+        message_type VARCHAR(50) DEFAULT 'TEXT',
         status VARCHAR(50) DEFAULT 'SENT',
-        whatsappId VARCHAR(255),
-        errorMessage TEXT,
+        whatsapp_id VARCHAR(255),
+        error_message TEXT,
         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
       )
     `);
 
@@ -71,31 +71,96 @@ export async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS interactions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        leadId UUID NOT NULL,
+        lead_id UUID NOT NULL,
         type VARCHAR(100) NOT NULL,
         description TEXT NOT NULL,
         outcome TEXT,
-        scheduledAt TIMESTAMP,
-        completedAt TIMESTAMP,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE
+        scheduled_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
       )
     `);
 
     // Add migration logic for existing tables
     try {
-      // Add errorMessage column to messages table if it doesn't exist
+      // Migrate messages table to snake_case columns
       await client.query(`
         ALTER TABLE messages 
-        ADD COLUMN IF NOT EXISTS errorMessage TEXT
+        ADD COLUMN IF NOT EXISTS error_message TEXT,
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS message_type VARCHAR(50) DEFAULT 'TEXT',
+        ADD COLUMN IF NOT EXISTS whatsapp_id VARCHAR(255)
       `);
+
+      // Migrate interactions table to snake_case columns  
+      await client.query(`
+        ALTER TABLE interactions 
+        ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP
+      `);
+
+      // Try to rename columns if they exist with old camelCase names
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "leadId" TO lead_id`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
       
-      // Add createdAt and updatedAt columns to messages table if they don't exist
-      await client.query(`
-        ALTER TABLE messages 
-        ADD COLUMN IF NOT EXISTS createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        ADD COLUMN IF NOT EXISTS updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      `);
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "messageType" TO message_type`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "whatsappId" TO whatsapp_id`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "errorMessage" TO error_message`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "createdAt" TO created_at`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE messages RENAME COLUMN "updatedAt" TO updated_at`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE interactions RENAME COLUMN "leadId" TO lead_id`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE interactions RENAME COLUMN "scheduledAt" TO scheduled_at`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE interactions RENAME COLUMN "completedAt" TO completed_at`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
+
+      try {
+        await client.query(`ALTER TABLE interactions RENAME COLUMN "createdAt" TO created_at`);
+      } catch (e) {
+        // Column may not exist or already renamed
+      }
       
       console.log('Database migrations applied successfully');
     } catch (migrationError) {

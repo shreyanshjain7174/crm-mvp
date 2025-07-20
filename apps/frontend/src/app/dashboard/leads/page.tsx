@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,14 +13,23 @@ import { Plus, Search, Filter, Phone, Mail, MessageCircle, Loader2 } from 'lucid
 import { useLeads, useCreateLead, useUpdateLead, useDeleteLead } from '@/hooks/use-api';
 import { Lead } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { useUserProgressStore } from '@/stores/userProgress';
 
 type LeadStatus = 'COLD' | 'WARM' | 'HOT' | 'CONVERTED' | 'LOST';
 type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export default function LeadsPage() {
+  const searchParams = useSearchParams();
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // Auto-open modal if accessed with add=true parameter
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setIsAddModalOpen(true);
+    }
+  }, [searchParams]);
   const [newLead, setNewLead] = useState({
     name: '',
     phone: '',
@@ -33,6 +43,8 @@ export default function LeadsPage() {
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
+  const incrementStat = useUserProgressStore(state => state.incrementStat);
+  const syncWithBackend = useUserProgressStore(state => state.syncWithBackend);
 
   const getStatusColor = (status: LeadStatus) => {
     switch (status) {
@@ -89,6 +101,13 @@ export default function LeadsPage() {
         priority: newLead.priority,
         businessProfile: newLead.businessProfile || undefined
       });
+      
+      // Update user progress stats
+      incrementStat('contactsAdded');
+      
+      // Sync with backend to update dashboard
+      await syncWithBackend();
+      
       setIsAddModalOpen(false);
       setNewLead({
         name: '',

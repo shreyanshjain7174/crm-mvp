@@ -48,7 +48,7 @@ export function IntermediateStage({ onViewPipeline, onManageContacts }: Intermed
     {
       title: 'Send Messages',
       current: stats.messagesSent,
-      target: 50,
+      target: 5,
       progress: messageProgress,
       icon: MessageSquare,
       action: handleSendMessages,
