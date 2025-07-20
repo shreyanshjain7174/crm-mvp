@@ -6,15 +6,15 @@ services:
     image: postgres:15-alpine
     container_name: crm-dev-db
     environment:
-      POSTGRES_DB: crm_dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crm_dev_db
+      POSTGRES_USER: crm_dev_user
+      POSTGRES_PASSWORD: dev_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d crm_dev"]
+      test: ["CMD-SHELL", "pg_isready -U crm_dev_user -d crm_dev_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,9 +37,92 @@ services:
     networks:
       - crm-dev-network
 
+  # Backend Development (with hot reload)
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: crm-dev-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://crm_dev_user:dev_password@db:5432/crm_dev_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-jwt-secret
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      # Meta WhatsApp Cloud API
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-dev-webhook-verify}
+    ports:
+      - "3001:3001"
+      - "3002:3002"
+      - "9229:9229"  # Debug port
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+      - backend_uploads:/app/uploads
+    networks:
+      - crm-dev-network
+
+  # Frontend Development (with hot reload)
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: crm-dev-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:3001
+      NEXT_PUBLIC_WS_URL: ws://localhost:3001
+      NEXT_PUBLIC_DEMO_MODE: "false"
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - crm-dev-network
+
+  # pgAdmin for Database Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: crm-dev-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@crm-dev.local
+      PGADMIN_DEFAULT_PASSWORD: dev_admin_password
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - crm-dev-network
+
 volumes:
   postgres_dev_data:
   redis_dev_data:
+  backend_uploads:
+  pgadmin_data:
 
 networks:
   crm-dev-network:

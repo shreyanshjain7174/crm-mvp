@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, CheckCircle, ArrowRight, Star } from 'lucide-react';
+import { Sparkles, CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,214 +20,117 @@ interface FeatureRevealProps {
   };
 }
 
-export function FeatureReveal({ 
-  isVisible, 
-  onComplete, 
-  onExplore, 
-  feature 
-}: FeatureRevealProps) {
+export function FeatureReveal({ isVisible, onComplete, onExplore, feature }: FeatureRevealProps) {
   const [step, setStep] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [hasShown, setHasShown] = useState(false);
 
   useEffect(() => {
-    if (isVisible) {
-      // Reset animation steps when becoming visible
-      setStep(0);
-      setShowCelebration(false);
-      
-      // Sequence the animation steps
-      const timer1 = setTimeout(() => setStep(1), 500);
-      const timer2 = setTimeout(() => setStep(2), 1500);
-      const timer3 = setTimeout(() => setShowCelebration(true), 2000);
-      
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-      };
+    if (isVisible && !hasShown) {
+      setHasShown(true);
+      const timers = [
+        setTimeout(() => setStep(1), 800),
+        setTimeout(() => setStep(2), 1200),
+        setTimeout(() => setStep(3), 1600),
+        setTimeout(() => setStep(4), 2000),
+      ];
+
+      setTimeout(() => {
+        if (onComplete) {
+          onComplete();
+        }
+      }, 3000);
+
+      return () => timers.forEach(clearTimeout);
     }
-  }, [isVisible]);
+  }, [isVisible, hasShown, onComplete]);
+
+  if (!isVisible) return null;
 
   const IconComponent = feature.icon;
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative max-w-md w-full"
-          >
-            <Card className="border-0 shadow-2xl overflow-hidden">
-              <CardContent className="p-0">
-                {/* Header with animated background */}
-                <motion.div
-                  className={`relative p-6 bg-gradient-to-br ${feature.color} text-white overflow-hidden`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  {/* Animated particles */}
-                  <div className="absolute inset-0 overflow-hidden">
-                    {[...Array(12)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute w-1 h-1 bg-white/30 rounded-full"
-                        initial={{
-                          x: Math.random() * 100,
-                          y: Math.random() * 100,
-                          opacity: 0
-                        }}
-                        animate={{
-                          x: Math.random() * 300,
-                          y: Math.random() * 200,
-                          opacity: [0, 1, 0]
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          delay: Math.random() * 2
-                        }}
-                      />
-                    ))}
-                  </div>
-                  
-                  <div className="relative z-10 text-center">
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring", 
-                        damping: 15, 
-                        stiffness: 300,
-                        delay: 0.3 
-                      }}
-                      className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm"
-                    >
-                      <IconComponent className="w-8 h-8 text-white" />
-                    </motion.div>
-                    
-                    <motion.div
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <Badge className="bg-white/20 text-white border-white/30 mb-3">
-                        New Feature Unlocked!
-                      </Badge>
-                      <h2 className="text-xl font-bold mb-2">{feature.name}</h2>
-                      <p className="text-white/90 text-sm">{feature.description}</p>
-                    </motion.div>
-                  </div>
-                </motion.div>
-
-                {/* Content area */}
-                <div className="p-6">
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={step >= 1 ? { y: 0, opacity: 1 } : {}}
-                    transition={{ delay: 0.8 }}
-                  >
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-yellow-500" />
-                      What you can do now:
-                    </h3>
-                    
-                    <ul className="space-y-2 mb-6">
-                      {feature.benefits.map((benefit, index) => (
-                        <motion.li
-                          key={index}
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={step >= 2 ? { x: 0, opacity: 1 } : {}}
-                          transition={{ delay: 1.2 + index * 0.2 }}
-                          className="flex items-start gap-3 text-sm text-gray-700"
-                        >
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={step >= 2 ? { scale: 1 } : {}}
-                            transition={{ 
-                              delay: 1.4 + index * 0.2,
-                              type: "spring",
-                              stiffness: 400
-                            }}
-                            className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                          >
-                            <CheckCircle className="w-3 h-3 text-green-600" />
-                          </motion.div>
-                          {benefit}
-                        </motion.li>
-                      ))}
-                    </ul>
-                  </motion.div>
-
-                  {/* Celebration animation */}
-                  <AnimatePresence>
-                    {showCelebration && (
-                      <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="text-center mb-6"
-                      >
-                        <motion.div
-                          animate={{ 
-                            rotate: [0, 10, -10, 0],
-                            scale: [1, 1.1, 1]
-                          }}
-                          transition={{ 
-                            duration: 0.6,
-                            repeat: 2
-                          }}
-                          className="text-4xl mb-2"
-                        >
-                          🎉
-                        </motion.div>
-                        <p className="text-sm text-gray-600 font-medium">
-                          You&apos;ve reached the <span className="text-purple-600">{feature.stage}</span> stage!
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Action buttons */}
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={showCelebration ? { y: 0, opacity: 1 } : {}}
-                    transition={{ delay: 0.3 }}
-                    className="flex gap-3"
-                  >
-                    <Button
-                      onClick={onExplore}
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                    >
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      Explore Now
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      onClick={onComplete}
-                      className="px-6"
-                    >
-                      Got it!
-                    </Button>
-                  </motion.div>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="relative max-w-md w-full animate-in zoom-in-95 duration-300">
+        <Card className="border-0 shadow-2xl overflow-hidden">
+          <CardContent className="p-0">
+            {/* Header with background */}
+            <div className={`relative p-6 bg-gradient-to-br ${feature.color} text-white overflow-hidden`}>
+              {/* Animated particles effect using CSS */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="animate-pulse absolute inset-0 opacity-20">
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 right-0 w-48 h-48 bg-white rounded-full blur-3xl"></div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              </div>
+              
+              <div className="relative z-10 text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm animate-in spin-in-180 zoom-in-50 duration-500">
+                  <IconComponent className="w-8 h-8 text-white" />
+                </div>
+                
+                <div className="animate-in slide-in-from-bottom-4 duration-500">
+                  <Badge className="bg-white/20 text-white border-white/30 mb-3">
+                    New Feature Unlocked!
+                  </Badge>
+                  <h2 className="text-xl font-bold mb-2">{feature.name}</h2>
+                  <p className="text-white/90 text-sm">{feature.description}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content area */}
+            <div className="p-6">
+              <div className={`transition-all duration-500 ${step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                  What you can do now:
+                </h3>
+                
+                <ul className="space-y-2 mb-6">
+                  {feature.benefits.map((benefit, index) => (
+                    <li
+                      key={index}
+                      className={`flex items-start gap-2 transition-all duration-300 ${
+                        step >= 2 ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                      }`}
+                      style={{ transitionDelay: `${index * 100 + 200}ms` }}
+                    >
+                      <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className={`flex gap-3 transition-all duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                <Button onClick={onExplore} className="flex-1">
+                  Explore Now
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button variant="outline" onClick={onComplete}>
+                  Got it
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Celebration effect */}
+        {step >= 4 && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 animate-ping">
+              <Sparkles className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div className="absolute top-3/4 right-1/4 animate-ping animation-delay-200">
+              <Sparkles className="w-4 h-4 text-yellow-400" />
+            </div>
+            <div className="absolute bottom-1/4 left-1/3 animate-ping animation-delay-400">
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-
-export default FeatureReveal;
