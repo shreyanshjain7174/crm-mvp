@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { 
+  DragDropContext, 
+  Droppable, 
+  Draggable, 
+  DropResult,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DraggableProvided,
+  DraggableStateSnapshot
+} from '@hello-pangea/dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -246,7 +255,7 @@ export function PipelineView({
                 
                 <CardContent className="pt-0">
                   <Droppable droppableId={stage.id}>
-                    {(provided, snapshot) => (
+                    {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
@@ -257,7 +266,7 @@ export function PipelineView({
                       >
                         {stage.leads.map((lead, index) => (
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
-                            {(provided, snapshot) => (
+                            {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
