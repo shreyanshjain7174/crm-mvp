@@ -14,43 +14,26 @@ export function Header() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
 
-  // Mock notifications data
+  // Dynamic notifications data - starts empty for new users
   useEffect(() => {
-    const mockNotifications = [
-      {
-        id: '1',
-        type: 'info',
-        title: 'New Lead Added',
-        message: 'Rajesh Kumar has been added as a new lead',
-        timestamp: '2 min ago',
-        isRead: false
-      },
-      {
-        id: '2',
-        type: 'success',
-        title: 'AI Response Approved',
-        message: 'Your AI response has been sent successfully',
-        timestamp: '5 min ago',
-        isRead: false
-      },
-      {
-        id: '3',
-        type: 'warning',
-        title: 'Lead Score Alert',
-        message: 'Amit Patel reached score threshold of 85',
-        timestamp: '15 min ago',
-        isRead: true
-      },
-      {
-        id: '4',
-        type: 'info',
-        title: 'New WhatsApp Message',
-        message: 'Message from Sunita Singh',
-        timestamp: '1 hour ago',
-        isRead: true
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/notifications');
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data.notifications || []);
+        } else {
+          // Start with empty notifications for new users
+          setNotifications([]);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        // Start with empty notifications for new users
+        setNotifications([]);
       }
-    ];
-    setNotifications(mockNotifications);
+    };
+
+    fetchNotifications();
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;

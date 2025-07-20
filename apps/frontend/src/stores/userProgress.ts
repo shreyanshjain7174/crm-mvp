@@ -246,24 +246,52 @@ export const useUserProgressStore = create<UserProgressStore>()(
           
           const backendData = await response.json();
           
-          // Update stats from backend
-          set((state) => ({
-            stats: {
-              ...state.stats,
-              contactsAdded: backendData.stats.contactsAdded,
-              messagesSent: backendData.stats.messagesSent,
-              aiInteractions: backendData.stats.aiInteractions,
-              templatesUsed: backendData.stats.templatesUsed,
-              pipelineActions: backendData.stats.pipelineActions
-            },
-            stage: backendData.stage as UserStage,
-            lastActiveDate: new Date()
-          }));
+          // If backend shows this is truly a new user (all stats are 0), reset everything
+          const isNewUser = backendData.stats.contactsAdded === 0 && 
+                           backendData.stats.messagesSent === 0 && 
+                           backendData.stats.aiInteractions === 0;
+          
+          if (isNewUser) {
+            // Override with fresh initial state for new users
+            set({
+              ...initialState,
+              stage: 'new',
+              stats: {
+                contactsAdded: 0,
+                messagesSent: 0,
+                aiInteractions: 0,
+                templatesUsed: 0,
+                pipelineActions: 0,
+                loginStreak: 0,
+                totalSessions: 0
+              },
+              lastActiveDate: new Date()
+            });
+          } else {
+            // Update stats from backend for existing users
+            set((state) => ({
+              stats: {
+                ...state.stats,
+                contactsAdded: backendData.stats.contactsAdded,
+                messagesSent: backendData.stats.messagesSent,
+                aiInteractions: backendData.stats.aiInteractions,
+                templatesUsed: backendData.stats.templatesUsed,
+                pipelineActions: backendData.stats.pipelineActions
+              },
+              stage: backendData.stage as UserStage,
+              lastActiveDate: new Date()
+            }));
+          }
           
           // Check for stage progression after sync
           setTimeout(() => get().checkStageProgression(), 0);
         } catch (error) {
           console.error('Error syncing with backend:', error);
+          // On error, if we suspect this might be a new user, default to initial state
+          const currentState = get();
+          if (currentState.stats.contactsAdded === 0) {
+            set(initialState);
+          }
         }
       },
       
@@ -334,3 +362,21 @@ export const useCurrentHint = () => useUserProgressStore((state) => state.curren
 export const useProgressPercentage = () => useUserProgressStore((state) => state.getProgressPercentage);
 export const useAchievements = () => useUserProgressStore((state) => state.achievements);
 export const usePendingCelebrations = () => useUserProgressStore((state) => state.pendingCelebrations);
+
+// Developer utilities (exposed globally for debugging)
+if (typeof window !== 'undefined') {
+  (window as any).resetUserProgress = () => {
+    useUserProgressStore.getState().resetProgress();
+    console.log('User progress has been reset to initial state');
+  };
+  
+  (window as any).debugUserProgress = () => {
+    const state = useUserProgressStore.getState();
+    console.log('Current user progress:', {
+      stage: state.stage,
+      stats: state.stats,
+      unlockedFeatures: state.unlockedFeatures,
+      onboardingCompleted: state.onboardingCompleted
+    });
+  };
+}

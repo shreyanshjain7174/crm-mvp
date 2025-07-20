@@ -67,6 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiClient.register(userData);
       setUser(response.user);
       setToken(response.token);
+      
+      // Clear any existing user progress for truly new users
+      localStorage.removeItem('user-progress');
+      
       router.push('/dashboard');
     } catch (error) {
       throw error;
