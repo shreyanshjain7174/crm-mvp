@@ -37,7 +37,7 @@ export default function AchievementsPage() {
   const [category, setCategory] = useState<CategoryType>('all');
   
   // Get unlocked achievement IDs
-  const unlockedIds = new Set(userAchievements.map(a => a.id));
+  const unlockedIds = useMemo(() => new Set(userAchievements.map(a => a.id)), [userAchievements]);
   
   // Calculate progress for locked achievements
   const getAchievementProgress = (achievement: Achievement): number => {

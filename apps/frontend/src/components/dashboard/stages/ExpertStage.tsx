@@ -92,7 +92,7 @@ export function ExpertStage({ onConfigureWorkflows, onViewAnalytics, onSystemMon
               </div>
             </div>
             <p className="text-slate-700 mb-2">
-              Outstanding! You've mastered all CRM features with {stats.contactsAdded} contacts, 
+              Outstanding! You&apos;ve mastered all CRM features with {stats.contactsAdded} contacts, 
               {stats.aiInteractions} AI interactions, and {stats.templatesUsed} template uses.
             </p>
             <p className="text-slate-600 text-sm">

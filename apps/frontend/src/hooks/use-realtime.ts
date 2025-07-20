@@ -255,7 +255,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
         clientRef.current = null;
       }
     };
-  }, [autoConnect, user?.id, token, memoizedChannels]);
+  }, [autoConnect, user?.id, token, memoizedChannels, user]);
 
   // Manual connection control
   const connect = useCallback(() => {
@@ -264,7 +264,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
     } else if (!state.connected && !state.connecting) {
       clientRef.current.connect();
     }
-  }, [state.connected, state.connecting]); // Remove initializeClient from dependencies
+  }, [state.connected, state.connecting, initializeClient]);
 
   const disconnect = useCallback(() => {
     if (clientRef.current) {

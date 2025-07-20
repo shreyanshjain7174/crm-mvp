@@ -239,7 +239,7 @@ export function IntermediateStage({ onViewPipeline, onManageContacts }: Intermed
       {/* Feature Preview */}
       <Card>
         <CardHeader>
-          <CardTitle>🚀 What's Next?</CardTitle>
+          <CardTitle>🚀 What&apos;s Next?</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

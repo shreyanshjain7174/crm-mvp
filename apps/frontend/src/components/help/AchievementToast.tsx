@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, Trophy, Star, Zap, Users, MessageSquare, Bot } from 'lucide-react';
@@ -37,21 +37,21 @@ export function AchievementToast({
   const [isVisible, setIsVisible] = useState(true);
   const [isLeaving, setIsLeaving] = useState(false);
   
+  const handleDismiss = useCallback(() => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onDismiss();
+    }, 300);
+  }, [onDismiss]);
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       handleDismiss();
     }, autoHide);
     
     return () => clearTimeout(timer);
-  }, [autoHide]);
-  
-  const handleDismiss = () => {
-    setIsLeaving(true);
-    setTimeout(() => {
-      setIsVisible(false);
-      onDismiss();
-    }, 300);
-  };
+  }, [autoHide, handleDismiss]);
   
   const IconComponent = ACHIEVEMENT_ICONS[achievement.category as keyof typeof ACHIEVEMENT_ICONS];
   const gradientColor = ACHIEVEMENT_COLORS[achievement.category as keyof typeof ACHIEVEMENT_COLORS];

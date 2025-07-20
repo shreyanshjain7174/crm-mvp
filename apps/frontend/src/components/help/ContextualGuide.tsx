@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { X, ChevronRight, Lightbulb, Target, Zap } from 'lucide-react';
@@ -54,6 +54,12 @@ export function ContextualGuide({ hints, onDismiss, className }: ContextualGuide
   }, [relevantHints]);
   
   // Auto-hide functionality
+  const handleDismiss = useCallback((hintId: string) => {
+    setDismissed(prev => new Set(prev).add(hintId));
+    setActiveHint(null);
+    onDismiss?.(hintId);
+  }, [onDismiss]);
+  
   useEffect(() => {
     if (activeHint?.autoHide) {
       const timer = setTimeout(() => {
@@ -62,13 +68,7 @@ export function ContextualGuide({ hints, onDismiss, className }: ContextualGuide
       
       return () => clearTimeout(timer);
     }
-  }, [activeHint]);
-  
-  const handleDismiss = (hintId: string) => {
-    setDismissed(prev => new Set(prev).add(hintId));
-    setActiveHint(null);
-    onDismiss?.(hintId);
-  };
+  }, [activeHint, handleDismiss]);
   
   const handleAction = () => {
     if (activeHint?.actionCallback) {

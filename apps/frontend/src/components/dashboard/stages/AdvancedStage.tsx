@@ -95,7 +95,7 @@ export function AdvancedStage({ onConfigureAI, onViewAnalytics }: AdvancedStageP
               </Badge>
             </div>
             <p className="text-slate-700">
-              Excellent! You're now using AI assistance to manage {stats.contactsAdded} contacts. 
+              Excellent! You&apos;re now using AI assistance to manage {stats.contactsAdded} contacts. 
               Continue using AI features to unlock the complete automation platform.
             </p>
           </div>

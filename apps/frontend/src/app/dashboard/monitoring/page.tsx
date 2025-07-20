@@ -50,6 +50,23 @@ export default function SystemMonitoringPage() {
     networkLatency: 12.8
   });
 
+  // Simulate real-time data updates
+  useEffect(() => {
+    if (!canAccessMonitoring) return;
+    
+    const interval = setInterval(() => {
+      setRealTimeData(prev => ({
+        timestamp: Date.now(),
+        cpuUsage: Math.max(10, Math.min(90, prev.cpuUsage + (Math.random() - 0.5) * 10)),
+        memoryUsage: Math.max(20, Math.min(80, prev.memoryUsage + (Math.random() - 0.5) * 8)),
+        diskUsage: Math.max(30, Math.min(95, prev.diskUsage + (Math.random() - 0.5) * 2)),
+        networkLatency: Math.max(5, Math.min(50, prev.networkLatency + (Math.random() - 0.5) * 5))
+      }));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [canAccessMonitoring]);
+
   // Show feature locked if not expert
   if (!canAccessMonitoring) {
     return (
@@ -80,21 +97,6 @@ export default function SystemMonitoringPage() {
       </div>
     );
   }
-
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRealTimeData(prev => ({
-        timestamp: Date.now(),
-        cpuUsage: Math.max(10, Math.min(90, prev.cpuUsage + (Math.random() - 0.5) * 10)),
-        memoryUsage: Math.max(20, Math.min(80, prev.memoryUsage + (Math.random() - 0.5) * 8)),
-        diskUsage: Math.max(30, Math.min(95, prev.diskUsage + (Math.random() - 0.5) * 2)),
-        networkLatency: Math.max(5, Math.min(50, prev.networkLatency + (Math.random() - 0.5) * 5))
-      }));
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
