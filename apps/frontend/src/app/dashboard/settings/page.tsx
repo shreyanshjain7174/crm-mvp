@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('whatsapp');
+  const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -29,6 +29,7 @@ export default function SettingsPage() {
   };
 
   const tabs = [
+    { id: 'profile', name: 'Profile', icon: Users },
     { id: 'whatsapp', name: 'WhatsApp', icon: Smartphone },
     { id: 'ai', name: 'AI Assistant', icon: Bot },
     { id: 'notifications', name: 'Notifications', icon: Bell },
@@ -85,6 +86,114 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <div className="lg:col-span-3">
+          {activeTab === 'profile' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-6">
+                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-2xl font-medium">
+                      DU
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium">Demo User</h3>
+                    <p className="text-gray-600">demo@crm.dev</p>
+                    <Button variant="outline" size="sm" className="mt-2">
+                      Change Avatar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="Demo User"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      defaultValue="demo@crm.dev"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="CRM Demo"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      defaultValue="+91 98765 43210"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    rows={3}
+                    defaultValue="Tell us about yourself and your business..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="text-lg font-medium mb-4">Change Password</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSave} className="bg-primary text-white">
+                    Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === 'whatsapp' && (
             <Card>
               <CardHeader>
