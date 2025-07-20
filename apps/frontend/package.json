@@ -13,6 +13,7 @@
     "deploy": "npm run build && touch out/.nojekyll"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.3.2",
     "@langchain/core": "^0.3.62",
     "@langchain/langgraph": "^0.3.8",
