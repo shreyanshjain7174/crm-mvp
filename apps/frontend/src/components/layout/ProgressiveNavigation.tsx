@@ -245,18 +245,6 @@ export function ProgressiveNavigation() {
         )}
       </div>
       
-      {/* User Info */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center">
-          <div className={cn('h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-medium', stageInfo.color)}>
-            {stageInfo.emoji}
-          </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-900">User</p>
-            <p className="text-xs text-gray-500">{stageInfo.title}</p>
-          </div>
-        </div>
-      </div>
     </nav>
   );
 }

@@ -20,7 +20,7 @@ export function EmptyAI({
   onSendMessages,
   onViewPipeline,
   messageCount = 0,
-  requiredMessages = 50,
+  requiredMessages = 5,
   isLocked = false
 }: EmptyAIProps) {
   const progress = Math.min((messageCount / requiredMessages) * 100, 100);

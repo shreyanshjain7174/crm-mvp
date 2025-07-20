@@ -30,8 +30,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const realtime = useRealtime({
     channels,
-    autoConnect: true,
-    reconnectOnAuthChange: true
+    autoConnect: false, // Disable auto-connect to prevent WebSocket errors
+    reconnectOnAuthChange: false
   });
 
   return (

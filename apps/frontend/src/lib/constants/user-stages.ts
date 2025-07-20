@@ -78,9 +78,9 @@ export const USER_STAGES: Record<UserStage, UserStageConfig> = {
     requirements: [
       {
         type: 'message_count',
-        threshold: 50,
+        threshold: 5,
         condition: 'gte',
-        description: 'Send 50 or more messages'
+        description: 'Send 5 or more messages'
       },
       {
         type: 'pipeline_actions',

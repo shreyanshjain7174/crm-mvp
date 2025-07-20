@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
+  const { status: whatsappStatus, loading: whatsappLoading, refresh: refreshWhatsApp } = useWhatsAppStatus();
   
   // WhatsApp form state
   const [whatsappSettings, setWhatsappSettings] = useState({
@@ -243,15 +245,62 @@ export default function SettingsPage() {
                 <CardTitle>WhatsApp Integration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                <div className={`flex items-center justify-between p-4 rounded-lg ${
+                  whatsappLoading 
+                    ? 'bg-gray-50' 
+                    : whatsappStatus.connected 
+                      ? 'bg-green-50' 
+                      : 'bg-red-50'
+                }`}>
                   <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className={`w-3 h-3 rounded-full ${
+                      whatsappLoading 
+                        ? 'bg-gray-400' 
+                        : whatsappStatus.connected 
+                          ? 'bg-green-500' 
+                          : 'bg-red-500'
+                    }`}></div>
                     <div>
-                      <p className="font-medium text-green-900">WhatsApp Business API</p>
-                      <p className="text-sm text-green-700">Connected via Meta Cloud API</p>
+                      <p className={`font-medium ${
+                        whatsappLoading 
+                          ? 'text-gray-900' 
+                          : whatsappStatus.connected 
+                            ? 'text-green-900' 
+                            : 'text-red-900'
+                      }`}>
+                        WhatsApp Business API
+                      </p>
+                      <p className={`text-sm ${
+                        whatsappLoading 
+                          ? 'text-gray-700' 
+                          : whatsappStatus.connected 
+                            ? 'text-green-700' 
+                            : 'text-red-700'
+                      }`}>
+                        {whatsappLoading 
+                          ? 'Checking connection...' 
+                          : whatsappStatus.message}
+                      </p>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={
+                      whatsappLoading 
+                        ? 'bg-gray-100 text-gray-800' 
+                        : whatsappStatus.connected 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                    }>
+                      {whatsappLoading 
+                        ? 'Checking...' 
+                        : whatsappStatus.connected 
+                          ? 'Connected' 
+                          : 'Disconnected'}
+                    </Badge>
+                    <Button variant="outline" size="sm" onClick={refreshWhatsApp}>
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

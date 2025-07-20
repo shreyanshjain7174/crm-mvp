@@ -101,7 +101,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
         <LeadsPipeline />
       </FeatureGate>
       
-      {/* Stage 4: AI Features (unlocked after 50 messages) */}
+      {/* Stage 4: AI Features (unlocked after 5 messages) */}
       <FeatureGate 
         feature="ai:suggestions"
         fallback={

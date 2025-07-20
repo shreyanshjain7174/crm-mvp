@@ -39,8 +39,8 @@ export function IntermediateStage({ onViewPipeline, onManageContacts }: Intermed
     router.push('/dashboard/messages');
   };
   
-  // Calculate progress towards next stage (Advanced - 50 messages + 10 pipeline actions)
-  const messageProgress = Math.min((stats.messagesSent / 50) * 100, 100);
+  // Calculate progress towards next stage (Advanced - 5 messages + 10 pipeline actions)
+  const messageProgress = Math.min((stats.messagesSent / 5) * 100, 100);
   const pipelineProgress = Math.min((stats.pipelineActions / 10) * 100, 100);
   const overallProgress = (messageProgress + pipelineProgress) / 2;
   

@@ -116,6 +116,56 @@ const facebookWhatsAppWebhookSchema = z.object({
 }).passthrough();
 
 export async function whatsappRoutes(fastify: FastifyInstance) {
+  // Get WhatsApp connection status and settings
+  fastify.get('/status', async (request, reply) => {
+    try {
+      const isConfigured = !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+      
+      if (!isConfigured) {
+        return {
+          connected: false,
+          configured: false,
+          message: 'WhatsApp API credentials not configured'
+        };
+      }
+
+      // Test connection by making a simple API call to get business profile
+      try {
+        const graphApiUrl = `https://graph.facebook.com/v21.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}`;
+        const response = await axios.get(graphApiUrl, {
+          headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`
+          },
+          params: {
+            fields: 'display_phone_number,verified_name,quality_rating'
+          }
+        });
+
+        return {
+          connected: true,
+          configured: true,
+          businessProfile: response.data,
+          message: 'WhatsApp Business API connected successfully'
+        };
+      } catch (error: any) {
+        fastify.log.error('WhatsApp API connection test failed:', error);
+        return {
+          connected: false,
+          configured: true,
+          error: error.response?.data?.error?.message || 'Connection test failed',
+          message: 'WhatsApp API credentials configured but connection failed'
+        };
+      }
+    } catch (error) {
+      fastify.log.error('Error checking WhatsApp status:', error);
+      return reply.status(500).send({ 
+        error: 'Failed to check WhatsApp status',
+        connected: false,
+        configured: false
+      });
+    }
+  });
+
   // Facebook WhatsApp webhook verification
   fastify.get('/webhook', async (request, reply) => {
     // Facebook webhook verification process

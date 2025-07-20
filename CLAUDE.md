@@ -25,7 +25,7 @@ The dashboard should start completely empty with a single CTA. Features unlock b
 Stage 1: "First Contact" → Unlocks contact list
 Stage 2: "First Message" → Unlocks chat interface  
 Stage 3: "Growing Contacts" (10+) → Unlocks pipeline view
-Stage 4: "Busy User" (50+ messages) → Unlocks AI assistant
+Stage 4: "Busy User" (5+ messages) → Unlocks AI assistant with pattern learning
 Stage 5: "Power User" (10+ AI approvals) → Unlocks automation
 ```
 
@@ -262,11 +262,12 @@ The following checks must pass in CI:
 - **Next Hint**: "Organize leads by dragging them into stages"
 - **UI Elements**: Kanban board, filtering options, bulk actions
 
-#### Stage 4: "Busy User" (Week 1)
-- **Trigger**: 50+ messages sent or repetitive patterns detected
+#### Stage 4: "Busy User" (Day 1-2)
+- **Trigger**: 5+ messages sent (AI learns user patterns quickly)
 - **Unlocks**: AI assistant suggestions, automated responses, smart replies
 - **Next Hint**: "Let AI help you respond faster"
 - **UI Elements**: AI suggestions panel, approval workflow
+- **AI Learning**: Agentic AI analyzes user communication patterns to automate flows with intelligent suggestions
 
 #### Stage 5: "Power User" (Week 2+)
 - **Trigger**: 10+ AI approvals, consistent usage patterns

@@ -246,7 +246,7 @@ export function useContextualHints() {
         break;
         
       case 'advanced':
-        if (stats.messagesSent >= 50 && stats.aiInteractions === 0) {
+        if (stats.messagesSent >= 5 && stats.aiInteractions === 0) {
           hints.push({
             id: 'try-ai-assistant',
             trigger: 'idle',
