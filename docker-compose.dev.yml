@@ -48,6 +48,11 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://crm_dev_user:dev_password@db:5432/crm_dev_db
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: crm_dev_db
+      DB_USER: crm_dev_user
+      DB_PASSWORD: dev_password
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev-jwt-secret
       PORT: 3001
