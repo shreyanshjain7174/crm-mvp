@@ -21,15 +21,15 @@ export async function buildTestApp(): Promise<FastifyInstance> {
 
   // Register JWT with mock
   await app.register(async function (fastify) {
-    fastify.decorate('jwt', mockJwt);
+    (fastify as any).decorate('jwt', mockJwt);
   });
 
   // Decorate with test database
-  app.decorate('db', testDb);
-  app.decorate('authenticate', authenticate);
+  (app as any).decorate('db', testDb);
+  (app as any).decorate('authenticate', authenticate);
 
   // Mock Socket.io
-  app.decorate('io', {
+  (app as any).decorate('io', {
     emit: jest.fn()
   });
 

@@ -4,7 +4,7 @@ import { buildTestApp, setupTestUser, setupTestLead, setupTestMessage } from '..
 
 describe('Stats API', () => {
   let app: FastifyInstance;
-  let request: supertest.SuperAgentTest;
+  let request: ReturnType<typeof supertest>;
 
   beforeAll(async () => {
     app = await buildTestApp();
