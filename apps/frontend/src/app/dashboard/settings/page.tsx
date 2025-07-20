@@ -22,10 +22,52 @@ import {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
+  
+  // WhatsApp form state
+  const [whatsappSettings, setWhatsappSettings] = useState({
+    businessPhone: '+91 98765 43210',
+    displayName: 'CRM Business',
+    welcomeMessage: 'Hi! Thanks for reaching out. We\'ll get back to you shortly.',
+    businessAccountId: 'your-business-account-id',
+    phoneNumberId: 'your-phone-number-id',
+    autoReply: true,
+    webhookStatus: true
+  });
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleWhatsAppSave = async () => {
+    try {
+      // Basic validation
+      if (!whatsappSettings.businessPhone.trim()) {
+        alert('Business phone number is required');
+        return;
+      }
+      if (!whatsappSettings.displayName.trim()) {
+        alert('Display name is required');
+        return;
+      }
+      if (!whatsappSettings.businessAccountId.trim()) {
+        alert('Business Account ID is required');
+        return;
+      }
+      if (!whatsappSettings.phoneNumberId.trim()) {
+        alert('Phone Number ID is required');
+        return;
+      }
+
+      // TODO: Add API call to save WhatsApp settings
+      // const response = await apiClient.updateWhatsAppSettings(whatsappSettings);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving WhatsApp settings:', error);
+      alert('Failed to save WhatsApp settings. Please try again.');
+    }
   };
 
   const tabs = [
@@ -218,9 +260,9 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value="+91 98765 43210"
+                      value={whatsappSettings.businessPhone}
+                      onChange={(e) => setWhatsappSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      readOnly
                     />
                   </div>
                   <div>
@@ -229,7 +271,8 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value="CRM Business"
+                      value={whatsappSettings.displayName}
+                      onChange={(e) => setWhatsappSettings(prev => ({ ...prev, displayName: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -241,8 +284,9 @@ export default function SettingsPage() {
                   </label>
                   <textarea
                     rows={3}
+                    value={whatsappSettings.welcomeMessage}
+                    onChange={(e) => setWhatsappSettings(prev => ({ ...prev, welcomeMessage: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    defaultValue="Hi! Thanks for reaching out. We'll get back to you shortly."
                   />
                 </div>
 
@@ -265,9 +309,9 @@ export default function SettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value="your-business-account-id"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                        readOnly
+                        value={whatsappSettings.businessAccountId}
+                        onChange={(e) => setWhatsappSettings(prev => ({ ...prev, businessAccountId: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -276,29 +320,39 @@ export default function SettingsPage() {
                       </label>
                       <input
                         type="text"
-                        value="your-phone-number-id"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                        readOnly
+                        value={whatsappSettings.phoneNumberId}
+                        onChange={(e) => setWhatsappSettings(prev => ({ ...prev, phoneNumberId: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <input type="checkbox" id="auto-reply" defaultChecked />
+                  <input 
+                    type="checkbox" 
+                    id="auto-reply" 
+                    checked={whatsappSettings.autoReply}
+                    onChange={(e) => setWhatsappSettings(prev => ({ ...prev, autoReply: e.target.checked }))}
+                  />
                   <label htmlFor="auto-reply" className="text-sm text-gray-700">
                     Enable automatic welcome messages for new conversations
                   </label>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <input type="checkbox" id="webhook-status" defaultChecked />
+                  <input 
+                    type="checkbox" 
+                    id="webhook-status" 
+                    checked={whatsappSettings.webhookStatus}
+                    onChange={(e) => setWhatsappSettings(prev => ({ ...prev, webhookStatus: e.target.checked }))}
+                  />
                   <label htmlFor="webhook-status" className="text-sm text-gray-700">
                     Real-time message webhook notifications
                   </label>
                 </div>
 
-                <Button onClick={handleSave}>
+                <Button onClick={handleWhatsAppSave}>
                   <Save className="h-4 w-4 mr-2" />
                   Save WhatsApp Settings
                 </Button>
