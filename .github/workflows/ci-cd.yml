@@ -84,15 +84,32 @@ jobs:
       env:
         CI: true
 
-    - name: Type checking
+    - name: Backend Type checking
       run: |
-        cd apps/backend && npm run typecheck
-        cd ../frontend && npm run typecheck
+        cd apps/backend
+        npm run typecheck
+      
+    - name: Frontend Type checking  
+      run: |
+        cd apps/frontend
+        npm run typecheck
 
-    - name: Linting
+    - name: Backend Linting
       run: |
-        cd apps/backend && npm run lint
-        cd ../frontend && npm run lint
+        cd apps/backend
+        npm run lint
+        
+    - name: Frontend Linting
+      run: |
+        cd apps/frontend
+        npm run lint -- --max-warnings 0
+        
+    - name: Build check
+      run: |
+        cd apps/frontend
+        npm run build
+        cd ../backend  
+        npm run build
 
   # Build and Push Docker Images
   build-and-push:
