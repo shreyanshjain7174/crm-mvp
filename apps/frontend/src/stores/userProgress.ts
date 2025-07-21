@@ -237,16 +237,9 @@ export const useUserProgressStore = create<UserProgressStore>()(
       
       syncWithBackend: async () => {
         try {
-          const response = await fetch('/api/stats/user/progress');
-          
-          if (!response.ok) {
-            // If API is not available or returns error, maintain current state
-            // This ensures new users still see empty dashboard even without backend
-            console.warn('Backend API not available, maintaining local state');
-            return;
-          }
-          
-          const backendData = await response.json();
+          // Import apiClient dynamically to avoid circular dependencies
+          const { apiClient } = await import('@/lib/api');
+          const backendData = await apiClient.getUserProgress();
           
           // If backend shows this is truly a new user (all stats are 0), ensure clean state
           const isNewUser = backendData.stats.contactsAdded === 0 && 
@@ -289,7 +282,23 @@ export const useUserProgressStore = create<UserProgressStore>()(
           setTimeout(() => get().checkStageProgression(), 0);
         } catch (error) {
           console.warn('Error syncing with backend, maintaining local state:', error);
-          // On error, maintain current state - don't override with potentially incorrect data
+          // On authentication error, reset to initial state for clean login
+          if (error instanceof Error && error.message.includes('No token provided')) {
+            set({
+              ...initialState,
+              stage: 'new',
+              stats: {
+                contactsAdded: 0,
+                messagesSent: 0,
+                aiInteractions: 0,
+                templatesUsed: 0,
+                pipelineActions: 0,
+                loginStreak: 0,
+                totalSessions: 0
+              }
+            });
+          }
+          // On other errors, maintain current state - don't override with potentially incorrect data
           // New users will maintain their initial empty state
         }
       },

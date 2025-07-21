@@ -53,6 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiClient.login(credentials);
       setUser(response.user);
       setToken(response.token);
+      
+      // Sync user progress with backend after successful login
+      try {
+        const { useUserProgressStore } = await import('@/stores/userProgress');
+        await useUserProgressStore.getState().syncWithBackend();
+      } catch (syncError) {
+        console.warn('Failed to sync user progress after login:', syncError);
+      }
+      
       router.push('/dashboard');
     } catch (error) {
       throw error;

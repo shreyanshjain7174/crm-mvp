@@ -384,6 +384,37 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  // Stats API
+  async getUserProgress(): Promise<{
+    stage: string;
+    stats: {
+      contactsAdded: number;
+      messagesSent: number;
+      aiInteractions: number;
+      templatesUsed: number;
+      pipelineActions: number;
+    };
+    progressPercentage: number;
+    nextStageRequirements: string[];
+  }> {
+    return this.request('/api/stats/user/progress');
+  }
+
+  async getDashboardStats(): Promise<{
+    totalLeads: number;
+    activeConversations: number;
+    conversionRate: number;
+    hotLeads: number;
+    growth: {
+      leads: number;
+      conversations: number;
+      hotLeads: number;
+      conversionRate: number;
+    };
+  }> {
+    return this.request('/api/stats/dashboard');
+  }
 }
 
 export const apiClient = new ApiClient();
