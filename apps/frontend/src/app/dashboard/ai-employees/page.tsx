@@ -1,6 +1,6 @@
 'use client';
 
-import { useUserProgress } from '@/stores/userProgress';
+import { useUserStage, useUserStats } from '@/stores/userProgress';
 import { AIEmployeesDashboard } from '@/components/ai-employees/ai-employees-dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Lock, ArrowRight, Bot, Zap, DollarSign, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AIEmployeesPage() {
-  const { stage, stats } = useUserProgress();
+  const stage = useUserStage();
+  const stats = useUserStats();
 
   // Check if user has unlocked AI employees (Stage 5)
   const hasUnlockedAIEmployees = stage === 'expert';

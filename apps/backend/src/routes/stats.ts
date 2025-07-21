@@ -16,7 +16,7 @@ export async function statsRoutes(fastify: FastifyInstance) {
       `);
       const activeConversations = parseInt(conversationsResult.rows[0]?.count || '0');
 
-      // Calculate conversion rate (leads with status 'WARM' or 'HOT' / total leads)
+      // Calculate conversion rate (leads with status 'WARM', 'HOT', or 'CONVERTED' / total leads)
       const convertedResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
         FROM leads 

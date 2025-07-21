@@ -240,19 +240,21 @@ export const useUserProgressStore = create<UserProgressStore>()(
           const response = await fetch('/api/stats/user/progress');
           
           if (!response.ok) {
-            console.error('Failed to sync user progress with backend');
+            // If API is not available or returns error, maintain current state
+            // This ensures new users still see empty dashboard even without backend
+            console.warn('Backend API not available, maintaining local state');
             return;
           }
           
           const backendData = await response.json();
           
-          // If backend shows this is truly a new user (all stats are 0), reset everything
+          // If backend shows this is truly a new user (all stats are 0), ensure clean state
           const isNewUser = backendData.stats.contactsAdded === 0 && 
                            backendData.stats.messagesSent === 0 && 
                            backendData.stats.aiInteractions === 0;
           
           if (isNewUser) {
-            // Override with fresh initial state for new users
+            // Ensure clean initial state for new users
             set({
               ...initialState,
               stage: 'new',
@@ -268,17 +270,17 @@ export const useUserProgressStore = create<UserProgressStore>()(
               lastActiveDate: new Date()
             });
           } else {
-            // Update stats from backend for existing users
+            // Update stats from backend for existing users with actual data
             set((state) => ({
               stats: {
                 ...state.stats,
-                contactsAdded: backendData.stats.contactsAdded,
-                messagesSent: backendData.stats.messagesSent,
-                aiInteractions: backendData.stats.aiInteractions,
-                templatesUsed: backendData.stats.templatesUsed,
-                pipelineActions: backendData.stats.pipelineActions
+                contactsAdded: backendData.stats.contactsAdded || 0,
+                messagesSent: backendData.stats.messagesSent || 0,
+                aiInteractions: backendData.stats.aiInteractions || 0,
+                templatesUsed: backendData.stats.templatesUsed || 0,
+                pipelineActions: backendData.stats.pipelineActions || 0
               },
-              stage: backendData.stage as UserStage,
+              stage: backendData.stage as UserStage || 'new',
               lastActiveDate: new Date()
             }));
           }
@@ -286,12 +288,9 @@ export const useUserProgressStore = create<UserProgressStore>()(
           // Check for stage progression after sync
           setTimeout(() => get().checkStageProgression(), 0);
         } catch (error) {
-          console.error('Error syncing with backend:', error);
-          // On error, if we suspect this might be a new user, default to initial state
-          const currentState = get();
-          if (currentState.stats.contactsAdded === 0) {
-            set(initialState);
-          }
+          console.warn('Error syncing with backend, maintaining local state:', error);
+          // On error, maintain current state - don't override with potentially incorrect data
+          // New users will maintain their initial empty state
         }
       },
       

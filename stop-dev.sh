@@ -2,22 +2,13 @@
 
 echo "🛑 Stopping CRM MVP Development Environment..."
 
-# Detect container runtime
-COMPOSE_CMD=""
-
-if command -v podman &> /dev/null; then
-    if command -v podman-compose &> /dev/null; then
-        COMPOSE_CMD="podman-compose"
-    else
-        COMPOSE_CMD="docker-compose"
-        export DOCKER_HOST="unix:///tmp/podman.sock"
-    fi
-    echo "🐳 Using Podman"
-elif command -v docker &> /dev/null; then
+# Use Docker compose
+if command -v docker &> /dev/null; then
     COMPOSE_CMD="docker compose"
     echo "🐳 Using Docker"
 else
-    echo "❌ No container runtime found"
+    echo "❌ Docker is not available"
+    echo "Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
     exit 1
 fi
 

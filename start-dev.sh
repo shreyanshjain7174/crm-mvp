@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting CRM MVP Development Environment (Containerized)..."
+echo "🚀 Starting CRM MVP Development Environment (Core Services Only)..."
 
 # Check container runtime availability (Docker or Podman)
 CONTAINER_CMD=""
@@ -50,54 +50,7 @@ check_and_kill_port() {
     return 0
 }
 
-# Function to force cleanup containers and pods
-force_cleanup_containers() {
-    echo "🧹 Performing deep cleanup of containers and pods..."
-    
-    if [ "$CONTAINER_CMD" = "podman" ]; then
-        # Stop all running containers
-        local running_containers=$(podman ps -q 2>/dev/null)
-        if [ ! -z "$running_containers" ]; then
-            echo "🛑 Stopping all running containers..."
-            echo "$running_containers" | xargs podman stop -t 10 2>/dev/null || true
-        fi
-        
-        # Force remove all containers with our project prefix
-        local project_containers=$(podman ps -a --format "{{.Names}}" | grep -E "(crm-dev|crm-mvp|pgadmin)" 2>/dev/null)
-        if [ ! -z "$project_containers" ]; then
-            echo "🗑️  Removing project containers..."
-            echo "$project_containers" | xargs podman rm -f 2>/dev/null || true
-        fi
-        
-        # Remove pods
-        local project_pods=$(podman pod ls --format "{{.Name}}" | grep -E "(crm|pod_)" 2>/dev/null)
-        if [ ! -z "$project_pods" ]; then
-            echo "🗑️  Removing project pods..."
-            echo "$project_pods" | xargs podman pod rm -f 2>/dev/null || true
-        fi
-        
-        # Clean up networks
-        echo "🌐 Cleaning up networks..."
-        podman network prune -f 2>/dev/null || true
-        
-        # System prune to clean up orphaned resources
-        echo "🧽 Pruning system resources..."
-        podman system prune -f 2>/dev/null || true
-        
-    else
-        # Docker cleanup
-        docker-compose -f docker-compose.dev.yml down --remove-orphans -v 2>/dev/null || true
-        docker system prune -f 2>/dev/null || true
-    fi
-    
-    echo "✅ Deep cleanup completed"
-}
-
-if command -v podman &> /dev/null; then
-    CONTAINER_CMD="podman"
-    COMPOSE_CMD="podman-compose"
-    echo "🐳 Using Podman as container runtime"
-elif command -v docker &> /dev/null; then
+if command -v docker &> /dev/null; then
     CONTAINER_CMD="docker"
     COMPOSE_CMD="docker compose"
     echo "🐳 Using Docker as container runtime"
@@ -109,25 +62,12 @@ elif command -v docker &> /dev/null; then
         exit 1
     fi
 else
-    echo "❌ Neither Docker nor Podman is available"
-    echo "Please install either:"
-    echo "  - Docker Desktop: https://www.docker.com/products/docker-desktop/"
-    echo "  - Podman: brew install podman"
+    echo "❌ Docker is not available"
+    echo "Please install Docker Desktop: https://www.docker.com/products/docker-desktop/"
     exit 1
 fi
 
-echo "🐳 Container runtime available - starting containerized environment..."
-
-# Comprehensive cleanup before starting
-echo "🧹 Performing comprehensive cleanup..."
-
-# Kill common problematic services
-echo "🔧 Stopping potential conflicting services..."
-pkill -f redis-server 2>/dev/null || true
-pkill -f postgres 2>/dev/null || true
-pkill -f ollama 2>/dev/null || true
-pkill -f node 2>/dev/null || true
-sleep 2
+echo "🐳 Container runtime available - starting core environment..."
 
 # Check for port conflicts before starting
 echo "🔍 Checking for port conflicts..."
@@ -137,34 +77,10 @@ check_and_kill_port 3002 "Backend Secondary" || exit 1
 check_and_kill_port 5432 "PostgreSQL" || exit 1
 check_and_kill_port 6379 "Redis" || exit 1
 check_and_kill_port 5050 "pgAdmin" || exit 1
-check_and_kill_port 8000 "AI Service" || exit 1
-check_and_kill_port 8001 "Chroma Vector DB" || exit 1
-check_and_kill_port 11434 "Ollama LLM" || exit 1
-check_and_kill_port 9229 "Node.js Debug" || exit 1
 
 echo "✅ Port cleanup completed"
 
-# For Podman, we need to check if the machine is running
-if [ "$CONTAINER_CMD" = "podman" ]; then
-    if ! podman machine list --format "{{.Running}}" | grep -q "true"; then
-        echo "🔧 Starting Podman machine..."
-        podman machine start
-        sleep 5
-    fi
-    
-    # Use podman-compose if available, otherwise docker-compose with podman socket
-    if ! command -v podman-compose &> /dev/null; then
-        echo "📦 Installing podman-compose..."
-        pip3 install podman-compose 2>/dev/null || {
-            echo "⚠️  podman-compose not available, using docker-compose with podman socket"
-            export DOCKER_HOST="unix:///tmp/podman.sock"
-            podman system service --time=0 unix:///tmp/podman.sock &
-            PODMAN_SERVICE_PID=$!
-            sleep 2
-            COMPOSE_CMD="docker-compose"
-        }
-    fi
-fi
+# Docker is ready to use immediately
 
 # Initial cleanup
 echo "🧹 Cleaning up existing containers..."
@@ -172,11 +88,11 @@ $COMPOSE_CMD -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
 
 # Function to start services with retry mechanism
 start_services_with_retry() {
-    local max_retries=3
+    local max_retries=2
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        echo "🔨 Building and starting all services (attempt $((retry_count + 1))/$max_retries)..."
+        echo "🔨 Building and starting core services (attempt $((retry_count + 1))/$max_retries)..."
         
         # Try to start services
         if $COMPOSE_CMD -f docker-compose.dev.yml up --build -d; then
@@ -184,7 +100,7 @@ start_services_with_retry() {
             
             # Wait a moment and check if all containers are running
             sleep 10
-            local failed_containers=$($CONTAINER_CMD ps -a --format "{{.Names}} {{.Status}}" | grep -E "(crm-dev|crm-mvp)" | grep -v "Up" | cut -d' ' -f1)
+            local failed_containers=$($CONTAINER_CMD ps -a --format "{{.Names}} {{.Status}}" | grep -E "(crm-dev)" | grep -v "Up" | cut -d' ' -f1)
             
             if [ -z "$failed_containers" ]; then
                 echo "🎉 All containers are running successfully!"
@@ -197,12 +113,6 @@ start_services_with_retry() {
                     echo "📋 Logs for $container:"
                     $CONTAINER_CMD logs --tail 20 $container 2>/dev/null || true
                 done
-                
-                # If it's a libpod error, try deep cleanup
-                if $CONTAINER_CMD logs $failed_containers 2>&1 | grep -q "internal libpod error"; then
-                    echo "🔧 Detected libpod error, performing deep cleanup..."
-                    force_cleanup_containers
-                fi
             fi
         else
             echo "❌ Failed to start services"
@@ -216,11 +126,6 @@ start_services_with_retry() {
             
             # Clean up before retry
             $COMPOSE_CMD -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
-            
-            # For Podman, do additional cleanup on retry
-            if [ "$CONTAINER_CMD" = "podman" ]; then
-                force_cleanup_containers
-            fi
         fi
     done
     
@@ -238,22 +143,18 @@ monitor_services() {
     echo ""
     echo "🔧 Backend API will be available on http://localhost:3001"
     echo "🌐 Frontend UI will be available on http://localhost:3000"
-    echo "🤖 AI Service will be available on http://localhost:8000"
     echo "📊 Database: PostgreSQL (localhost:5432)"
     echo "🗄️  Database Admin: pgAdmin (http://localhost:5050)"
-    echo "   └── Email: admin@crm-dev.local | Password: dev_admin_password"
+    echo "   └── Email: admin@example.com | Password: dev_admin_password"
     echo "🔴 Cache: Redis (localhost:6379)"
-    echo "🧠 Ollama LLM: http://localhost:11434"
-    echo "🗂️  Chroma Vector DB: http://localhost:8001"
     echo ""
-    echo "💡 Demo mode is DISABLED - using containerized backend with persistent data"
-    echo "🤖 AI employees powered by local Ollama (zero API costs)"
+    echo "💡 Core CRM development mode - AI services disabled for stability"
     echo "🐳 All services running in containers with hot reload"
     echo ""
     echo "📋 Container Status:"
-    $CONTAINER_CMD ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(NAMES|crm-dev|crm-mvp)" || true
+    $CONTAINER_CMD ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}" | grep -E "(NAMES|crm-dev)" || true
     echo ""
-    echo "To stop: Ctrl+C or run '$COMPOSE_CMD -f docker-compose.dev.yml down'"
+    echo "To stop: Ctrl+C or run './stop-dev.sh'"
     echo "To view logs: '$COMPOSE_CMD -f docker-compose.dev.yml logs -f'"
     echo "To restart a service: '$COMPOSE_CMD -f docker-compose.dev.yml restart <service>'"
     echo ""
@@ -265,11 +166,7 @@ cleanup() {
     echo "🧹 Stopping containers..."
     $COMPOSE_CMD -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
     
-    if [ "$CONTAINER_CMD" = "podman" ] && [ ! -z "$PODMAN_SERVICE_PID" ]; then
-        echo "🛑 Stopping Podman service..."
-        kill $PODMAN_SERVICE_PID 2>/dev/null || true
-        rm -f /tmp/podman.sock
-    fi
+    # Docker cleanup is handled by compose down
     
     echo "✅ Development environment stopped"
     exit 0
@@ -286,6 +183,6 @@ if start_services_with_retry; then
     echo "📜 Following logs for all services (Ctrl+C to stop)..."
     $COMPOSE_CMD -f docker-compose.dev.yml logs -f
 else
-    echo "💥 Failed to start development environment"
+    echo "💥 Failed to start core development environment"
     exit 1
 fi

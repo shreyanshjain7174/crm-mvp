@@ -108,7 +108,7 @@ export function TaskExecutionDialog({ open, onOpenChange, employeeName, onTaskCo
             Assign Task to {employeeName}
           </DialogTitle>
           <DialogDescription>
-            Give your AI employee a task to complete. They'll work on it autonomously and provide results.
+            Give your AI employee a task to complete. They&apos;ll work on it autonomously and provide results.
           </DialogDescription>
         </DialogHeader>
 

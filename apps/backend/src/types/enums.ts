@@ -1,12 +1,10 @@
-// Database enums - replacing Prisma client enums
+// Database enums - aligned with frontend types for progressive disclosure
 export enum LeadStatus {
-  NEW = 'NEW',
-  CONTACTED = 'CONTACTED',
-  QUALIFIED = 'QUALIFIED',
-  PROPOSAL = 'PROPOSAL',
-  NEGOTIATION = 'NEGOTIATION',
-  CLOSED_WON = 'CLOSED_WON',
-  CLOSED_LOST = 'CLOSED_LOST'
+  COLD = 'COLD',
+  WARM = 'WARM', 
+  HOT = 'HOT',
+  CONVERTED = 'CONVERTED',
+  LOST = 'LOST'
 }
 
 export enum Priority {

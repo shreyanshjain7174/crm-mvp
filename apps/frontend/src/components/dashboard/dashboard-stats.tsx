@@ -31,7 +31,21 @@ export function DashboardStats() {
         const response = await fetch('/api/stats/dashboard');
         
         if (!response.ok) {
-          throw new Error('Failed to fetch dashboard statistics');
+          // If API is not available, show empty/zero stats for new users
+          console.warn('Dashboard stats API not available, showing empty stats');
+          setData({
+            totalLeads: 0,
+            activeConversations: 0,
+            conversionRate: 0,
+            hotLeads: 0,
+            growth: {
+              leads: 0,
+              conversations: 0,
+              hotLeads: 0,
+              conversionRate: 0
+            }
+          });
+          return;
         }
         
         const stats = await response.json();
