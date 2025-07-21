@@ -232,6 +232,60 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Delete user account and all associated data
+  fastify.delete('/account', {
+    preHandler: [fastify.authenticate]
+  }, async (request, reply) => {
+    try {
+      const userId = (request as any).user.userId;
+      
+      // Start transaction for data consistency
+      await fastify.db.query('BEGIN');
+      
+      try {
+        // Delete user's interactions first (foreign key dependencies)
+        await fastify.db.query('DELETE FROM interactions WHERE user_id = $1', [userId]);
+        
+        // Delete user's messages
+        await fastify.db.query(`
+          DELETE FROM messages 
+          WHERE lead_id IN (SELECT id FROM leads WHERE user_id = $1)
+        `, [userId]);
+        
+        // Delete user's leads
+        await fastify.db.query('DELETE FROM leads WHERE user_id = $1', [userId]);
+        
+        // Finally delete the user
+        const result = await fastify.db.query(
+          'DELETE FROM users WHERE id = $1 RETURNING email',
+          [userId]
+        );
+        
+        if (result.rows.length === 0) {
+          await fastify.db.query('ROLLBACK');
+          return reply.status(404).send({ error: 'User not found' });
+        }
+        
+        // Commit transaction
+        await fastify.db.query('COMMIT');
+        
+        fastify.log.info(`User account deleted: ${result.rows[0].email}`);
+        
+        return { 
+          message: 'Account deleted successfully',
+          deletedEmail: result.rows[0].email
+        };
+      } catch (error) {
+        // Rollback on any error
+        await fastify.db.query('ROLLBACK');
+        throw error;
+      }
+    } catch (error) {
+      fastify.log.error('Account deletion error:', error);
+      reply.status(500).send({ error: 'Failed to delete account' });
+    }
+  });
+
   // Logout (client-side token removal, but we can track it)
   fastify.post('/logout', {
     preHandler: [fastify.authenticate]
