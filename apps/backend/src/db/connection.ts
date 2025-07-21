@@ -82,6 +82,24 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Create ai_suggestions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS ai_suggestions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        lead_id UUID NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        content TEXT NOT NULL,
+        context TEXT,
+        confidence DECIMAL(3,2),
+        approved BOOLEAN DEFAULT FALSE,
+        executed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        approved_at TIMESTAMP,
+        executed_at TIMESTAMP,
+        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+      )
+    `);
+
     // Add migration logic for existing tables
     try {
       // Migrate messages table to snake_case columns
