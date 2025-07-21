@@ -106,7 +106,9 @@ export default function LeadsPage() {
         return;
       }
       
-      await createLead.mutateAsync(validationResult.data);
+      if (validationResult.data) {
+        await createLead.mutateAsync(validationResult.data);
+      }
       
       // Update user progress stats
       incrementStat('contactsAdded');

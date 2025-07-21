@@ -282,7 +282,7 @@ export function PhoneInput(props: Omit<ValidatedInputProps, 'validators' | 'sani
   );
 }
 
-export function RequiredTextInput(props: Omit<ValidatedInputProps, 'validators'>) {
+export function RequiredTextInput(props: ValidatedInputProps) {
   return (
     <ValidatedInput
       {...props}
