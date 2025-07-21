@@ -8,6 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
+  ValidatedInput, 
+  ValidatedTextarea, 
+  EmailInput, 
+  PhoneInput, 
+  NameInput, 
+  RequiredTextInput 
+} from '@/components/ui/validated-input';
+import { validateUserProfile, validatePassword, validateWhatsAppSettings } from '@/lib/validation';
+import { 
   Settings, 
   Smartphone, 
   Bot, 
@@ -28,7 +37,26 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
   const { status: whatsappStatus, loading: whatsappLoading, refresh: refreshWhatsApp } = useWhatsAppStatus();
+  
+  // Profile form state
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    company: user?.company || '',
+    phone: '',
+    bio: ''
+  });
+  
+  // Password form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   
   // WhatsApp form state
   const [whatsappSettings, setWhatsappSettings] = useState({
@@ -41,40 +69,104 @@ export default function SettingsPage() {
     webhookStatus: true
   });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleProfileSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      // Validate and sanitize profile data
+      const validationResult = validateUserProfile(profileForm);
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
+        return;
+      }
+      
+      // TODO: Call API to update profile
+      // const response = await apiClient.updateProfile(validationResult.data);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setFormErrors({ general: 'Failed to save profile. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      // Check if passwords match
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        setFormErrors({ confirmPassword: 'Passwords do not match' });
+        return;
+      }
+      
+      // Validate password data
+      const validationResult = validatePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
+        return;
+      }
+      
+      // TODO: Call API to change password
+      // const response = await apiClient.changePassword(validationResult.data);
+      
+      // Clear password form on success
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setFormErrors({ general: 'Failed to change password. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleWhatsAppSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
     try {
-      // Basic validation
-      if (!whatsappSettings.businessPhone.trim()) {
-        alert('Business phone number is required');
-        return;
-      }
-      if (!whatsappSettings.displayName.trim()) {
-        alert('Display name is required');
-        return;
-      }
-      if (!whatsappSettings.businessAccountId.trim()) {
-        alert('Business Account ID is required');
-        return;
-      }
-      if (!whatsappSettings.phoneNumberId.trim()) {
-        alert('Phone Number ID is required');
+      // Validate and sanitize WhatsApp settings
+      const validationResult = validateWhatsAppSettings(whatsappSettings);
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
         return;
       }
 
       // TODO: Add API call to save WhatsApp settings
-      // const response = await apiClient.updateWhatsAppSettings(whatsappSettings);
+      // const response = await apiClient.updateWhatsAppSettings(validationResult.data);
       
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
-      alert('Failed to save WhatsApp settings. Please try again.');
+      setFormErrors({ general: 'Failed to save WhatsApp settings. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Generic save handler for other sections
+  const handleSave = async () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
   };
 
   const tabs = [
@@ -156,88 +248,99 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.name || ''}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                {formErrors.general && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                    <p className="text-sm text-red-600">{formErrors.general}</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      defaultValue={user?.email || ''}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.company || ''}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      defaultValue=""
-                      placeholder="+91 98765 43210"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                  </div>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bio
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Tell us about yourself and your business..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <NameInput
+                    label="Full Name"
+                    value={profileForm.name}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                    errorMessage={formErrors.name}
+                  />
+                  
+                  <EmailInput
+                    label="Email Address"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
+                    errorMessage={formErrors.email}
+                  />
+                  
+                  <ValidatedInput
+                    label="Company"
+                    value={profileForm.company}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, company: e.target.value }))}
+                    errorMessage={formErrors.company}
+                  />
+                  
+                  <PhoneInput
+                    label="Phone"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+91 98765 43210"
+                    errorMessage={formErrors.phone}
                   />
                 </div>
+
+                <ValidatedTextarea
+                  label="Bio"
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Tell us about yourself and your business..."
+                  rows={3}
+                  errorMessage={formErrors.bio}
+                />
 
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-medium mb-4">Change Password</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      />
-                    </div>
+                    <RequiredTextInput
+                      label="Current Password"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      errorMessage={formErrors.currentPassword}
+                    />
+                    
+                    <RequiredTextInput
+                      label="New Password"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      errorMessage={formErrors.newPassword}
+                    />
+                  </div>
+                  
+                  <div className="mt-4">
+                    <RequiredTextInput
+                      label="Confirm New Password"
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      errorMessage={formErrors.confirmPassword}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button 
+                      onClick={handlePasswordSave}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Changing...' : 'Change Password'}
+                    </Button>
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={handleSave} className="bg-primary text-white">
-                    Save Changes
+                  <Button 
+                    onClick={handleProfileSave} 
+                    className="bg-primary text-white"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </CardContent>

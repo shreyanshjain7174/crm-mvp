@@ -14,6 +14,8 @@ import { useLeads, useCreateLead, useUpdateLead, useDeleteLead } from '@/hooks/u
 import { Lead } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useUserProgressStore } from '@/stores/userProgress';
+import { validateLead } from '@/lib/validation';
+import { NameInput, EmailInput, PhoneInput, ValidatedInput } from '@/components/ui/validated-input';
 
 type LeadStatus = 'COLD' | 'WARM' | 'HOT' | 'CONVERTED' | 'LOST';
 type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -23,6 +25,7 @@ export default function LeadsPage() {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   // Auto-open modal if accessed with add=true parameter
   useEffect(() => {
@@ -92,15 +95,18 @@ export default function LeadsPage() {
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+    
     try {
-      await createLead.mutateAsync({
-        name: newLead.name,
-        phone: newLead.phone,
-        email: newLead.email || undefined,
-        source: newLead.source || undefined,
-        priority: newLead.priority,
-        businessProfile: newLead.businessProfile || undefined
-      });
+      // Validate and sanitize lead data
+      const validationResult = validateLead(newLead);
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
+        return;
+      }
+      
+      await createLead.mutateAsync(validationResult.data);
       
       // Update user progress stats
       incrementStat('contactsAdded');
@@ -119,6 +125,7 @@ export default function LeadsPage() {
       });
     } catch (error) {
       console.error('Failed to create lead:', error);
+      setFormErrors({ general: 'Failed to create lead. Please try again.' });
     }
   };
 
