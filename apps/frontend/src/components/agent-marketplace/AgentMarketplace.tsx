@@ -38,41 +38,6 @@ export function AgentMarketplace({ businessId, onInstallAgent }: AgentMarketplac
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // Mock data for demonstration - in production, this would come from API
-  const mockAgents: AgentManifestWithMetadata[] = [
-    {
-      id: 'whatsapp-ai-responder',
-      name: 'WhatsApp AI Responder',
-      version: '2.1.0',
-      provider: 'Local AI Co.',
-      description: 'Automatically respond to WhatsApp messages with intelligent replies',
-      capabilities: [
-        { id: 'auto-reply', name: 'Auto Reply', description: 'Automatic message responses', inputTypes: ['message'], outputTypes: ['message'], requiresApproval: false },
-        { id: 'sentiment', name: 'Sentiment Analysis', description: 'Analyze customer emotions', inputTypes: ['message'], outputTypes: ['analytics'], requiresApproval: false }
-      ],
-      permissions: [
-        { resource: 'message', actions: ['read', 'create'], constraints: { businessScope: true } }
-      ],
-      pricing: {
-        model: 'subscription',
-        subscription: {
-          monthlyPrice: 99900,
-          limits: { messages: 5000, apiCalls: 10000 }
-        }
-      } as any,
-      ui: {},
-      supportedDataTypes: ['message', 'contact', 'conversation'],
-      metadata: {
-        rating: 4.8,
-        reviews: 2341,
-        installs: 15670,
-        category: 'whatsapp',
-        featured: true,
-        isInstalled: false
-      }
-    }
-  ]
-
   const categories = [
     { id: 'all', name: 'All Agents', icon: Bot, color: 'text-gray-600' },
     { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare, color: 'text-green-600' },
@@ -82,6 +47,41 @@ export function AgentMarketplace({ businessId, onInstallAgent }: AgentMarketplac
   ]
 
   useEffect(() => {
+    // Mock data for demonstration - in production, this would come from API
+    const mockAgents: AgentManifestWithMetadata[] = [
+      {
+        id: 'whatsapp-ai-responder',
+        name: 'WhatsApp AI Responder',
+        version: '2.1.0',
+        provider: 'Local AI Co.',
+        description: 'Automatically respond to WhatsApp messages with intelligent replies',
+        capabilities: [
+          { id: 'auto-reply', name: 'Auto Reply', description: 'Automatic message responses', inputTypes: ['message'], outputTypes: ['message'], requiresApproval: false },
+          { id: 'sentiment', name: 'Sentiment Analysis', description: 'Analyze customer emotions', inputTypes: ['message'], outputTypes: ['analytics'], requiresApproval: false }
+        ],
+        permissions: [
+          { resource: 'message', actions: ['read', 'create'], constraints: { businessScope: true } }
+        ],
+        pricing: {
+          model: 'subscription',
+          subscription: {
+            monthlyPrice: 99900,
+            limits: { messages: 5000, apiCalls: 10000 }
+          }
+        } as any,
+        ui: {},
+        supportedDataTypes: ['message', 'contact', 'conversation'],
+        metadata: {
+          rating: 4.8,
+          reviews: 2341,
+          installs: 15670,
+          category: 'whatsapp',
+          featured: true,
+          isInstalled: false
+        }
+      }
+    ]
+
     const loadAgents = async () => {
       setLoading(true)
       await new Promise(resolve => setTimeout(resolve, 800))

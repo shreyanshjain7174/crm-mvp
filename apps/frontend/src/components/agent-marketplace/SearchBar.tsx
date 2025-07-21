@@ -27,17 +27,17 @@ export function SearchBar({
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Default suggestions when no value
-  const defaultSuggestions = [
-    'WhatsApp automation',
-    'Voice agents',
-    'Data enrichment',
-    'Follow-up scheduling',
-    'Customer support',
-    'Lead qualification'
-  ]
-
   useEffect(() => {
+    // Default suggestions when no value
+    const defaultSuggestions = [
+      'WhatsApp automation',
+      'Voice agents',
+      'Data enrichment',
+      'Follow-up scheduling',
+      'Customer support',
+      'Lead qualification'
+    ]
+
     if (!value) {
       setFilteredSuggestions(defaultSuggestions.slice(0, 5))
       return
