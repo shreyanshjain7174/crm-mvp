@@ -12,8 +12,10 @@ import { aiRoutes } from './routes/ai';
 import { aiIntegrationRoutes } from './routes/ai-integration';
 import { authRoutes } from './routes/auth';
 import { statsRoutes } from './routes/stats';
+import agentRoutes from './routes/agents';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
+import { socketService } from './services/socket-service';
 
 dotenv.config();
 
@@ -89,6 +91,10 @@ async function buildApp() {
     });
 
     app.decorate('io', io);
+    
+    // Initialize socket service
+    socketService.initialize(io);
+    
     logger.info('Socket.io server initialized');
   });
 
@@ -105,6 +111,7 @@ async function buildApp() {
   await app.register(aiRoutes, { prefix: '/api/ai' });
   await app.register(aiIntegrationRoutes, { prefix: '/api/ai-workflows' });
   await app.register(statsRoutes, { prefix: '/api/stats' });
+  await app.register(agentRoutes, { prefix: '/api/agents' });
 
   return app;
 }
