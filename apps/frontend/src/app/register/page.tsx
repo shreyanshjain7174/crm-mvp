@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { DEMO_MODE } from '@/lib/demo-mode';
+import { NameInput, EmailInput, ValidatedInput } from '@/components/ui/validated-input';
+import { validateRegister } from '@/lib/validation';
 
 export default function RegisterPage() {
   const { register, loading } = useAuth();
@@ -21,23 +21,34 @@ export default function RegisterPage() {
     company: ''
   });
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFormErrors({});
 
-    // Validate passwords match
+    // Check password confirmation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setFormErrors({ confirmPassword: 'Passwords do not match' });
       return;
     }
 
-    // Validate password length
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
+    // Skip validation in demo mode for easier testing
+    if (!DEMO_MODE) {
+      const validationResult = validateRegister({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        company: formData.company
+      });
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
+        return;
+      }
     }
 
     try {
@@ -94,59 +105,57 @@ export default function RegisterPage() {
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter your full name"
-                  disabled={loading}
-                />
-              </div>
+              {(formErrors.general || Object.keys(formErrors).length > 0) && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    {formErrors.general || 'Please fix the errors below and try again.'}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <NameInput
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter your full name"
+                disabled={loading}
+                errorMessage={formErrors.name}
+                showValidation={!DEMO_MODE}
+              />
+
+              <EmailInput
+                label="Email Address"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter your email"
+                disabled={loading}
+                errorMessage={formErrors.email}
+                showValidation={!DEMO_MODE}
+              />
+
+              <ValidatedInput
+                label="Company Name (Optional)"
+                value={formData.company}
+                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                placeholder="Enter your company name"
+                disabled={loading}
+                errorMessage={formErrors.company}
+                showValidation={!DEMO_MODE}
+              />
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="company">Company Name (Optional)</Label>
-                <Input
-                  id="company"
-                  name="company"
-                  type="text"
-                  value={formData.company}
-                  onChange={handleChange}
-                  placeholder="Enter your company name"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <label className="text-sm font-medium text-gray-700">Password</label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
+                  <ValidatedInput
+                    label=""
                     type={showPassword ? 'text' : 'password'}
-                    required
                     value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Enter your password (min 6 characters)"
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Enter your password (min 8 characters)"
                     disabled={loading}
+                    errorMessage={formErrors.password}
+                    showValidation={!DEMO_MODE}
+                    className="pr-10"
                   />
                   <button
                     type="button"
@@ -163,17 +172,18 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <label className="text-sm font-medium text-gray-700">Confirm Password</label>
                 <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
+                  <ValidatedInput
+                    label=""
                     type={showConfirmPassword ? 'text' : 'password'}
-                    required
                     value={formData.confirmPassword}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="Confirm your password"
                     disabled={loading}
+                    errorMessage={formErrors.confirmPassword}
+                    showValidation={!DEMO_MODE}
+                    className="pr-10"
                   />
                   <button
                     type="button"

@@ -141,6 +141,39 @@ export const validationSchemas = {
     
     leadId: z.string()
       .uuid('Invalid lead ID')
+  }),
+
+  // Authentication validation
+  login: z.object({
+    email: z.string()
+      .min(1, 'Email is required')
+      .email('Please enter a valid email address')
+      .max(255, 'Email must be less than 255 characters'),
+    
+    password: z.string()
+      .min(1, 'Password is required')
+  }),
+
+  register: z.object({
+    name: z.string()
+      .min(1, 'Name is required')
+      .max(100, 'Name must be less than 100 characters')
+      .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces'),
+    
+    email: z.string()
+      .min(1, 'Email is required')
+      .email('Please enter a valid email address')
+      .max(255, 'Email must be less than 255 characters'),
+    
+    password: z.string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(128, 'Password must be less than 128 characters')
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    
+    company: z.string()
+      .max(100, 'Company name must be less than 100 characters')
+      .optional()
   })
 };
 
@@ -224,6 +257,12 @@ export const validateWhatsAppSettings = (data: Record<string, any>) =>
 
 export const validateMessage = (data: Record<string, any>) => 
   validateAndSanitize(data, validationSchemas.message);
+
+export const validateLogin = (data: Record<string, any>) => 
+  validateAndSanitize(data, validationSchemas.login);
+
+export const validateRegister = (data: Record<string, any>) => 
+  validateAndSanitize(data, validationSchemas.register);
 
 // React hook for form validation
 export function useFormValidation<T>(schema: z.ZodSchema<T>) {

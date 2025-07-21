@@ -5,12 +5,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { DEMO_MODE } from '@/lib/demo-mode';
+import { EmailInput, ValidatedInput } from '@/components/ui/validated-input';
+import { validateLogin } from '@/lib/validation';
 
 function LoginForm() {
   const { login, loading } = useAuth();
@@ -20,6 +20,7 @@ function LoginForm() {
     password: ''
   });
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -33,6 +34,17 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFormErrors({});
+
+    // Skip validation in demo mode for easier testing
+    if (!DEMO_MODE) {
+      const validationResult = validateLogin(formData);
+      
+      if (!validationResult.success) {
+        setFormErrors(validationResult.errors || {});
+        return;
+      }
+    }
 
     try {
       await login(formData);
@@ -96,32 +108,37 @@ function LoginForm() {
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter your email"
-                  disabled={loading}
-                />
-              </div>
+              {(formErrors.general || Object.keys(formErrors).length > 0) && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    {formErrors.general || 'Please fix the errors below and try again.'}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <EmailInput
+                label="Email Address"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter your email"
+                disabled={loading}
+                errorMessage={formErrors.email}
+                showValidation={!DEMO_MODE}
+              />
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <label className="text-sm font-medium text-gray-700">Password</label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
+                  <ValidatedInput
+                    label=""
                     type={showPassword ? 'text' : 'password'}
-                    required
                     value={formData.password}
-                    onChange={handleChange}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Enter your password"
                     disabled={loading}
+                    errorMessage={formErrors.password}
+                    showValidation={!DEMO_MODE}
+                    className="pr-10"
                   />
                   <button
                     type="button"
