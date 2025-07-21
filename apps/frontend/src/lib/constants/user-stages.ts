@@ -112,8 +112,8 @@ export const USER_STAGES: Record<UserStage, UserStageConfig> = {
         description: 'Use message templates 10+ times'
       }
     ],
-    unlockedFeatures: ['automation:advanced', 'automation:rules', 'analytics:full', 'workflows:custom', 'monitoring:system'],
-    nextHint: 'Create custom workflows to automate your process'
+    unlockedFeatures: ['automation:advanced', 'automation:rules', 'analytics:full', 'workflows:custom', 'monitoring:system', 'ai:employees'],
+    nextHint: 'Create AI employees to automate your business'
   }
 };
 
@@ -139,6 +139,7 @@ export const FEATURE_GATES = {
   'ai:suggestions': 'advanced',
   'ai:responses': 'advanced',
   'ai:interactions': 'expert',
+  'ai:employees': 'expert',
   
   // Automation
   'automation:basic': 'advanced',

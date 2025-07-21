@@ -66,6 +66,14 @@ const allNavigationItems: NavigationItem[] = [
     description: 'AI-powered assistance'
   },
   { 
+    name: 'AI Employees', 
+    href: '/dashboard/ai-employees', 
+    icon: Bot,
+    feature: 'ai:employees',
+    requiredStage: 'expert',
+    description: 'Autonomous AI workforce'
+  },
+  { 
     name: 'Analytics', 
     href: '/dashboard/analytics', 
     icon: BarChart3,

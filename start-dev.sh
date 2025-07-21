@@ -17,12 +17,29 @@ check_and_kill_port() {
     if [ ! -z "$pids" ]; then
         echo "⚠️  Port $port is in use by process(es): $pids"
         echo "🔪 Killing conflicting processes for $service_name..."
-        echo "$pids" | xargs kill -9 2>/dev/null || true
-        sleep 2
         
-        # Verify port is free
+        # Try multiple kill attempts with escalating force
+        for signal in TERM KILL; do
+            echo "$pids" | xargs kill -$signal 2>/dev/null || true
+            sleep 2
+            
+            # Check if port is now free
+            if ! lsof -ti:$port &>/dev/null; then
+                echo "✅ Port $port is now free"
+                return 0
+            fi
+        done
+        
+        # If still not free, try sudo (for system services)
+        echo "🔧 Trying with elevated privileges..."
+        echo "$pids" | xargs sudo kill -9 2>/dev/null || true
+        sleep 3
+        
+        # Final check
         if lsof -ti:$port &>/dev/null; then
-            echo "❌ Failed to free port $port. Please manually stop the conflicting service."
+            echo "❌ Failed to free port $port. Manual intervention required:"
+            echo "   Run: sudo lsof -ti:$port | xargs sudo kill -9"
+            echo "   Or: sudo pkill -f $service_name"
             return 1
         else
             echo "✅ Port $port is now free"
@@ -101,6 +118,17 @@ fi
 
 echo "🐳 Container runtime available - starting containerized environment..."
 
+# Comprehensive cleanup before starting
+echo "🧹 Performing comprehensive cleanup..."
+
+# Kill common problematic services
+echo "🔧 Stopping potential conflicting services..."
+pkill -f redis-server 2>/dev/null || true
+pkill -f postgres 2>/dev/null || true
+pkill -f ollama 2>/dev/null || true
+pkill -f node 2>/dev/null || true
+sleep 2
+
 # Check for port conflicts before starting
 echo "🔍 Checking for port conflicts..."
 check_and_kill_port 3000 "Frontend" || exit 1
@@ -109,7 +137,12 @@ check_and_kill_port 3002 "Backend Secondary" || exit 1
 check_and_kill_port 5432 "PostgreSQL" || exit 1
 check_and_kill_port 6379 "Redis" || exit 1
 check_and_kill_port 5050 "pgAdmin" || exit 1
+check_and_kill_port 8000 "AI Service" || exit 1
+check_and_kill_port 8001 "Chroma Vector DB" || exit 1
+check_and_kill_port 11434 "Ollama LLM" || exit 1
 check_and_kill_port 9229 "Node.js Debug" || exit 1
+
+echo "✅ Port cleanup completed"
 
 # For Podman, we need to check if the machine is running
 if [ "$CONTAINER_CMD" = "podman" ]; then
@@ -205,12 +238,16 @@ monitor_services() {
     echo ""
     echo "🔧 Backend API will be available on http://localhost:3001"
     echo "🌐 Frontend UI will be available on http://localhost:3000"
+    echo "🤖 AI Service will be available on http://localhost:8000"
     echo "📊 Database: PostgreSQL (localhost:5432)"
     echo "🗄️  Database Admin: pgAdmin (http://localhost:5050)"
     echo "   └── Email: admin@crm-dev.local | Password: dev_admin_password"
     echo "🔴 Cache: Redis (localhost:6379)"
+    echo "🧠 Ollama LLM: http://localhost:11434"
+    echo "🗂️  Chroma Vector DB: http://localhost:8001"
     echo ""
     echo "💡 Demo mode is DISABLED - using containerized backend with persistent data"
+    echo "🤖 AI employees powered by local Ollama (zero API costs)"
     echo "🐳 All services running in containers with hot reload"
     echo ""
     echo "📋 Container Status:"

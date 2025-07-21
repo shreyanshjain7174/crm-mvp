@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Chroma Vector Database for local embeddings
+  chroma:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: crm_chroma_db
+    ports:
+      - "8001:8000"
+    environment:
+      - ANONYMIZED_TELEMETRY=False
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - ai_network
+    restart: unless-stopped
+
+  # Ollama for local LLM (cost-free)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: crm_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ai_network
+    restart: unless-stopped
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+
+  # Simple AI Service (local-only)
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm_ai_service
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=local
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=llama3.1:8b
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - ai_network
+    depends_on:
+      - chroma
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+networks:
+  ai_network:
+    driver: bridge

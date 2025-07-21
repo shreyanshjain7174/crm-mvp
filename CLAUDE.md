@@ -61,15 +61,24 @@ This is a **solo entrepreneur project** where Claude Code serves as the primary 
 
 ## Project Overview
 
-Agentic CRM for Indian SMEs - A WhatsApp-first, AI-powered CRM that starts as a simple contact manager and progressively reveals advanced features as users grow. Built with local AI capabilities for data privacy and cost efficiency.
+**Agentic AI CRM Platform** for Indian SMEs - A WhatsApp-first CRM that transforms into an agentic AI platform where users can create and deploy AI employees to autonomously handle business tasks. Progressive disclosure ensures users aren't overwhelmed while building toward a powerful AI workforce.
 
 ## Core Philosophy
 
-**"Progressive Disclosure"** - The CRM starts completely blank and reveals features based on user achievements:
-- Day 1: Simple contact manager
-- Week 1: WhatsApp communication hub  
-- Week 2: AI-powered assistant
-- Month 1: Full automation platform
+**"Progressive Disclosure to AI Employees"** - The platform evolves from simple CRM to autonomous AI workforce:
+- **Stage 1-3**: Traditional CRM (contacts, messaging, pipeline)
+- **Stage 4**: AI Assistant with suggestions and approvals
+- **Stage 5+**: **AI Employee Creation** - Users build autonomous AI agents
+- **Ultimate Goal**: AI employees that work independently with human oversight
+
+## Agentic AI Vision
+
+Transform from "AI assistance" to "AI employees" - autonomous agents that:
+- **Work Independently**: Handle tasks without constant human approval
+- **Learn and Adapt**: Improve performance based on outcomes
+- **Collaborate**: Multiple agents work together on complex workflows
+- **Report and Analyze**: Provide insights on their own performance
+- **Scale Business**: Allow SMEs to compete with larger teams through AI workforce
 
 ### Business-First Development Mantra
 **"Ship fast, iterate faster, but never compromise on user experience or data security."**
@@ -114,16 +123,18 @@ Stage 5: "Power User" (10+ AI approvals) → Unlocks automation
 - **Queue**: BullMQ for background jobs
 - **Events**: Redis Streams for inter-service communication
 
-### AI Agent System
-- **Orchestration**: LangChain for agent coordination
-- **Specialized Agents**:
-  - Lead Qualification Agent
-  - Message Generation Agent  
-  - Follow-up Scheduler Agent
-  - Intent Recognition Agent
-  - Context Memory Agent
-- **LLM Provider**: OpenAI GPT-4o (primary), Gemini (fallback)
-- **Vector Store**: Pinecone for chat embeddings and RAG
+### Agentic AI System (Local-First)
+- **Agent Framework**: LangChain/LangGraph for autonomous agent orchestration
+- **Local LLM**: Ollama with lightweight models (Llama 3.1:8b, Phi-3, CodeLlama)
+- **Vector Database**: Chroma for local embeddings and RAG
+- **AI Employee Types**:
+  - **Sales Development Agent**: Autonomous lead qualification and meeting scheduling
+  - **Customer Success Agent**: Independent customer support and follow-ups  
+  - **Marketing Agent**: Automated campaign creation and personalization
+  - **Data Analyst Agent**: Self-service report generation and insights
+- **Cost Optimization**: Zero API costs with local inference
+- **Privacy**: All AI processing happens locally for data security
+- **Fallback**: Simple rule-based systems when local AI fails
 
 ### Core Services
 - **lead-service**: Lead management and lifecycle
@@ -135,16 +146,12 @@ Stage 5: "Power User" (10+ AI approvals) → Unlocks automation
 ## Development Commands
 
 ```bash
-# Install dependencies
+# Start complete development environment (includes AI)
+./start-dev.sh         # Starts all services + local AI automatically
+
+# Legacy commands (use start-dev.sh instead)
 npm install
-
-# Development mode (all services)
 npm run dev
-
-# Run specific service
-npm run dev:frontend
-npm run dev:lead-service
-npm run dev:chat-service
 
 # Database operations
 npm run db:migrate
@@ -169,6 +176,17 @@ npm run docker:build
 npm run deploy:staging
 npm run deploy:prod
 ```
+
+## Automated AI Integration ✅ COMPLETED
+
+- **Zero-Setup AI**: Run `./start-dev.sh` and get complete AI workforce
+- **Local-First**: Ollama + Chroma + AI Service all containerized
+- **Cost-Free**: $0 API costs with local AI processing
+- **Auto-Model Download**: Required LLMs download automatically in background
+- **Production Ready**: Same setup works in development and production
+- **Privacy Guaranteed**: All AI processing happens locally
+
+See [AUTOMATED_AI_SETUP.md](./AUTOMATED_AI_SETUP.md) for details.
 
 ## Test-Driven Development Workflow
 

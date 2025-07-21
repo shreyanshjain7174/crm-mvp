@@ -273,6 +273,25 @@ class ApiClient {
     });
   }
 
+  async deleteAccount(): Promise<{ message: string; deletedEmail: string }> {
+    // Use demo mode if enabled
+    if (DEMO_MODE) {
+      await demoAuthService.logout();
+      return { 
+        message: 'Account deleted successfully (Demo Mode)', 
+        deletedEmail: 'demo@example.com' 
+      };
+    }
+    
+    const response = await this.request<{ message: string; deletedEmail: string }>('/api/auth/account', {
+      method: 'DELETE',
+    });
+    
+    // Clear token after successful deletion
+    this.setToken(null);
+    return response;
+  }
+
   // Leads API
   async getLeads(): Promise<Lead[]> {
     return this.request<Lead[]>('/api/leads');

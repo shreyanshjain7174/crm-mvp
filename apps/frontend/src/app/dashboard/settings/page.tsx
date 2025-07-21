@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
+import { DeleteAccountDialog } from '@/components/ui/delete-account-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { status: whatsappStatus, loading: whatsappLoading, refresh: refreshWhatsApp } = useWhatsAppStatus();
   
   // WhatsApp form state
@@ -726,7 +728,11 @@ export default function SettingsPage() {
                   <p className="text-sm text-red-700 mb-3">
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
-                  <Button variant="destructive" size="sm">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
                     Delete Account
                   </Button>
                 </div>
@@ -921,6 +927,12 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+      
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog 
+        open={showDeleteDialog} 
+        onOpenChange={setShowDeleteDialog} 
+      />
     </div>
   );
 }

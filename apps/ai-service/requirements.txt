@@ -4,3 +4,21 @@ httpx
 python-dotenv
 anthropic
 openai
+# Local AI and Vector DB
+ollama
+chromadb>=0.4.15
+sentence-transformers
+numpy
+# Additional dependencies for hybrid AI system
+pydantic-settings
+langchain
+langchain-community
+langchain-ollama
+# For vector embeddings
+transformers
+torch
+# For text processing
+tiktoken
+# For async operations
+aiofiles
+asyncio

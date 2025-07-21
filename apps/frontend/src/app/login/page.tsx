@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,12 +14,21 @@ import { DEMO_MODE } from '@/lib/demo-mode';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
+    // Check if user was redirected after account deletion
+    if (searchParams.get('deleted') === 'true') {
+      setSuccessMessage('Your account has been successfully deleted. Thank you for using our service.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +78,14 @@ export default function LoginPage() {
                 <Alert>
                   <AlertDescription>
                     🎭 <strong>Demo Mode:</strong> This is a live demo! You can use any credentials to login and explore the full CRM system.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {successMessage && (
+                <Alert className="border-green-200 bg-green-50">
+                  <AlertDescription className="text-green-800">
+                    {successMessage}
                   </AlertDescription>
                 </Alert>
               )}
