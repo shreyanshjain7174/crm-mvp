@@ -19,7 +19,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.56.0",
     "@fastify/cors": "^8.4.2",
     "@fastify/helmet": "^11.1.1",
     "@fastify/jwt": "^7.2.4",
@@ -28,13 +27,10 @@
     "@types/pg": "^8.15.4",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
-    "chromadb": "^1.8.1",
     "dotenv": "^16.3.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.3",
     "fastify": "^4.24.3",
-    "langchain": "^0.3.30",
-    "ollama": "^0.5.6",
     "pg": "^8.16.3",
     "socket.io": "^4.7.4",
     "uuid": "^9.0.0",
