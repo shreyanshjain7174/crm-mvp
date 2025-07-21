@@ -9,22 +9,17 @@ import { DiscoveryPrompt } from '@/components/help/DiscoveryPrompt';
 import { ConnectionStatus } from '@/components/ui/connection-status';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserProgressStore } from '@/stores/userProgress';
-import { useFeatureTracker } from '@/hooks/useFeatureGate';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   
   const { hints } = useContextualHints();
-  const { trackFeatureUsage } = useFeatureTracker();
-  const incrementStat = useUserProgressStore(state => state.incrementStat);
   const stage = useUserProgressStore(state => state.stage);
   
   const handleAddContact = () => {
-    // Track the feature usage
-    trackFeatureUsage('contacts:create');
-    
-    // Navigate to leads page with modal trigger
+    // Just navigate to leads page with modal trigger
+    // Don't increment counter until contact is actually created
     router.push('/dashboard/leads?add=true');
   };
   
