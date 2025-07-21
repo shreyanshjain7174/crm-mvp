@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
 import { DeleteAccountDialog } from '@/components/ui/delete-account-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -142,12 +144,12 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-6">
                   <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-2xl font-medium">
-                      DU
+                      {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium">Demo User</h3>
-                    <p className="text-gray-600">demo@crm.dev</p>
+                    <h3 className="text-lg font-medium">{user?.name || 'User'}</h3>
+                    <p className="text-gray-600">{user?.email || 'user@example.com'}</p>
                     <Button variant="outline" size="sm" className="mt-2">
                       Change Avatar
                     </Button>
@@ -161,7 +163,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="Demo User"
+                      defaultValue={user?.name || ''}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
@@ -171,7 +173,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="email"
-                      defaultValue="demo@crm.dev"
+                      defaultValue={user?.email || ''}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
@@ -181,7 +183,7 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      defaultValue="CRM Demo"
+                      defaultValue={user?.company || ''}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
@@ -191,7 +193,8 @@ export default function SettingsPage() {
                     </label>
                     <input
                       type="tel"
-                      defaultValue="+91 98765 43210"
+                      defaultValue=""
+                      placeholder="+91 98765 43210"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
@@ -203,7 +206,7 @@ export default function SettingsPage() {
                   </label>
                   <textarea
                     rows={3}
-                    defaultValue="Tell us about yourself and your business..."
+                    placeholder="Tell us about yourself and your business..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
