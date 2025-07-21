@@ -131,11 +131,28 @@ export default function LeadsPage() {
   }
 
   if (error) {
+    console.error('Leads API Error:', error);
+    
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading leads</h3>
-          <p className="text-gray-600">Please try again later</p>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error && error.message.includes('No token provided') 
+              ? 'Please log in to access your leads'
+              : 'Unable to connect to the backend API'
+            }
+          </p>
+          <div className="text-sm text-gray-500">
+            Backend URL: {process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}
+          </div>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+            variant="outline"
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     );
