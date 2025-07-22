@@ -185,6 +185,16 @@ export async function initializeDatabase() {
       console.warn('Migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
     }
 
+    // Apply new monitoring and billing migrations
+    try {
+      await runAgentMigrations(client);
+      await runBillingMigrations(client);
+      await runMonitoringMigrations(client);
+      console.log('Agent, billing, and monitoring migrations applied successfully');
+    } catch (migrationError) {
+      console.warn('Agent migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
+    }
+
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
@@ -192,4 +202,214 @@ export async function initializeDatabase() {
   } finally {
     client.release();
   }
+}
+
+// Agent system migrations
+async function runAgentMigrations(client: any) {
+  // Agent installations table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_installations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100) NOT NULL,
+      agent_name VARCHAR(255) NOT NULL,
+      agent_provider VARCHAR(100) NOT NULL,
+      agent_version VARCHAR(50) NOT NULL,
+      pricing_model VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (pricing_model IN ('free', 'subscription', 'usage', 'hybrid')),
+      pricing_config JSONB DEFAULT '{}',
+      status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'cancelled')),
+      installed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(business_id, agent_id)
+    )
+  `);
+
+  // Agent marketplace table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_marketplace (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      agent_id VARCHAR(100) UNIQUE NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      category VARCHAR(100),
+      provider VARCHAR(100) NOT NULL,
+      version VARCHAR(50) NOT NULL,
+      pricing_model VARCHAR(20) NOT NULL DEFAULT 'free',
+      pricing_config JSONB DEFAULT '{}',
+      capabilities JSONB DEFAULT '[]',
+      configuration_schema JSONB DEFAULT '{}',
+      installation_count INTEGER DEFAULT 0,
+      rating DECIMAL(3,2) DEFAULT 0.0,
+      status VARCHAR(20) NOT NULL DEFAULT 'active',
+      featured BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+// Billing system migrations
+async function runBillingMigrations(client: any) {
+  // Agent usage events table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_usage_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100) NOT NULL,
+      installation_id UUID NOT NULL,
+      event_type VARCHAR(100) NOT NULL,
+      event_data JSONB DEFAULT '{}',
+      usage_amount DECIMAL(12,4) NOT NULL DEFAULT 0,
+      usage_unit VARCHAR(50) NOT NULL,
+      cost_amount INTEGER DEFAULT 0, -- in smallest currency unit (paise)
+      billing_period VARCHAR(20) NOT NULL, -- YYYY-MM-DD format
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Billing periods table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS billing_periods (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      period_start TIMESTAMP WITH TIME ZONE NOT NULL,
+      period_end TIMESTAMP WITH TIME ZONE NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'finalized', 'paid', 'overdue')),
+      total_amount INTEGER DEFAULT 0, -- in smallest currency unit
+      currency VARCHAR(3) DEFAULT 'INR',
+      due_date TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Agent usage quotas table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_usage_quotas (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100) NOT NULL,
+      installation_id UUID NOT NULL,
+      quota_type VARCHAR(20) NOT NULL DEFAULT 'monthly' CHECK (quota_type IN ('monthly', 'daily', 'lifetime')),
+      usage_unit VARCHAR(50) NOT NULL,
+      quota_limit DECIMAL(12,4) NOT NULL DEFAULT 0,
+      quota_used DECIMAL(12,4) NOT NULL DEFAULT 0,
+      quota_period_start TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      quota_period_end TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP + INTERVAL '1 month',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(business_id, agent_id, quota_type, usage_unit)
+    )
+  `);
+
+  // Billing notifications table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS billing_notifications (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100),
+      notification_type VARCHAR(100) NOT NULL,
+      severity VARCHAR(20) NOT NULL CHECK (severity IN ('info', 'warning', 'critical')),
+      title VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      data JSONB DEFAULT '{}',
+      sent BOOLEAN DEFAULT FALSE,
+      sent_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+// Monitoring system migrations
+async function runMonitoringMigrations(client: any) {
+  // Agent health checks table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_health_checks (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      agent_id VARCHAR(100) NOT NULL,
+      connectivity VARCHAR(20) NOT NULL CHECK (connectivity IN ('pass', 'fail', 'warning')),
+      authentication VARCHAR(20) NOT NULL CHECK (authentication IN ('pass', 'fail', 'warning')),
+      dependencies VARCHAR(20) NOT NULL CHECK (dependencies IN ('pass', 'fail', 'warning')),
+      performance VARCHAR(20) NOT NULL CHECK (performance IN ('pass', 'fail', 'warning')),
+      details JSONB DEFAULT '{}',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Agent performance metrics table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_performance_metrics (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      agent_id VARCHAR(100) NOT NULL,
+      business_id VARCHAR(100) NOT NULL,
+      success_rate DECIMAL(5,2) DEFAULT 0,
+      avg_response_time INTEGER DEFAULT 0, -- in milliseconds
+      tasks_completed INTEGER DEFAULT 0,
+      tasks_per_minute DECIMAL(8,2) DEFAULT 0,
+      error_rate DECIMAL(5,2) DEFAULT 0,
+      uptime DECIMAL(5,2) DEFAULT 0, -- percentage
+      resource_usage JSONB DEFAULT '{}', -- CPU, memory, etc.
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Agent task executions table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_task_executions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100) NOT NULL,
+      task_type VARCHAR(100) NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+      start_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      end_time TIMESTAMP WITH TIME ZONE,
+      duration INTEGER, -- in milliseconds
+      input JSONB DEFAULT '{}',
+      output JSONB DEFAULT '{}',
+      error TEXT,
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Agent alerts table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_alerts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      business_id VARCHAR(100) NOT NULL,
+      agent_id VARCHAR(100) NOT NULL,
+      alert_type VARCHAR(100) NOT NULL,
+      severity VARCHAR(20) NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+      message TEXT NOT NULL,
+      details JSONB DEFAULT '{}',
+      resolved BOOLEAN DEFAULT FALSE,
+      resolved_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create indexes for performance
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_agent_health_checks_agent_id ON agent_health_checks(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_health_checks_created_at ON agent_health_checks(created_at DESC);
+    
+    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_agent_id ON agent_performance_metrics(agent_id, business_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_created_at ON agent_performance_metrics(created_at DESC);
+    
+    CREATE INDEX IF NOT EXISTS idx_agent_task_executions_agent_id ON agent_task_executions(agent_id, business_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_task_executions_status ON agent_task_executions(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_task_executions_start_time ON agent_task_executions(start_time DESC);
+    
+    CREATE INDEX IF NOT EXISTS idx_agent_alerts_business_id ON agent_alerts(business_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_alerts_agent_id ON agent_alerts(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_alerts_resolved ON agent_alerts(resolved);
+    CREATE INDEX IF NOT EXISTS idx_agent_alerts_created_at ON agent_alerts(created_at DESC);
+  `);
 }

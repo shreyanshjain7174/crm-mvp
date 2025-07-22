@@ -50,7 +50,11 @@ export async function agentMonitoringRoutes(fastify: FastifyInstance) {
       try {
         await agentMonitoringService.recordHealthCheck({
           agentId,
-          ...healthCheck
+          connectivity: healthCheck.connectivity,
+          authentication: healthCheck.authentication,
+          dependencies: healthCheck.dependencies,
+          performance: healthCheck.performance,
+          details: healthCheck.details || {}
         })
 
         reply.send({ success: true, message: 'Health check recorded' })
@@ -87,7 +91,13 @@ export async function agentMonitoringRoutes(fastify: FastifyInstance) {
         await agentMonitoringService.recordPerformanceMetrics({
           businessId,
           agentId,
-          ...metrics
+          successRate: metrics.successRate,
+          avgResponseTime: metrics.avgResponseTime,
+          tasksCompleted: metrics.tasksCompleted,
+          tasksPerMinute: metrics.tasksPerMinute,
+          errorRate: metrics.errorRate,
+          uptime: metrics.uptime,
+          resourceUsage: metrics.resourceUsage
         })
 
         reply.send({ success: true, message: 'Performance metrics recorded' })
@@ -115,7 +125,9 @@ export async function agentMonitoringRoutes(fastify: FastifyInstance) {
         const executionId = await agentMonitoringService.startTaskExecution({
           businessId,
           agentId,
-          ...task
+          taskType: task.taskType,
+          input: task.input,
+          metadata: task.metadata
         })
 
         reply.send({ 
@@ -254,21 +266,35 @@ export async function agentMonitoringRoutes(fastify: FastifyInstance) {
           case 'health_check':
             await agentMonitoringService.recordHealthCheck({
               agentId: webhook.agentId,
-              ...webhook.data
+              connectivity: webhook.data.connectivity || 'pass',
+              authentication: webhook.data.authentication || 'pass', 
+              dependencies: webhook.data.dependencies || 'pass',
+              performance: webhook.data.performance || 'pass',
+              details: webhook.data.details || {}
             })
             break
           
           case 'performance_metrics':
             await agentMonitoringService.recordPerformanceMetrics({
               agentId: webhook.agentId,
-              ...webhook.data
+              businessId: webhook.data.businessId,
+              successRate: webhook.data.successRate || 0,
+              avgResponseTime: webhook.data.avgResponseTime || 0,
+              tasksCompleted: webhook.data.tasksCompleted || 0,
+              tasksPerMinute: webhook.data.tasksPerMinute || 0,
+              errorRate: webhook.data.errorRate || 0,
+              uptime: webhook.data.uptime || 0,
+              resourceUsage: webhook.data.resourceUsage || {}
             })
             break
           
           case 'task_started':
             await agentMonitoringService.startTaskExecution({
               agentId: webhook.agentId,
-              ...webhook.data
+              businessId: webhook.data.businessId,
+              taskType: webhook.data.taskType,
+              input: webhook.data.input,
+              metadata: webhook.data.metadata
             })
             break
           
@@ -279,7 +305,8 @@ export async function agentMonitoringRoutes(fastify: FastifyInstance) {
                 webhook.data.executionId,
                 {
                   status: webhook.eventType === 'task_completed' ? 'completed' : 'failed',
-                  ...webhook.data
+                  output: webhook.data.output,
+                  error: webhook.data.error
                 }
               )
             }

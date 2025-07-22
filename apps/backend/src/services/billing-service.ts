@@ -124,7 +124,7 @@ class BillingService {
         event.usageAmount,
         event.usageUnit,
         cost * 100, // Store in smallest currency unit (paise)
-        billingPeriod.format('YYYY-MM-DD')
+        billingPeriod.toISOString().split('T')[0]
       ])
 
       // Update quota usage
@@ -133,7 +133,7 @@ class BillingService {
       // Check for quota warnings
       await this.checkQuotaWarnings(event.businessId, event.agentId)
 
-      logger.debug('Usage event recorded successfully', { cost, billingPeriod: billingPeriod.format('YYYY-MM-DD') })
+      logger.debug('Usage event recorded successfully', { cost, billingPeriod: billingPeriod.toISOString().split('T')[0] })
     } catch (error) {
       logger.error('Failed to record usage event', { error, event })
       throw error
@@ -228,7 +228,7 @@ class BillingService {
   /**
    * Get current billing period
    */
-  private async getCurrentBillingPeriod(businessId: string): Promise<Date> {
+  private async getCurrentBillingPeriod(_businessId: string): Promise<Date> {
     // Return first day of current month
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -430,7 +430,7 @@ class BillingService {
       usageBreakdown.push({
         unit: usage.unit,
         amount: usage.amount,
-        rate: installation.pricingConfig[`per${usage.unit.charAt(0).toUpperCase() + usage.unit.slice(1, -1)}`] || 0,
+        rate: (installation.pricingConfig as any)[`per${usage.unit.charAt(0).toUpperCase() + usage.unit.slice(1, -1)}`] || 0,
         cost: unitCost
       })
     }
