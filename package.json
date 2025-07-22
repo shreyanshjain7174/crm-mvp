@@ -41,6 +41,8 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
-    "framer-motion": "^12.23.6"
+    "framer-motion": "^12.23.6",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.0"
   }
 }

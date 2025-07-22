@@ -56,21 +56,15 @@ jobs:
 
     - name: Install dependencies  
       run: |
-        npm ci --frozen-lockfile --prefer-offline
-        cd apps/backend && npm ci --frozen-lockfile --prefer-offline  
-        cd ../frontend && npm ci --frozen-lockfile --prefer-offline
+        npm ci --frozen-lockfile --prefer-offline --workspaces
 
     - name: Setup test database
-      run: |
-        cd apps/backend
-        npm run db:migrate
+      run: npm run db:migrate
       env:
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
 
     - name: Run backend tests
-      run: |
-        cd apps/backend
-        npm run test
+      run: npm run test:backend
       env:
         NODE_ENV: test
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
@@ -78,38 +72,24 @@ jobs:
         JWT_SECRET: test-jwt-secret
 
     - name: Run frontend tests
-      run: |
-        cd apps/frontend
-        npm run test
+      run: npm run test:frontend
       env:
         CI: true
 
     - name: Backend Type checking
-      run: |
-        cd apps/backend
-        npm run typecheck
+      run: npm run typecheck:backend
       
     - name: Frontend Type checking  
-      run: |
-        cd apps/frontend
-        npm run typecheck
+      run: npm run typecheck:frontend
 
     - name: Backend Linting
-      run: |
-        cd apps/backend
-        npm run lint
+      run: npm run lint:backend
         
     - name: Frontend Linting
-      run: |
-        cd apps/frontend
-        npm run lint -- --max-warnings 0
+      run: npm run lint:frontend -- --max-warnings 0
         
     - name: Build check
-      run: |
-        cd apps/frontend
-        npm run build
-        cd ../backend  
-        npm run build
+      run: npm run build
 
   # Build and Push Docker Images
   build-and-push:
