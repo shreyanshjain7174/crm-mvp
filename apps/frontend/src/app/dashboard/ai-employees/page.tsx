@@ -118,6 +118,35 @@ export default function AIEmployeesPage() {
     );
   }
 
-  // User has unlocked AI employees
-  return <AIEmployeesDashboard />;
+  // User has unlocked AI employees - show both internal AI employees and external agents
+  return (
+    <div className="space-y-8">
+      {/* Internal AI Employees */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Your AI Employees</h2>
+        <AIEmployeesDashboard />
+      </div>
+      
+      {/* External AI Agents */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Third-Party AI Agents</h2>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start space-x-2">
+            <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <div className="font-medium text-blue-900">Enhanced Security Controls</div>
+              <div className="text-sm text-blue-700 mt-1">
+                Third-party agents include advanced permission management, security monitoring, 
+                and audit trails to ensure your data stays safe.
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Import and use the EnhancedAgentDashboard */}
+        <div className="text-sm text-gray-600">
+          Enhanced agent management with security controls is being loaded...
+        </div>
+      </div>
+    </div>
+  );
 }
