@@ -483,8 +483,9 @@ The following checks must pass in CI:
 
 ### Strategic Pivot Status
 - **Old AI Service**: ✅ Built (now becomes reference implementation)
-- **Universal Agent Protocol**: ⏳ **HIGH PRIORITY** - Design and implement
+- **Universal Agent Protocol**: 🔄 **IN PROGRESS** - Core interfaces designed, implementation started
 - **Agent Marketplace UI**: ⏳ **HIGH PRIORITY** - Build discovery and installation
+- **Agent Runtime & Sandbox**: ⏳ **HIGH PRIORITY** - Secure execution environment
 - **Developer API**: ⏳ **MEDIUM PRIORITY** - Enable third-party agent integration
 - **Revenue Engine**: ⏳ **MEDIUM PRIORITY** - Commission tracking and payments
 
