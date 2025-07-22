@@ -5,7 +5,7 @@
  * configuration, monitoring, and lifecycle operations.
  */
 
-import '../types/fastify-extended'
+import '../types/fastify-extended.d'
 import { FastifyPluginAsync } from 'fastify'
 import { 
   AgentInstallRequest,

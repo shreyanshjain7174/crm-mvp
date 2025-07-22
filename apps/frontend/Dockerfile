@@ -22,9 +22,8 @@ WORKDIR /app
 # Copy all source code
 COPY . .
 
-# Copy node_modules from deps stage
+# Copy node_modules from deps stage (workspace dependencies are in root)
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
 
 # Build the frontend using npm workspace from root directory
 WORKDIR /app

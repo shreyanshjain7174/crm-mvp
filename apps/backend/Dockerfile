@@ -96,4 +96,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 EXPOSE 3001
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["node", "apps/backend/dist/index.js"]
+CMD ["node", "dist/index.js"]
