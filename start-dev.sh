@@ -2,8 +2,53 @@
 
 # Start Development Environment Script
 # This script starts all required services for the CRM MVP development
+# 
+# Usage:
+#   ./start-dev.sh           # Interactive mode (default)
+#   ./start-dev.sh --force   # Auto-kill processes on port conflicts
+#   ./start-dev.sh --help    # Show help
+
+# Check for command line arguments
+FORCE_KILL=false
+SHOW_HELP=false
+
+for arg in "$@"; do
+    case $arg in
+        --force)
+            FORCE_KILL=true
+            ;;
+        --help|-h)
+            SHOW_HELP=true
+            ;;
+        *)
+            echo "Unknown argument: $arg"
+            SHOW_HELP=true
+            ;;
+    esac
+done
+
+if [ "$SHOW_HELP" = true ]; then
+    echo "🚀 CRM MVP Development Environment Launcher"
+    echo ""
+    echo "Usage:"
+    echo "  ./start-dev.sh           # Interactive mode (ask before killing processes)"
+    echo "  ./start-dev.sh --force   # Automatically kill conflicting processes"
+    echo "  ./start-dev.sh --help    # Show this help message"
+    echo ""
+    echo "This script will:"
+    echo "  • Start PostgreSQL and Redis containers (if not running)"
+    echo "  • Check and handle port conflicts for 3000 (frontend) and 3001 (backend)"
+    echo "  • Install dependencies if needed"
+    echo "  • Run database migrations"
+    echo "  • Start both frontend and backend development servers"
+    echo ""
+    exit 0
+fi
 
 echo "🚀 Starting CRM MVP Development Environment..."
+if [ "$FORCE_KILL" = true ]; then
+    echo "⚡ Force mode enabled: Will automatically kill conflicting processes"
+fi
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -67,16 +112,80 @@ case $? in
         ;;
 esac
 
-# Check application ports
-check_app_port() {
-    if lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null ; then
-        echo "❌ Port $1 is already in use. Please free it before starting."
-        exit 1
+# Check and handle application ports
+check_and_handle_app_port() {
+    local port=$1
+    local service_name=$2
+    
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null ; then
+        echo "⚠️  Port $port is already in use by another process."
+        echo "🔧 Attempting to free port $port for $service_name..."
+        
+        # Get the PID and process name
+        local pid=$(lsof -ti :$port)
+        local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+        
+        echo "   Found process: $process_name (PID: $pid)"
+        
+        if [ "$FORCE_KILL" = true ]; then
+            echo "⚡ Force mode: Killing process $pid automatically..."
+            kill $pid 2>/dev/null
+            sleep 2
+            
+            # Check if port is now free
+            if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null ; then
+                echo "❌ Failed to free port $port. Please manually stop the process and try again."
+                exit 1
+            else
+                echo "✅ Port $port freed successfully"
+            fi
+        else
+            # Offer options to the user
+            echo "   Options:"
+            echo "   [1] Kill the process and use port $port"
+            echo "   [2] Use a different port (will require manual configuration)"
+            echo "   [3] Exit and handle manually"
+            read -p "   Choose option (1-3): " -n 1 -r
+            echo
+            
+            case $REPLY in
+                1)
+                    echo "🔫 Killing process $pid..."
+                    kill $pid 2>/dev/null
+                    sleep 2
+                    
+                    # Check if port is now free
+                    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null ; then
+                        echo "❌ Failed to free port $port. Please manually stop the process and try again."
+                        exit 1
+                    else
+                        echo "✅ Port $port freed successfully"
+                    fi
+                    ;;
+                2)
+                    # Find next available port
+                    local new_port=$((port + 10))
+                    while lsof -Pi :$new_port -sTCP:LISTEN -t >/dev/null ; do
+                        new_port=$((new_port + 1))
+                    done
+                    echo "💡 Suggested alternative port: $new_port"
+                    echo "⚠️  You'll need to update your environment configuration to use port $new_port"
+                    echo "❌ For now, please manually free port $port or update your configuration. Exiting."
+                    exit 1
+                    ;;
+                3|*)
+                    echo "❌ Exiting. Please manually free port $port and try again."
+                    exit 1
+                    ;;
+            esac
+        fi
+    else
+        echo "✅ Port $port is available for $service_name"
     fi
 }
 
-check_app_port 3000  # Frontend
-check_app_port 3001  # Backend
+check_and_handle_app_port 3000 "Frontend"
+check_and_handle_app_port 3001 "Backend"
 
 # Start PostgreSQL if not running
 if [ "$POSTGRES_RUNNING" = false ]; then
