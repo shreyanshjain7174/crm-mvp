@@ -86,7 +86,7 @@ jobs:
       run: npm run lint:backend
         
     - name: Frontend Linting
-      run: npm run lint:frontend -- --max-warnings 0
+      run: cd apps/frontend && npm run lint -- --max-warnings 0
         
     - name: Build check
       run: npm run build
