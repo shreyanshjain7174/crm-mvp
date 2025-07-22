@@ -1,10 +1,62 @@
+import { LucideIcon } from 'lucide-react';
+
+// Core workflow types
+export type WorkflowNodeType = 
+  | 'trigger' 
+  | 'action' 
+  | 'condition' 
+  | 'delay' 
+  | 'webhook'
+  | 'api-call' 
+  | 'ai-agent' 
+  | 'email' 
+  | 'whatsapp' 
+  | 'database'
+  | 'transform' 
+  | 'split' 
+  | 'merge' 
+  | 'end';
+
+export type WorkflowStatus = 'draft' | 'active' | 'paused' | 'completed' | 'failed';
+export type WorkflowCategory = 'lead-management' | 'automation' | 'analytics' | 'custom';
+export type NodeCategory = 'triggers' | 'actions' | 'conditions' | 'utilities' | 'logic' | 'integrations' | 'ai' | 'communications' | 'data';
+
+export interface WorkflowNodeInput {
+  id: string;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  required: boolean;
+  description?: string;
+}
+
+export interface WorkflowNodeOutput {
+  id: string;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  description?: string;
+}
+
+export interface WorkflowNodeData {
+  name: string;
+  description: string;
+  config: Record<string, any>;
+  status?: 'idle' | 'running' | 'completed' | 'failed' | 'waiting';
+  executionTime?: number;
+  stats?: {
+    executions: number;
+    successRate: number;
+  };
+  inputs?: WorkflowNodeInput[];
+  outputs?: WorkflowNodeOutput[];
+  metadata?: Record<string, any>;
+}
+
 export interface WorkflowNode {
   id: string;
   type: WorkflowNodeType;
   position: { x: number; y: number };
+  workflowId: string;
   data: WorkflowNodeData;
-  inputs: WorkflowInput[];
-  outputs: WorkflowOutput[];
 }
 
 export interface WorkflowEdge {
@@ -13,416 +65,235 @@ export interface WorkflowEdge {
   target: string;
   sourceHandle: string;
   targetHandle: string;
+  workflowId?: string;
   animated?: boolean;
   style?: Record<string, any>;
+  label?: string;
+  status?: 'active' | 'error' | 'waiting';
 }
 
 export interface Workflow {
   id: string;
   name: string;
   description: string;
-  businessId: string;
-  status: WorkflowStatus;
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  variables: WorkflowVariable[];
-  triggers: WorkflowTrigger[];
+  version: string;
   createdAt: Date;
   updatedAt: Date;
-  version: number;
+  status: WorkflowStatus;
   isTemplate: boolean;
   category: WorkflowCategory;
   tags: string[];
+  metadata: Record<string, any>;
 }
 
-export type WorkflowNodeType = 
-  | 'trigger'
-  | 'action'
-  | 'condition'
-  | 'delay'
-  | 'webhook'
-  | 'api-call'
-  | 'ai-agent'
-  | 'email'
-  | 'whatsapp'
-  | 'database'
-  | 'transform'
-  | 'split'
-  | 'merge'
-  | 'end';
-
-export type WorkflowStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type WorkflowCategory = 'sales' | 'marketing' | 'support' | 'operations' | 'general';
-
-export interface WorkflowNodeData {
-  label: string;
-  description?: string;
-  config: Record<string, any>;
-  icon?: string;
-  color?: string;
-}
-
-export interface WorkflowInput {
-  id: string;
-  name: string;
-  type: WorkflowDataType;
-  required: boolean;
-  defaultValue?: any;
-  description?: string;
-}
-
-export interface WorkflowOutput {
-  id: string;
-  name: string;
-  type: WorkflowDataType;
-  description?: string;
-}
-
-export type WorkflowDataType = 
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'date'
-  | 'object'
-  | 'array'
-  | 'file'
-  | 'contact'
-  | 'message'
-  | 'lead';
-
-export interface WorkflowVariable {
-  id: string;
-  name: string;
-  type: WorkflowDataType;
-  value: any;
-  scope: 'global' | 'local';
-  description?: string;
-}
-
-export interface WorkflowTrigger {
-  id: string;
-  type: WorkflowTriggerType;
-  config: Record<string, any>;
-  enabled: boolean;
-}
-
-export type WorkflowTriggerType = 
-  | 'manual'
-  | 'schedule'
-  | 'webhook'
-  | 'contact-created'
-  | 'message-received'
-  | 'lead-status-changed'
-  | 'ai-suggestion'
-  | 'email-received';
-
-export interface WorkflowExecution {
-  id: string;
-  workflowId: string;
-  status: WorkflowExecutionStatus;
-  startedAt: Date;
-  completedAt?: Date;
-  triggerData: any;
-  currentNodeId?: string;
-  logs: WorkflowExecutionLog[];
-  error?: string;
-  variables: Record<string, any>;
-}
-
-export type WorkflowExecutionStatus = 
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'paused'
-  | 'cancelled';
-
-export interface WorkflowExecutionLog {
-  id: string;
-  nodeId: string;
-  timestamp: Date;
-  level: 'info' | 'warn' | 'error';
-  message: string;
-  data?: any;
-  duration?: number;
-}
-
-export interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: WorkflowCategory;
-  tags: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedTime: number; // minutes
-  workflow: Omit<Workflow, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>;
-  previewImage?: string;
-  usageCount: number;
-  rating: number;
-  author: {
-    name: string;
-    avatar?: string;
-    verified: boolean;
-  };
-}
-
-// Workflow Builder State
 export interface WorkflowBuilderState {
   workflow: Workflow;
-  selectedNodeId: string | null;
-  selectedEdgeId: string | null;
-  isExecuting: boolean;
-  executionId: string | null;
-  zoom: number;
-  panOffset: { x: number; y: number };
-  mode: 'edit' | 'view' | 'debug';
-  showMinimap: boolean;
-  showGrid: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  selectedNode: WorkflowNode | null;
+  draggedNodeType: WorkflowNodeType | null;
+  history: any[];
+  historyIndex: number;
+  maxHistorySize: number;
 }
 
-// Node Definitions for Drag & Drop Palette
-export interface WorkflowNodeDefinition {
-  type: WorkflowNodeType;
+export interface WorkflowValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface WorkflowConfigField {
+  key: string;
   label: string;
-  description: string;
-  icon: string;
-  color: string;
-  category: NodeCategory;
-  defaultConfig: Record<string, any>;
-  inputs: WorkflowInput[];
-  outputs: WorkflowOutput[];
-  isAvailable: boolean;
-  requiredPermissions: string[];
+  type: 'text' | 'number' | 'select' | 'boolean' | 'textarea';
+  placeholder?: string;
+  required?: boolean;
+  options?: { label: string; value: string }[];
 }
 
-export type NodeCategory = 
-  | 'triggers'
-  | 'actions'
-  | 'logic'
-  | 'integrations'
-  | 'ai'
-  | 'communications'
-  | 'data';
+export interface WorkflowNodeDefinition {
+  name: string;
+  description: string;
+  category: 'triggers' | 'actions' | 'conditions' | 'utilities';
+  icon: LucideIcon;
+  color?: string;
+  inputs?: WorkflowNodeInput[];
+  outputs?: WorkflowNodeOutput[];
+  configSchema?: WorkflowConfigField[];
+  isDisabled?: boolean;
+  type?: WorkflowNodeType;
+  label?: string;
+  requiredPermissions?: string[];
+  isAvailable?: boolean;
+}
 
-// Predefined node configurations
+// Node definitions
 export const WORKFLOW_NODE_DEFINITIONS: Record<WorkflowNodeType, WorkflowNodeDefinition> = {
-  'trigger': {
+  trigger: {
+    name: 'Trigger',
+    description: 'Start a workflow when something happens',
+    category: 'triggers',
+    icon: require('lucide-react').Zap,
+    color: '#10b981',
     type: 'trigger',
     label: 'Trigger',
-    description: 'Start point for the workflow',
-    icon: 'Play',
-    color: '#10B981',
-    category: 'triggers',
-    defaultConfig: { triggerType: 'manual' },
-    inputs: [],
-    outputs: [{ id: 'output', name: 'Triggered', type: 'object' }],
+    requiredPermissions: [],
     isAvailable: true,
-    requiredPermissions: []
+    outputs: [{ id: 'output', name: 'Triggered', type: 'object' }]
   },
-  'action': {
+  action: {
+    name: 'Action',
+    description: 'Perform an action or task',
+    category: 'actions',
+    icon: require('lucide-react').Play,
+    color: '#3b82f6',
     type: 'action',
     label: 'Action',
-    description: 'Perform a specific action',
-    icon: 'Zap',
-    color: '#3B82F6',
-    category: 'actions',
-    defaultConfig: { actionType: 'custom' },
-    inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }],
-    outputs: [{ id: 'output', name: 'Result', type: 'object' }],
+    requiredPermissions: [],
     isAvailable: true,
-    requiredPermissions: []
+    inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }],
+    outputs: [{ id: 'output', name: 'Result', type: 'object' }]
   },
-  'condition': {
+  condition: {
+    name: 'Condition',
+    description: 'Branch workflow based on conditions',
+    category: 'conditions',
+    icon: require('lucide-react').GitBranch,
+    color: '#eab308',
     type: 'condition',
     label: 'Condition',
-    description: 'Branch based on conditions',
-    icon: 'GitBranch',
-    color: '#F59E0B',
-    category: 'logic',
-    defaultConfig: { operator: 'equals', value: '' },
+    requiredPermissions: [],
+    isAvailable: true,
     inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }],
     outputs: [
       { id: 'true', name: 'True', type: 'object' },
       { id: 'false', name: 'False', type: 'object' }
-    ],
-    isAvailable: true,
-    requiredPermissions: []
+    ]
   },
-  'delay': {
+  delay: {
+    name: 'Delay',
+    description: 'Wait for a specified amount of time',
+    category: 'utilities',
+    icon: require('lucide-react').Clock,
+    color: '#6b7280',
     type: 'delay',
     label: 'Delay',
-    description: 'Wait for a specified time',
-    icon: 'Clock',
-    color: '#8B5CF6',
-    category: 'logic',
-    defaultConfig: { duration: 60, unit: 'seconds' },
-    inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }],
-    outputs: [{ id: 'output', name: 'After Delay', type: 'object' }],
+    requiredPermissions: [],
     isAvailable: true,
-    requiredPermissions: []
+    configSchema: [
+      { key: 'duration', label: 'Duration (seconds)', type: 'number', required: true }
+    ]
   },
-  'webhook': {
+  webhook: {
+    name: 'Webhook',
+    description: 'Send HTTP request to external service',
+    category: 'actions',
+    icon: require('lucide-react').Webhook,
+    color: '#8b5cf6',
     type: 'webhook',
     label: 'Webhook',
-    description: 'Call external webhook',
-    icon: 'Webhook',
-    color: '#EF4444',
-    category: 'integrations',
-    defaultConfig: { url: '', method: 'POST', headers: {} },
-    inputs: [{ id: 'input', name: 'Payload', type: 'object', required: false }],
-    outputs: [{ id: 'output', name: 'Response', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: ['webhooks:send']
+    requiredPermissions: [],
+    isAvailable: true
   },
   'api-call': {
+    name: 'API Call',
+    description: 'Make API requests to external services',
+    category: 'actions',
+    icon: require('lucide-react').Globe,
+    color: '#6366f1',
     type: 'api-call',
     label: 'API Call',
-    description: 'Make HTTP API requests',
-    icon: 'Globe',
-    color: '#06B6D4',
-    category: 'integrations',
-    defaultConfig: { endpoint: '', method: 'GET', authentication: 'none' },
-    inputs: [{ id: 'input', name: 'Parameters', type: 'object', required: false }],
-    outputs: [{ id: 'output', name: 'Response', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: ['api:call']
+    requiredPermissions: [],
+    isAvailable: true
   },
   'ai-agent': {
+    name: 'AI Agent',
+    description: 'Use AI to process and analyze data',
+    category: 'actions',
+    icon: require('lucide-react').Bot,
+    color: '#ec4899',
     type: 'ai-agent',
     label: 'AI Agent',
-    description: 'Process with AI intelligence',
-    icon: 'Brain',
-    color: '#EC4899',
-    category: 'ai',
-    defaultConfig: { model: 'gpt-4', prompt: '', temperature: 0.7 },
-    inputs: [{ id: 'input', name: 'Context', type: 'object', required: true }],
-    outputs: [{ id: 'output', name: 'AI Response', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: ['ai:process']
+    requiredPermissions: ['ai_features'],
+    isAvailable: true
   },
-  'email': {
+  email: {
+    name: 'Email',
+    description: 'Send email notifications',
+    category: 'actions',
+    icon: require('lucide-react').Mail,
+    color: '#ef4444',
     type: 'email',
-    label: 'Send Email',
-    description: 'Send email messages',
-    icon: 'Mail',
-    color: '#DC2626',
-    category: 'communications',
-    defaultConfig: { template: '', subject: '', to: '' },
-    inputs: [
-      { id: 'contact', name: 'Contact', type: 'contact', required: true },
-      { id: 'data', name: 'Template Data', type: 'object', required: false }
-    ],
-    outputs: [{ id: 'output', name: 'Sent', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: ['email:send']
+    label: 'Email',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'whatsapp': {
-    type: 'whatsapp',
-    label: 'WhatsApp Message',
+  whatsapp: {
+    name: 'WhatsApp',
     description: 'Send WhatsApp messages',
-    icon: 'MessageCircle',
-    color: '#16A34A',
-    category: 'communications',
-    defaultConfig: { template: '', message: '' },
-    inputs: [
-      { id: 'contact', name: 'Contact', type: 'contact', required: true },
-      { id: 'message', name: 'Message', type: 'string', required: true }
-    ],
-    outputs: [{ id: 'output', name: 'Sent', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: ['whatsapp:send']
+    category: 'actions',
+    icon: require('lucide-react').MessageSquare,
+    color: '#25d366',
+    type: 'whatsapp',
+    label: 'WhatsApp',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'database': {
+  database: {
+    name: 'Database',
+    description: 'Read/write data from database',
+    category: 'actions',
+    icon: require('lucide-react').Database,
+    color: '#64748b',
     type: 'database',
-    label: 'Database Query',
-    description: 'Query or update database',
-    icon: 'Database',
-    color: '#7C3AED',
-    category: 'data',
-    defaultConfig: { operation: 'select', table: '', conditions: {} },
-    inputs: [{ id: 'input', name: 'Query Data', type: 'object', required: false }],
-    outputs: [{ id: 'output', name: 'Result', type: 'array' }],
-    isAvailable: true,
-    requiredPermissions: ['database:query']
+    label: 'Database',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'transform': {
+  transform: {
+    name: 'Transform',
+    description: 'Transform and manipulate data',
+    category: 'utilities',
+    icon: require('lucide-react').RefreshCw,
+    color: '#f97316',
     type: 'transform',
-    label: 'Transform Data',
-    description: 'Transform and map data',
-    icon: 'Shuffle',
-    color: '#059669',
-    category: 'data',
-    defaultConfig: { transformations: [] },
-    inputs: [{ id: 'input', name: 'Data', type: 'object', required: true }],
-    outputs: [{ id: 'output', name: 'Transformed', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: []
+    label: 'Transform',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'split': {
+  split: {
+    name: 'Split',
+    description: 'Split workflow into parallel paths',
+    category: 'utilities',
+    icon: require('lucide-react').Split,
+    color: '#14b8a6',
     type: 'split',
-    label: 'Split Flow',
-    description: 'Split into parallel paths',
-    icon: 'Split',
-    color: '#D97706',
-    category: 'logic',
-    defaultConfig: { paths: 2 },
-    inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }],
-    outputs: [
-      { id: 'path1', name: 'Path 1', type: 'object' },
-      { id: 'path2', name: 'Path 2', type: 'object' }
-    ],
-    isAvailable: true,
-    requiredPermissions: []
+    label: 'Split',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'merge': {
+  merge: {
+    name: 'Merge',
+    description: 'Merge parallel workflow paths',
+    category: 'utilities',
+    icon: require('lucide-react').Merge,
+    color: '#06b6d4',
     type: 'merge',
-    label: 'Merge Flows',
-    description: 'Merge parallel paths',
-    icon: 'Merge',
-    color: '#7C2D12',
-    category: 'logic',
-    defaultConfig: { strategy: 'wait-all' },
-    inputs: [
-      { id: 'input1', name: 'Input 1', type: 'object', required: true },
-      { id: 'input2', name: 'Input 2', type: 'object', required: true }
-    ],
-    outputs: [{ id: 'output', name: 'Merged', type: 'object' }],
-    isAvailable: true,
-    requiredPermissions: []
+    label: 'Merge',
+    requiredPermissions: [],
+    isAvailable: true
   },
-  'end': {
+  end: {
+    name: 'End',
+    description: 'End the workflow execution',
+    category: 'utilities',
+    icon: require('lucide-react').StopCircle,
+    color: '#ef4444',
     type: 'end',
     label: 'End',
-    description: 'End point of the workflow',
-    icon: 'Square',
-    color: '#6B7280',
-    category: 'logic',
-    defaultConfig: {},
-    inputs: [{ id: 'input', name: 'Final Data', type: 'object', required: false }],
-    outputs: [],
+    requiredPermissions: [],
     isAvailable: true,
-    requiredPermissions: []
+    inputs: [{ id: 'input', name: 'Input', type: 'object', required: true }]
   }
 };
-
-// Workflow validation
-export interface WorkflowValidationResult {
-  isValid: boolean;
-  errors: WorkflowValidationError[];
-  warnings: WorkflowValidationWarning[];
-}
-
-export interface WorkflowValidationError {
-  id: string;
-  type: 'missing-trigger' | 'disconnected-node' | 'invalid-config' | 'circular-dependency';
-  nodeId?: string;
-  message: string;
-}
-
-export interface WorkflowValidationWarning {
-  id: string;
-  type: 'unused-node' | 'missing-end' | 'performance' | 'best-practice';
-  nodeId?: string;
-  message: string;
-}

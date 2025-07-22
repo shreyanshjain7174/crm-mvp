@@ -21,41 +21,35 @@ interface NodePaletteProps {
   className?: string;
 }
 
-const CATEGORY_CONFIG: Record<NodeCategory, { label: string; icon: string; color: string }> = {
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
   triggers: { label: 'Triggers', icon: '⚡', color: 'bg-green-100 text-green-800' },
   actions: { label: 'Actions', icon: '🔧', color: 'bg-blue-100 text-blue-800' },
-  logic: { label: 'Logic & Control', icon: '🧠', color: 'bg-purple-100 text-purple-800' },
-  integrations: { label: 'Integrations', icon: '🔗', color: 'bg-orange-100 text-orange-800' },
-  ai: { label: 'AI & Intelligence', icon: '🤖', color: 'bg-pink-100 text-pink-800' },
-  communications: { label: 'Communications', icon: '💬', color: 'bg-indigo-100 text-indigo-800' },
-  data: { label: 'Data & Storage', icon: '📊', color: 'bg-yellow-100 text-yellow-800' }
+  conditions: { label: 'Conditions', icon: '🔀', color: 'bg-yellow-100 text-yellow-800' },
+  utilities: { label: 'Utilities', icon: '🛠️', color: 'bg-gray-100 text-gray-800' }
 };
 
 export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Set<NodeCategory>>(
-    new Set(['triggers', 'actions', 'logic'])
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(['triggers', 'actions', 'conditions'])
   );
   const canAccessFeature = useUserProgressStore(state => state.canAccessFeature);
 
   // Group nodes by category
   const nodesByCategory = React.useMemo(() => {
-    const categories: Record<NodeCategory, WorkflowNodeDefinition[]> = {
+    const categories: Record<string, WorkflowNodeDefinition[]> = {
       triggers: [],
       actions: [],
-      logic: [],
-      integrations: [],
-      ai: [],
-      communications: [],
-      data: []
+      conditions: [],
+      utilities: []
     };
 
     Object.values(WORKFLOW_NODE_DEFINITIONS).forEach(nodeDef => {
       // Check if user has access to this node type
-      const hasAccess = nodeDef.requiredPermissions.length === 0 || 
-        nodeDef.requiredPermissions.some(permission => canAccessFeature(permission as any));
+      const hasAccess = (nodeDef.requiredPermissions || []).length === 0 || 
+        (nodeDef.requiredPermissions || []).some(permission => canAccessFeature(permission as any));
       
-      if (hasAccess && nodeDef.isAvailable) {
+      if (hasAccess && (nodeDef.isAvailable !== false)) {
         categories[nodeDef.category].push(nodeDef);
       }
     });
@@ -67,19 +61,16 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
   const filteredCategories = React.useMemo(() => {
     if (!searchTerm.trim()) return nodesByCategory;
 
-    const filtered: Record<NodeCategory, WorkflowNodeDefinition[]> = {
+    const filtered: Record<string, WorkflowNodeDefinition[]> = {
       triggers: [],
       actions: [],
-      logic: [],
-      integrations: [],
-      ai: [],
-      communications: [],
-      data: []
+      conditions: [],
+      utilities: []
     };
 
     Object.entries(nodesByCategory).forEach(([category, nodes]) => {
-      filtered[category as NodeCategory] = nodes.filter(node =>
-        node.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      filtered[category] = nodes.filter(node =>
+        (node.label || node.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
         node.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     });
@@ -87,7 +78,7 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
     return filtered;
   }, [nodesByCategory, searchTerm]);
 
-  const toggleCategory = (category: NodeCategory) => {
+  const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(category)) {
       newExpanded.delete(category);
@@ -136,8 +127,8 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="p-2 space-y-2">
             {Object.entries(CATEGORY_CONFIG).map(([categoryKey, categoryConfig]) => {
-              const category = categoryKey as NodeCategory;
-              const nodes = filteredCategories[category];
+              const category = categoryKey;
+              const nodes = filteredCategories[category] || [];
               const isExpanded = expandedCategories.has(category);
               
               if (nodes.length === 0) return null;
@@ -174,8 +165,8 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
                         >
                           {nodes.map((node, index) => (
                             <Draggable
-                              key={node.type}
-                              draggableId={node.type}
+                              key={node.type || node.name}
+                              draggableId={node.type || node.name}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -200,15 +191,15 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
                                       className="w-8 h-8 rounded-md flex items-center justify-center text-white text-sm font-medium"
                                       style={{ backgroundColor: node.color }}
                                     >
-                                      {node.icon.charAt(0)}
+                                      <node.icon size={16} />
                                     </div>
                                     
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center justify-between">
                                         <h4 className="font-medium text-sm text-gray-900 truncate">
-                                          {node.label}
+                                          {node.label || node.name}
                                         </h4>
-                                        {node.requiredPermissions.length > 0 && (
+                                        {(node.requiredPermissions || []).length > 0 && (
                                           <Badge variant="outline" className="text-xs ml-2">
                                             Pro
                                           </Badge>
@@ -220,19 +211,19 @@ export function NodePalette({ onNodeDrop, className }: NodePaletteProps) {
                                       
                                       {/* Node connections preview */}
                                       <div className="flex items-center gap-2 mt-2">
-                                        {node.inputs.length > 0 && (
+                                        {(node.inputs || []).length > 0 && (
                                           <div className="flex items-center gap-1">
                                             <div className="w-2 h-2 rounded-full bg-blue-400" />
                                             <span className="text-xs text-gray-400">
-                                              {node.inputs.length} in
+                                              {(node.inputs || []).length} in
                                             </span>
                                           </div>
                                         )}
-                                        {node.outputs.length > 0 && (
+                                        {(node.outputs || []).length > 0 && (
                                           <div className="flex items-center gap-1">
                                             <div className="w-2 h-2 rounded-full bg-green-400" />
                                             <span className="text-xs text-gray-400">
-                                              {node.outputs.length} out
+                                              {(node.outputs || []).length} out
                                             </span>
                                           </div>
                                         )}
@@ -291,13 +282,13 @@ function LockedNodeCard({ node }: { node: WorkflowNodeDefinition }) {
           className="w-8 h-8 rounded-md flex items-center justify-center text-white text-sm font-medium opacity-50"
           style={{ backgroundColor: node.color }}
         >
-          {node.icon.charAt(0)}
+          <node.icon size={16} />
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-sm text-gray-600 truncate">
-              {node.label}
+              {node.label || node.name}
             </h4>
             <Badge variant="outline" className="text-xs">
               Locked
@@ -307,7 +298,7 @@ function LockedNodeCard({ node }: { node: WorkflowNodeDefinition }) {
             {node.description}
           </p>
           <p className="text-xs text-orange-600 mt-1">
-            Requires: {node.requiredPermissions.join(', ')}
+            Requires: {(node.requiredPermissions || []).join(', ')}
           </p>
         </div>
       </div>

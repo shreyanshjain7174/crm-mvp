@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Modern CSS Variables for smooth transitions */
+:root {
+  --animation-speed: 0.3s;
+  --glass-opacity: 0.1;
+  --blur-strength: 12px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -27,24 +34,24 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
     --ring: 224.3 76.3% 94.1%;
   }
 }
@@ -76,6 +83,14 @@
   background: #94a3b8;
 }
 
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* WhatsApp-style message bubbles */
 .message-bubble {
   @apply max-w-xs lg:max-w-md px-4 py-2 rounded-lg;
@@ -83,6 +98,10 @@
 
 .message-inbound {
   @apply bg-gray-200 text-gray-900 rounded-tl-lg rounded-tr-lg rounded-br-lg rounded-bl-sm;
+}
+
+.dark .message-inbound {
+  @apply bg-gray-700 text-gray-100;
 }
 
 .message-outbound {
@@ -94,20 +113,40 @@
   @apply bg-blue-100 text-blue-800 border-blue-200;
 }
 
+.dark .status-cold {
+  @apply bg-blue-900/50 text-blue-300 border-blue-800;
+}
+
 .status-warm {
   @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+
+.dark .status-warm {
+  @apply bg-yellow-900/50 text-yellow-300 border-yellow-800;
 }
 
 .status-hot {
   @apply bg-red-100 text-red-800 border-red-200;
 }
 
+.dark .status-hot {
+  @apply bg-red-900/50 text-red-300 border-red-800;
+}
+
 .status-converted {
   @apply bg-green-100 text-green-800 border-green-200;
 }
 
+.dark .status-converted {
+  @apply bg-green-900/50 text-green-300 border-green-800;
+}
+
 .status-lost {
   @apply bg-gray-100 text-gray-800 border-gray-200;
+}
+
+.dark .status-lost {
+  @apply bg-gray-700/50 text-gray-300 border-gray-600;
 }
 
 /* Priority badges */
@@ -115,14 +154,195 @@
   @apply bg-gray-100 text-gray-700;
 }
 
+.dark .priority-low {
+  @apply bg-gray-700/50 text-gray-300;
+}
+
 .priority-medium {
   @apply bg-blue-100 text-blue-700;
+}
+
+.dark .priority-medium {
+  @apply bg-blue-900/50 text-blue-300;
 }
 
 .priority-high {
   @apply bg-orange-100 text-orange-700;
 }
 
+.dark .priority-high {
+  @apply bg-orange-900/50 text-orange-300;
+}
+
 .priority-urgent {
   @apply bg-red-100 text-red-700;
+}
+
+.dark .priority-urgent {
+  @apply bg-red-900/50 text-red-300;
+}
+
+/* Modern Glassmorphism Effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(var(--blur-strength));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  transition: all var(--animation-speed) ease;
+}
+
+.dark .glass-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.37),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px 0 rgba(31, 38, 135, 0.5),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-card:hover {
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Neomorphism Effects */
+.neo-card {
+  background: #e0e5ec;
+  border-radius: 20px;
+  box-shadow: 
+    9px 9px 16px #a3b1c6,
+    -9px -9px 16px #ffffff;
+  transition: all var(--animation-speed) ease;
+}
+
+.dark .neo-card {
+  background: #2d2d30;
+  box-shadow: 
+    9px 9px 16px #1a1a1c,
+    -9px -9px 16px #404044;
+}
+
+.neo-card:hover {
+  box-shadow: 
+    inset 9px 9px 16px #a3b1c6,
+    inset -9px -9px 16px #ffffff;
+}
+
+.dark .neo-card:hover {
+  box-shadow: 
+    inset 9px 9px 16px #1a1a1c,
+    inset -9px -9px 16px #404044;
+}
+
+/* Fluid Animation Utilities */
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Modern gradient backgrounds */
+.gradient-bg-light {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-bg-dark {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+/* Interactive elements */
+.interactive-scale {
+  transition: transform var(--animation-speed) ease;
+}
+
+.interactive-scale:hover {
+  transform: scale(1.05);
+}
+
+.interactive-scale:active {
+  transform: scale(0.95);
+}
+
+/* Modern button effects */
+.modern-button {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border: none;
+  transition: all var(--animation-speed) ease;
+}
+
+.modern-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.modern-button:hover::before {
+  left: 100%;
+}
+
+/* Loading animations */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

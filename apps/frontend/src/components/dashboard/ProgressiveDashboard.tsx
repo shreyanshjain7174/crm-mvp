@@ -4,11 +4,13 @@ import React, { useEffect } from 'react';
 import { useUserProgressStore } from '@/stores/userProgress';
 import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { NewUserStage } from './stages/NewUserStage';
+import { ModernNewUserStage } from './stages/ModernNewUserStage';
 import { BeginnerStage } from './stages/BeginnerStage';
 import { IntermediateStage } from './stages/IntermediateStage';
 import { AdvancedStage } from './stages/AdvancedStage';
 import { ExpertStage } from './stages/ExpertStage';
 import { FeatureGate } from '@/components/ui/FeatureGate';
+import { ModernDashboard } from '@/components/ui/modern-dashboard';
 
 // Import existing dashboard components
 import { DashboardStats } from './dashboard-stats';
@@ -37,9 +39,9 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show stage-specific components based on user progression
   // Prioritize local stats over stage to ensure blank dashboard for truly new users
   if (stats.contactsAdded === 0 || stage === 'new') {
-    console.log('Rendering NewUserStage - Stage:', stage, 'Contacts:', stats.contactsAdded);
+    console.log('Rendering ModernNewUserStage - Stage:', stage, 'Contacts:', stats.contactsAdded);
     return (
-      <NewUserStage 
+      <ModernNewUserStage 
         onAddContact={onAddContact || (() => {})} 
       />
     );
@@ -48,46 +50,51 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show beginner stage for users who just started
   if (stage === 'beginner' && stats.contactsAdded < 5) {
     return (
-      <BeginnerStage 
-        onSendMessage={() => {/* Navigate to messages */}}
-        onViewContacts={() => {/* Navigate to contacts */}}
-      />
+      <ModernDashboard>
+        <BeginnerStage 
+          onSendMessage={() => {/* Navigate to messages */}}
+          onViewContacts={() => {/* Navigate to contacts */}}
+        />
+      </ModernDashboard>
     );
   }
   
   // Show intermediate stage for users building their network
   if (stage === 'intermediate') {
     return (
-      <IntermediateStage />
+      <ModernDashboard>
+        <IntermediateStage />
+      </ModernDashboard>
     );
   }
   
-  // Show advanced stage for AI-powered users
+  // Show advanced stage for AI-powered users with modern elements
   if (stage === 'advanced') {
     return (
-      <AdvancedStage />
+      <ModernDashboard />
     );
   }
   
-  // Show expert stage for CRM masters
+  // Show expert stage for CRM masters with modern dashboard
   if (stage === 'expert') {
     return (
-      <ExpertStage />
+      <ModernDashboard />
     );
   }
   
-  // For users with some progress, show progressive dashboard
+  // For users with some progress, show progressive dashboard wrapped in modern design
   return (
-    <div className="space-y-6">
-      {/* Welcome back message for returning users */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">
-          Welcome back! 👋
-        </h2>
-        <p className="text-slate-600">
-          {getWelcomeMessage(stage, stats)}
-        </p>
-      </div>
+    <ModernDashboard>
+      <div className="space-y-6">
+        {/* Welcome back message for returning users */}
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-lg p-6 border border-border backdrop-blur-sm">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Welcome back! 👋
+          </h2>
+          <p className="text-muted-foreground">
+            {getWelcomeMessage(stage, stats)}
+          </p>
+        </div>
       
       {/* Progressive feature sections */}
       
@@ -134,7 +141,8 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
       >
         <SystemMonitoring />
       </FeatureGate>
-    </div>
+      </div>
+    </ModernDashboard>
   );
 }
 
@@ -158,17 +166,17 @@ function PipelineTeaser({ contactCount, requiredCount }: { contactCount: number;
   const remaining = requiredCount - contactCount;
   
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-dashed border-purple-200">
+    <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 rounded-lg p-6 border-2 border-dashed border-purple-500/30 dark:border-purple-400/30 backdrop-blur-sm">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-purple-500/20 dark:bg-purple-400/30 rounded-full flex items-center justify-center backdrop-blur-sm">
           <span className="text-2xl">📈</span>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">Pipeline View Coming Soon!</h3>
-          <p className="text-slate-600">
+          <h3 className="font-semibold text-foreground">Pipeline View Coming Soon!</h3>
+          <p className="text-muted-foreground">
             Add {remaining} more contacts to unlock the pipeline view and organize your leads effectively.
           </p>
-          <div className="mt-2 bg-white rounded-full h-2">
+          <div className="mt-2 bg-muted rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${Math.min((contactCount / requiredCount) * 100, 100)}%` }}
@@ -184,17 +192,17 @@ function AITeaser({ messageCount, requiredCount }: { messageCount: number; requi
   const remaining = requiredCount - messageCount;
   
   return (
-    <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-6 border-2 border-dashed border-orange-200">
+    <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 dark:from-orange-500/20 dark:to-red-500/20 rounded-lg p-6 border-2 border-dashed border-orange-500/30 dark:border-orange-400/30 backdrop-blur-sm">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-orange-500/20 dark:bg-orange-400/30 rounded-full flex items-center justify-center backdrop-blur-sm">
           <span className="text-2xl">🤖</span>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">AI Assistant Almost Ready!</h3>
-          <p className="text-slate-600">
+          <h3 className="font-semibold text-foreground">AI Assistant Almost Ready!</h3>
+          <p className="text-muted-foreground">
             Send {remaining} more messages to unlock AI-powered response suggestions and automation.
           </p>
-          <div className="mt-2 bg-white rounded-full h-2">
+          <div className="mt-2 bg-muted rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${Math.min((messageCount / requiredCount) * 100, 100)}%` }}
@@ -210,17 +218,17 @@ function AdvancedTeaser({ aiInteractions, requiredCount }: { aiInteractions: num
   const remaining = requiredCount - aiInteractions;
   
   return (
-    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 border-2 border-dashed border-yellow-200">
+    <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 dark:from-yellow-500/20 dark:to-orange-500/20 rounded-lg p-6 border-2 border-dashed border-yellow-500/30 dark:border-yellow-400/30 backdrop-blur-sm">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+        <div className="w-12 h-12 bg-yellow-500/20 dark:bg-yellow-400/30 rounded-full flex items-center justify-center backdrop-blur-sm">
           <span className="text-2xl">🚀</span>
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">Advanced Features Loading...</h3>
-          <p className="text-slate-600">
+          <h3 className="font-semibold text-foreground">Advanced Features Loading...</h3>
+          <p className="text-muted-foreground">
             Use AI assistance {remaining} more times to unlock advanced analytics, monitoring, and custom workflows.
           </p>
-          <div className="mt-2 bg-white rounded-full h-2">
+          <div className="mt-2 bg-muted rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${Math.min((aiInteractions / requiredCount) * 100, 100)}%` }}

@@ -217,7 +217,11 @@ export function AgentInstallModal({ agent, isOpen, onClose }: AgentInstallModalP
             {currentStep === 'success' && (
               <>
                 <button
-                  onClick={() => {/* Navigate to agent settings */}}
+                  onClick={() => {
+                    handleClose();
+                    // TODO: Navigate to agent settings page
+                    console.log('Navigate to agent settings for:', agent?.name);
+                  }}
                   className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 border border-transparent rounded-md hover:bg-indigo-200"
                 >
                   Configure Agent

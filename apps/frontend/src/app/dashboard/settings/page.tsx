@@ -83,6 +83,7 @@ export default function SettingsPage() {
       }
       
       // TODO: Call API to update profile
+      console.log('Saving profile:', validationResult.data);
       // const response = await apiClient.updateProfile(validationResult.data);
       
       setSaved(true);
@@ -118,6 +119,7 @@ export default function SettingsPage() {
       }
       
       // TODO: Call API to change password
+      console.log('Changing password for user');
       // const response = await apiClient.changePassword(validationResult.data);
       
       // Clear password form on success
@@ -151,6 +153,7 @@ export default function SettingsPage() {
       }
 
       // TODO: Add API call to save WhatsApp settings
+      console.log('Saving WhatsApp settings:', validationResult.data);
       // const response = await apiClient.updateWhatsAppSettings(validationResult.data);
       
       setSaved(true);
@@ -185,8 +188,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-gray-600">Manage your CRM configuration and preferences</p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground">Manage your CRM configuration and preferences</p>
         </div>
         {saved && (
           <div className="flex items-center space-x-2 text-green-600">
@@ -210,10 +213,10 @@ export default function SettingsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                    className={`w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-accent/50 transition-colors ${
                       activeTab === tab.id
-                        ? 'bg-primary/5 border-r-2 border-r-primary text-primary'
-                        : 'text-gray-700'
+                        ? 'bg-primary/10 border-r-2 border-r-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -240,8 +243,8 @@ export default function SettingsPage() {
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-medium">{user?.name || 'User'}</h3>
-                    <p className="text-gray-600">{user?.email || 'user@example.com'}</p>
+                    <h3 className="text-lg font-medium text-foreground">{user?.name || 'User'}</h3>
+                    <p className="text-muted-foreground">{user?.email || 'user@example.com'}</p>
                     <Button variant="outline" size="sm" className="mt-2">
                       Change Avatar
                     </Button>

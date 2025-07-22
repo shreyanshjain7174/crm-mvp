@@ -166,7 +166,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-slate-900 text-sm">
+              <h3 className="font-semibold text-foreground text-sm">
                 {activePrompt.title}
               </h3>
               <Badge 
@@ -177,7 +177,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
               </Badge>
             </div>
             
-            <p className="text-slate-600 text-sm leading-relaxed mb-3">
+            <p className="text-muted-foreground text-sm leading-relaxed mb-3">
               {activePrompt.description}
             </p>
             
@@ -185,7 +185,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
               <Button
                 size="sm"
                 onClick={handleAction}
-                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {activePrompt.actionText}
                 <ArrowRight className="w-4 h-4" />
@@ -195,7 +195,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
                 variant="ghost"
                 size="sm"
                 onClick={handleDismiss}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Maybe later
               </Button>
