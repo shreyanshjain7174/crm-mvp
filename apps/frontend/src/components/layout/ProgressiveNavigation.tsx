@@ -11,7 +11,8 @@ import {
   Bot,
   Settings,
   Lock,
-  Star
+  Star,
+  DollarSign
 } from 'lucide-react';
 import { useUserProgressStore } from '@/stores/userProgress';
 import { FeatureMenuItem } from '@/components/ui/FeatureGate';
@@ -80,6 +81,14 @@ const allNavigationItems: NavigationItem[] = [
     feature: 'analytics:full',
     requiredStage: 'expert',
     description: 'Advanced analytics'
+  },
+  { 
+    name: 'Billing', 
+    href: '/dashboard/billing', 
+    icon: DollarSign,
+    feature: 'ai:employees',
+    requiredStage: 'expert',
+    description: 'Usage tracking and billing'
   },
   { 
     name: 'Achievements', 
