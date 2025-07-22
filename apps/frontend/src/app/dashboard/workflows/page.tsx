@@ -30,6 +30,10 @@ import {
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { WorkflowCanvas } from '@/components/workflow/WorkflowCanvas';
+import { NodePalette } from '@/components/workflow/NodePalette';
+import { useWorkflowStore } from '@/stores/workflowBuilder';
+import { WorkflowNodeType } from '@/types/workflow-types';
 
 interface WorkflowTemplate {
   id: string;
@@ -343,45 +347,7 @@ export default function WorkflowsPage() {
 
         {/* Visual Builder Tab */}
         <TabsContent value="builder" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Visual Workflow Builder</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Workflow className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Drag & Drop Workflow Builder</h3>
-                <p className="text-gray-600 mb-6">
-                  Create complex automation workflows with our intuitive visual interface
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
-                  <div className="p-4 border border-dashed border-blue-200 rounded-lg">
-                    <Target className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-                    <h4 className="font-medium mb-1">Triggers</h4>
-                    <p className="text-sm text-gray-600">New lead, message received, time-based</p>
-                  </div>
-                  
-                  <div className="p-4 border border-dashed border-purple-200 rounded-lg">
-                    <Zap className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-                    <h4 className="font-medium mb-1">Actions</h4>
-                    <p className="text-sm text-gray-600">Send message, update status, create task</p>
-                  </div>
-                  
-                  <div className="p-4 border border-dashed border-green-200 rounded-lg">
-                    <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-                    <h4 className="font-medium mb-1">Conditions</h4>
-                    <p className="text-sm text-gray-600">If/then logic, filters, smart routing</p>
-                  </div>
-                </div>
-                
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Start Building Workflow
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <WorkflowBuilderInterface />
         </TabsContent>
 
         {/* Analytics Tab */}
@@ -447,5 +413,135 @@ export default function WorkflowsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function WorkflowBuilderInterface() {
+  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const { clearWorkflow, validateWorkflow, addNode } = useWorkflowStore();
+
+  const handleSaveWorkflow = () => {
+    console.log('Saving workflow...');
+    // Implementation for saving workflow
+  };
+
+  const handleTestWorkflow = () => {
+    const validation = validateWorkflow();
+    if (!validation.isValid) {
+      alert(`Workflow validation failed: ${validation.errors.join(', ')}`);
+      return;
+    }
+    console.log('Testing workflow...');
+    // Implementation for testing workflow
+  };
+
+  const createNewWorkflow = () => {
+    const workflowId = `workflow-${Date.now()}`;
+    setSelectedWorkflow(workflowId);
+    clearWorkflow();
+    setShowBuilder(true);
+  };
+
+  const handleNodeDrop = (type: WorkflowNodeType, position: { x: number; y: number }) => {
+    if (selectedWorkflow) {
+      addNode(type, position, selectedWorkflow);
+    }
+  };
+
+  if (showBuilder && selectedWorkflow) {
+    return (
+      <div className="h-[800px] border rounded-lg overflow-hidden bg-white">
+        {/* Builder Header */}
+        <div className="border-b bg-gray-50 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowBuilder(false)}
+            >
+              ← Back to Templates
+            </Button>
+            <div>
+              <h3 className="font-semibold">Workflow Builder</h3>
+              <p className="text-sm text-gray-600">Drag nodes from the palette to create your workflow</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
+              <Settings className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+            <Button size="sm" onClick={handleTestWorkflow}>
+              <Play className="w-4 h-4 mr-2" />
+              Test
+            </Button>
+          </div>
+        </div>
+
+        {/* Builder Interface */}
+        <div className="flex h-full">
+          {/* Node Palette */}
+          <div className="w-80 border-r bg-gray-50 overflow-y-auto">
+            <NodePalette onNodeDrop={handleNodeDrop} />
+          </div>
+
+          {/* Workflow Canvas */}
+          <div className="flex-1">
+            <WorkflowCanvas
+              workflowId={selectedWorkflow}
+              onSave={handleSaveWorkflow}
+              onTest={handleTestWorkflow}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Visual Workflow Builder</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-center py-12">
+          <Workflow className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-xl font-semibold mb-2">Drag & Drop Workflow Builder</h3>
+          <p className="text-gray-600 mb-6">
+            Create complex automation workflows with our intuitive visual interface
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
+            <div className="p-4 border border-dashed border-blue-200 rounded-lg">
+              <Target className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <h4 className="font-medium mb-1">Triggers</h4>
+              <p className="text-sm text-gray-600">New lead, message received, time-based</p>
+            </div>
+            
+            <div className="p-4 border border-dashed border-purple-200 rounded-lg">
+              <Zap className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+              <h4 className="font-medium mb-1">Actions</h4>
+              <p className="text-sm text-gray-600">Send message, update status, create task</p>
+            </div>
+            
+            <div className="p-4 border border-dashed border-green-200 rounded-lg">
+              <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
+              <h4 className="font-medium mb-1">Conditions</h4>
+              <p className="text-sm text-gray-600">If/then logic, filters, smart routing</p>
+            </div>
+          </div>
+          
+          <Button 
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={createNewWorkflow}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Start Building Workflow
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

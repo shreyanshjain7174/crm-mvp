@@ -96,7 +96,7 @@ export function AchievementToast({
             <div className="flex items-center gap-3 mb-3">
               <div className="text-2xl">{achievement.icon}</div>
               <div>
-                <p className="text-slate-600 text-sm leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {achievement.description}
                 </p>
               </div>
@@ -200,7 +200,7 @@ export function FeatureUnlockCelebration({
               {getFeatureIcon(feature)}
             </div>
             
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               🎉 New Feature Unlocked!
             </h2>
             
@@ -208,7 +208,7 @@ export function FeatureUnlockCelebration({
               {title}
             </h3>
             
-            <p className="text-slate-600 leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed">
               {description}
             </p>
           </div>
@@ -286,7 +286,7 @@ export function StageProgressionCelebration({
           <div className="mb-6">
             <div className="text-6xl mb-4">🚀</div>
             
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Stage Complete!
             </h2>
             
@@ -294,12 +294,12 @@ export function StageProgressionCelebration({
               {stageTitle}
             </h3>
             
-            <p className="text-slate-600 leading-relaxed mb-6">
+            <p className="text-muted-foreground leading-relaxed mb-6">
               {stageDescription}
             </p>
             
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4">
-              <h4 className="font-semibold text-slate-900 mb-2">New Features Unlocked:</h4>
+              <h4 className="font-semibold text-foreground mb-2">New Features Unlocked:</h4>
               <div className="flex flex-wrap gap-2 justify-center">
                 {unlockedFeatures.map((feature, index) => (
                   <Badge 

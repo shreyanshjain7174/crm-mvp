@@ -54,6 +54,14 @@ module.exports = {
           DEFAULT: "#25D366",
           dark: "#128C7E",
         },
+        glass: {
+          light: "rgba(255, 255, 255, 0.1)",
+          dark: "rgba(0, 0, 0, 0.2)",
+        },
+        gradient: {
+          from: "#667eea",
+          to: "#764ba2",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -73,6 +81,22 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float": "float 6s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "gradient": "gradient 15s ease infinite",
+        "shimmer": "shimmer 1.5s infinite",
+      },
+      backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '24px',
+        '3xl': '32px',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

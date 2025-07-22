@@ -123,10 +123,10 @@ export function ContextualGuide({ hints, onDismiss, className }: ContextualGuide
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-900 text-sm mb-1">
+              <h3 className="font-semibold text-foreground text-sm mb-1">
                 {activeHint.title}
               </h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {activeHint.message}
               </p>
             </div>
