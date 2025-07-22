@@ -66,7 +66,7 @@ export const USER_STAGES: Record<UserStage, UserStageConfig> = {
         description: 'Send 5 or more messages'
       }
     ],
-    unlockedFeatures: ['pipeline:view', 'contacts:tags', 'contacts:filters', 'templates:create'],
+    unlockedFeatures: ['pipeline:view', 'contacts:tags', 'contacts:filters', 'templates:create', 'agents:marketplace'],
     nextHint: 'Organize your leads by dragging them into stages'
   },
   advanced: {
@@ -140,6 +140,11 @@ export const FEATURE_GATES = {
   'ai:responses': 'advanced',
   'ai:interactions': 'expert',
   'ai:employees': 'expert',
+  
+  // Agent Platform
+  'agents:marketplace': 'intermediate',
+  'agents:install': 'intermediate',
+  'agents:manage': 'advanced',
   
   // Automation
   'automation:basic': 'advanced',

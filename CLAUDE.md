@@ -669,7 +669,198 @@ apps/frontend/src/
 
 ## Animation and Interaction Patterns
 
-### Visual Design Guidelines
+## **UI Theme: "Clarity" - Built for Focus, Not Features**
+
+### **Design Philosophy**
+**"Every pixel should help the user succeed, not impress them"**
+
+## **Color Palette**
+
+### **Primary Colors**
+```css
+:root {
+  /* Base Colors */
+  --primary: #6366F1;        /* Indigo - Trust & Intelligence */
+  --primary-hover: #5558E3;
+  --primary-light: #E0E7FF;
+  
+  /* Neutral Grays */
+  --gray-950: #030712;       /* Almost Black - Primary Text */
+  --gray-900: #111827;
+  --gray-800: #1F2937;
+  --gray-700: #374151;
+  --gray-600: #4B5563;
+  --gray-500: #6B7280;
+  --gray-400: #9CA3AF;
+  --gray-300: #D1D5DB;
+  --gray-200: #E5E7EB;
+  --gray-100: #F3F4F6;
+  --gray-50: #F9FAFB;
+  --white: #FFFFFF;
+  
+  /* Semantic Colors */
+  --success: #10B981;        /* Emerald Green */
+  --warning: #F59E0B;        /* Amber */
+  --error: #EF4444;          /* Red */
+  --info: #3B82F6;           /* Blue */
+}
+```
+
+### **Special Accent Colors**
+```css
+/* For Progressive Unlocks & Celebrations */
+--unlock-gradient: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+--achievement: #8B5CF6;     /* Purple - Special moments */
+--ai-agent: #06B6D4;       /* Cyan - AI features */
+```
+
+## **Typography System**
+
+### **Font Stack**
+```css
+/* Primary Font - Clean & Modern */
+--font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+             'Roboto', 'Helvetica Neue', sans-serif;
+
+/* Monospace for Data */
+--font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 
+             'Courier New', monospace;
+```
+
+### **Type Scale**
+```css
+/* Fluid Typography */
+--text-xs: clamp(0.75rem, 2vw, 0.8125rem);    /* 12-13px */
+--text-sm: clamp(0.875rem, 2.5vw, 0.9375rem); /* 14-15px */
+--text-base: 1rem;                             /* 16px */
+--text-lg: clamp(1.125rem, 3vw, 1.25rem);     /* 18-20px */
+--text-xl: clamp(1.25rem, 3.5vw, 1.5rem);     /* 20-24px */
+--text-2xl: clamp(1.5rem, 4vw, 2rem);         /* 24-32px */
+--text-3xl: clamp(2rem, 5vw, 3rem);           /* 32-48px */
+
+/* Font Weights */
+--font-normal: 400;
+--font-medium: 500;
+--font-semibold: 600;
+--font-bold: 700;
+
+/* Line Heights */
+--leading-tight: 1.25;
+--leading-normal: 1.5;
+--leading-relaxed: 1.625;
+```
+
+## **Component Styling**
+
+### **Cards & Surfaces**
+```css
+/* Elevation System - Subtle Depth */
+.surface-0 { 
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+}
+
+.surface-1 {
+  background: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--gray-100);
+}
+
+.surface-2 {
+  background: var(--white);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Glassmorphism for Special Elements */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+```
+
+### **Buttons**
+```css
+/* Primary Button */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* Ghost Button */
+.btn-ghost {
+  background: transparent;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+/* AI Agent Button - Special */
+.btn-agent {
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-agent::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: rotate(45deg);
+  transition: 0.5s;
+}
+
+.btn-agent:hover::before {
+  animation: shimmer 0.5s;
+}
+```
+
+## **Layout Principles**
+
+### **Spacing System**
+```css
+/* 8px Grid System */
+--space-1: 0.25rem;  /* 4px */
+--space-2: 0.5rem;   /* 8px */
+--space-3: 0.75rem;  /* 12px */
+--space-4: 1rem;     /* 16px */
+--space-5: 1.25rem;  /* 20px */
+--space-6: 1.5rem;   /* 24px */
+--space-8: 2rem;     /* 32px */
+--space-10: 2.5rem;  /* 40px */
+--space-12: 3rem;    /* 48px */
+--space-16: 4rem;    /* 64px */
+```
+
+### **Border Radius**
+```css
+--radius-sm: 0.25rem;   /* 4px - Subtle */
+--radius-md: 0.5rem;    /* 8px - Default */
+--radius-lg: 0.75rem;   /* 12px - Cards */
+--radius-xl: 1rem;      /* 16px - Modals */
+--radius-full: 9999px;  /* Pills */
+```
+
+### **Visual Design Guidelines**
 **Inspiration**: Linear, Notion, Superhuman - clean, minimal with delightful micro-interactions
 **Reference**: https://jitter.video/templates/ui-elements/ (subtle, professional animations)
 

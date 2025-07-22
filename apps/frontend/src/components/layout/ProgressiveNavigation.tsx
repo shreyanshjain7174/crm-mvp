@@ -67,6 +67,14 @@ const allNavigationItems: NavigationItem[] = [
     description: 'AI-powered assistance'
   },
   { 
+    name: 'Agent Marketplace', 
+    href: '/marketplace', 
+    icon: Bot,
+    feature: 'agents:marketplace',
+    requiredStage: 'intermediate',
+    description: 'Discover and install AI agents'
+  },
+  { 
     name: 'AI Employees', 
     href: '/dashboard/ai-employees', 
     icon: Bot,
