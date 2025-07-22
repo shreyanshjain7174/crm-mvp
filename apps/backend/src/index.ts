@@ -14,6 +14,7 @@ import { authRoutes } from './routes/auth';
 import { statsRoutes } from './routes/stats';
 import agentRoutes from './routes/agents';
 import billingRoutes from './routes/billing';
+import { agentMonitoringRoutes } from './routes/agent-monitoring';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
@@ -114,6 +115,7 @@ async function buildApp() {
   await app.register(statsRoutes, { prefix: '/api/stats' });
   await app.register(agentRoutes, { prefix: '/api/agents' });
   await app.register(billingRoutes, { prefix: '/api/billing' });
+  await app.register(agentMonitoringRoutes, { prefix: '/api/monitoring' });
 
   return app;
 }

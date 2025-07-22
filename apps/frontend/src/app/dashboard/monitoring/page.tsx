@@ -36,6 +36,7 @@ import {
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { AgentMonitoringDashboard } from '@/components/monitoring/AgentMonitoringDashboard';
 
 export default function SystemMonitoringPage() {
   const router = useRouter();
@@ -274,8 +275,9 @@ export default function SystemMonitoringPage() {
 
       {/* Monitoring Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="agents">AI Agents</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
@@ -370,6 +372,11 @@ export default function SystemMonitoringPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* AI Agents Tab */}
+        <TabsContent value="agents" className="space-y-6">
+          <AgentMonitoringDashboard businessId="demo-business" />
         </TabsContent>
 
         {/* Services Tab */}
