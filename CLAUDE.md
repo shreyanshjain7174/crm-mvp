@@ -805,9 +805,12 @@ const ANIMATIONS = {
 - For now other than the sensitive information push the changes in the main branch, after this point we will use one staging branch and the main branch will be our production branch
 
 ## Commit Guidelines
-- Always use user signed commits with -s flag, never use co-authored commits
-- PRs created by Claude should not contain co-authored commits
+- Always use user signed commits with -s flag only
+- NEVER use co-authored commits
+- NEVER include "Co-Authored-By: Claude" in commit messages
+- NEVER include "Generated with Claude Code" or any Claude attribution in commits
 - All commits must be signed off by the user only
+- Keep commit messages clean and professional without any AI/Claude references
 
 ## GitHub Project Board Management
 - Always update task status in GitHub project board using gh CLI
