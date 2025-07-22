@@ -14,7 +14,13 @@ export function useFeatureGate(feature: FeatureKey): FeatureGateResult {
   const newFeaturesSeen = useUserProgressStore((state) => state.newFeaturesSeen);
   
   const requiredStage = FEATURE_GATES[feature];
-  const canAccess = canAccessFeature(feature);
+  
+  // In development mode, allow bypassing feature gates with a global flag
+  let canAccess = canAccessFeature(feature);
+  if (typeof window !== 'undefined' && (window as any).__BYPASS_FEATURE_GATES) {
+    canAccess = true;
+  }
+  
   const isNew = canAccess && !newFeaturesSeen.includes(feature);
   
   return {

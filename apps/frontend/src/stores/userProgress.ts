@@ -54,6 +54,11 @@ interface UserProgressStore extends UserProgress {
   resetProgress: () => void;
   syncWithBackend: () => Promise<void>;
   
+  // Development helpers
+  unlockAllFeatures: () => void;
+  setStage: (stage: UserStage) => void;
+  addTestData: () => void;
+  
   // Getters
   canAccessFeature: (feature: FeatureKey) => boolean;
   getProgressPercentage: () => number;
@@ -343,6 +348,50 @@ export const useUserProgressStore = create<UserProgressStore>()(
       hasUnseenFeatures: () => {
         const state = get();
         return state.unlockedFeatures.some(feature => !state.newFeaturesSeen.includes(feature));
+      },
+
+      // Development helpers
+      unlockAllFeatures: () => {
+        const allFeatures = Object.keys(FEATURE_GATES) as FeatureKey[];
+        set({
+          stage: 'expert',
+          unlockedFeatures: allFeatures,
+          stats: {
+            contactsAdded: 50,
+            messagesSent: 100,
+            aiInteractions: 75,
+            templatesUsed: 25,
+            pipelineActions: 30,
+            loginStreak: 10,
+            totalSessions: 25
+          }
+        });
+      },
+
+      setStage: (stage) => {
+        const stageConfig = USER_STAGES[stage];
+        set({
+          stage,
+          unlockedFeatures: stageConfig.unlockedFeatures as FeatureKey[],
+          currentHint: stageConfig.nextHint
+        });
+      },
+
+      addTestData: () => {
+        set((state) => ({
+          stats: {
+            ...state.stats,
+            contactsAdded: state.stats.contactsAdded + 10,
+            messagesSent: state.stats.messagesSent + 20,
+            aiInteractions: state.stats.aiInteractions + 15,
+            templatesUsed: state.stats.templatesUsed + 5,
+            pipelineActions: state.stats.pipelineActions + 8,
+            loginStreak: state.stats.loginStreak + 1,
+            totalSessions: state.stats.totalSessions + 1
+          }
+        }));
+        // Check for stage progression after adding test data
+        setTimeout(() => get().checkStageProgression(), 0);
       }
     }),
     {
@@ -387,4 +436,43 @@ if (typeof window !== 'undefined') {
       onboardingCompleted: state.onboardingCompleted
     });
   };
+
+  // Additional development helpers
+  (window as any).unlockAllFeatures = () => {
+    useUserProgressStore.getState().unlockAllFeatures();
+    console.log('🚀 All features unlocked! You are now an expert user.');
+  };
+
+  (window as any).setUserStage = (stage: string) => {
+    if (['new', 'beginner', 'intermediate', 'advanced', 'expert'].includes(stage)) {
+      useUserProgressStore.getState().setStage(stage as any);
+      console.log(`User stage set to: ${stage}`);
+    } else {
+      console.log('Invalid stage. Use: new, beginner, intermediate, advanced, or expert');
+    }
+  };
+
+  (window as any).addTestData = () => {
+    useUserProgressStore.getState().addTestData();
+    console.log('📊 Test data added! Check your progress.');
+  };
+
+  (window as any).bypassAllFeatureGates = () => {
+    (window as any).__BYPASS_FEATURE_GATES = true;
+    console.log('🔓 All feature gates bypassed! All features are now accessible.');
+  };
+
+  (window as any).enableFeatureGates = () => {
+    (window as any).__BYPASS_FEATURE_GATES = false;
+    console.log('🔒 Feature gates re-enabled. Progressive disclosure active.');
+  };
+
+  console.log('🛠️ Development helpers available:');
+  console.log('- unlockAllFeatures() - Unlock all features immediately');
+  console.log('- setUserStage("expert") - Jump to any stage');
+  console.log('- addTestData() - Add sample progress data');
+  console.log('- resetUserProgress() - Reset to new user');
+  console.log('- debugUserProgress() - Show current state');
+  console.log('- bypassAllFeatureGates() - Bypass all feature restrictions');
+  console.log('- enableFeatureGates() - Re-enable progressive disclosure');
 }

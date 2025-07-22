@@ -155,7 +155,12 @@ export const FEATURE_GATES = {
   // Analytics & Monitoring
   'analytics:basic': 'intermediate',
   'analytics:full': 'expert',
-  'monitoring:system': 'expert'
+  'monitoring:system': 'expert',
+  
+  // Workflows
+  'workflows:view': 'intermediate',
+  'workflows:create': 'advanced',
+  'workflows:manage': 'expert'
 } as const;
 
 export type FeatureKey = keyof typeof FEATURE_GATES;

@@ -27,6 +27,17 @@ interface PromptConfig {
 
 const DISCOVERY_PROMPTS: PromptConfig[] = [
   {
+    id: 'add-first-contact',
+    title: 'Start your CRM journey',
+    description: 'Add your first contact to unlock messaging, pipeline management, and AI features.',
+    icon: <span className="text-blue-500">👋</span>,
+    actionText: 'Add Contact',
+    actionType: 'add_contact',
+    urgency: 'high',
+    condition: (stats) => stats.contactsAdded === 0,
+    cooldown: 0
+  },
+  {
     id: 'inactive-leads',
     title: 'Quiet leads need attention',
     description: 'You have contacts who haven\'t heard from you in a while. A quick message could re-engage them.',
@@ -126,7 +137,7 @@ export function DiscoveryPrompt({ onAction, className }: DiscoveryPromptProps) {
     }
   };
   
-  if (!activePrompt || stage === 'new') return null;
+  if (!activePrompt) return null;
   
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {

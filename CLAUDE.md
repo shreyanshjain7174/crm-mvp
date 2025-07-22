@@ -358,7 +358,27 @@ The following checks must pass in CI:
 
 ## Recent Major Updates
 
-### Comprehensive Testing Infrastructure (July 2024) ✅ IN PROGRESS
+### Visual Workflow Builder Implementation (July 2024) ✅ COMPLETED
+- **Drag-and-Drop Interface**: ✅ Complete workflow canvas with @hello-pangea/dnd
+  - Visual workflow builder with 14+ node types (trigger, action, condition, AI agent, etc.)
+  - Real-time drag-and-drop from palette to canvas with visual feedback
+  - Node positioning, connections, and workflow orchestration
+  - Undo/redo functionality with complete state management
+
+- **Workflow Architecture**: ✅ Comprehensive workflow system
+  - Complete TypeScript type system for workflows (`/types/workflow-types.ts`)
+  - Zustand store for workflow state management (`/stores/workflowBuilder.ts`)
+  - Node palette with categorized components (`/components/workflow/NodePalette.tsx`)
+  - Workflow canvas with connection handling (`/components/workflow/WorkflowCanvas.tsx`)
+  - Node component system with validation and execution
+
+- **Progressive Disclosure Fixes**: ✅ New user onboarding resolved
+  - Fixed Add Contact button visibility for new users
+  - Enabled discovery prompts for all user stages
+  - Added proper action handlers for new user interactions
+  - Maintained development bypass tools for testing progressive features
+
+### Comprehensive Testing Infrastructure (July 2024) ✅ COMPLETED
 - **Backend Testing Setup**: ✅ Complete Jest + Supertest testing infrastructure
   - Jest configuration with TypeScript support and ts-jest preset
   - Test database setup with PostgreSQL and proper cleanup

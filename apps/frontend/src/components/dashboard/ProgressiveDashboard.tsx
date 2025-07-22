@@ -37,6 +37,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show stage-specific components based on user progression
   // Prioritize local stats over stage to ensure blank dashboard for truly new users
   if (stats.contactsAdded === 0 || stage === 'new') {
+    console.log('Rendering NewUserStage - Stage:', stage, 'Contacts:', stats.contactsAdded);
     return (
       <NewUserStage 
         onAddContact={onAddContact || (() => {})} 

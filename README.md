@@ -5,8 +5,9 @@ An advanced **Agentic CRM** system designed specifically for Indian SMEs with co
 ## ✨ Features
 
 - 🤖 **AI Agent System**: Multi-agent architecture with LangGraph workflow orchestration
-- 📱 **WhatsApp Integration**: 360dialog Business API with automated responses
-- 🎯 **Lead Management**: Complete pipeline with AI-powered qualification and scoring
+- 🔧 **Visual Workflow Builder**: Drag-and-drop interface for creating AI agent workflows
+- 📱 **WhatsApp Integration**: Facebook WhatsApp Cloud API with automated responses
+- 🎯 **Progressive CRM**: Feature discovery system that grows with user expertise
 - 📊 **Real-time Dashboard**: Live monitoring with Socket.io and comprehensive analytics
 - 🔄 **Event-Driven Architecture**: Scalable microservices with Redis Streams
 - 👥 **Human-in-the-Loop**: Intelligent approval workflows for AI-generated content
@@ -24,10 +25,12 @@ An advanced **Agentic CRM** system designed specifically for Indian SMEs with co
 - **Context Memory Agent**: Conversation history and embeddings
 
 ### Workflow Automation
+- **Visual Workflow Builder**: Drag-and-drop interface with 14+ node types
 - **Lead Qualification & Response**: 5-step automated workflow
 - **Follow-up Sequence**: 4-step nurturing automation
 - **Real-time Execution**: Live workflow monitoring with step-by-step tracking
 - **Human Approval**: Critical decisions routed for human review
+- **Progressive Feature Discovery**: Features unlock based on user interaction patterns
 
 ## 🚀 Quick Start
 
@@ -131,18 +134,18 @@ NEXT_PUBLIC_DEMO_MODE=false
 GITHUB_PAGES=false
 ```
 
-### WhatsApp Setup (AISensy)
+### WhatsApp Setup (Facebook Cloud API)
 
-1. Sign up for AISensy Business WhatsApp API
-2. Get your API key from the AISensy dashboard
-3. Create a campaign in AISensy (make sure it's "Live")
+1. Create a Facebook App in Meta for Developers
+2. Set up WhatsApp Business API product
+3. Get your permanent access token and phone number ID
 4. Configure webhook URL: `https://yourdomain.com/api/whatsapp/webhook`
-5. Update environment variables with your AISensy credentials
+5. Update environment variables with your Facebook credentials
 
-**AISensy Features:**
-- Free forever plan available
-- Easy integration with JWT-based authentication
-- Support for templates and media messages
+**Facebook WhatsApp Cloud API Features:**
+- Free tier with 1000 conversations/month
+- Direct integration with Meta services
+- Support for templates, media, and interactive messages
 - Automatic contact creation for new numbers
 
 ### AI Configuration
