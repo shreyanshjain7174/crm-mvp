@@ -12,11 +12,42 @@
 
 ### Code Standards
 - Update package.json when adding dependencies
-- Run `npm run lint` and `npm run typecheck` before commits
-- Fix all ESLint/TypeScript errors
+- **Use automated CI checks**: `npm run ci-check` (comprehensive validation)
+- Fix all ESLint/TypeScript errors before committing
 - Test-driven development (TDD)
 - Never create files unless necessary
 - No proactive documentation unless requested
+
+### Automation Philosophy
+- **Automate repetitive tasks** - Just like our AI agents do for users
+- Create scripts for multi-step processes (linting, type checking, testing)
+- Use package.json shortcuts for common workflows
+- Suggest automation opportunities when patterns emerge
+- Mirror platform philosophy: "Proactive assistance through intelligent automation"
+
+### Automation Tools & Scripts
+```bash
+# Comprehensive CI validation
+npm run ci-check              # Runs lint, typecheck, tests with timing
+
+# Quick development workflows
+npm run quick-commit "message" # Full commit workflow with CI validation
+./scripts/check-ci.sh          # Direct script execution with verbose logs
+
+# Suggested automation opportunities:
+# - Pre-commit hooks for automatic formatting
+# - Automated PR description generation
+# - Bundle size monitoring alerts
+# - Performance regression detection
+# - Automated dependency updates with testing
+```
+
+### When to Create Automation
+1. **3+ Manual Steps**: If a workflow requires 3+ manual commands
+2. **Daily Repetition**: Tasks performed multiple times daily
+3. **Error-Prone Process**: Manual steps that frequently cause mistakes
+4. **Context Switching**: Workflows that interrupt development focus
+5. **Onboarding Friction**: Complex setup processes for new developers
 
 ## Platform Strategy
 
@@ -68,6 +99,7 @@ npm run db:seed
 npm run db:studio
 
 # Testing & Quality
+npm run ci-check        # 🚀 Automated CI validation (recommended)
 npm run test            # All tests
 npm run test:watch      # Watch mode
 npm run lint            # ESLint
