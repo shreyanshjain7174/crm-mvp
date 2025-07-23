@@ -1,36 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Search, Star, Download, Zap, MessageSquare, BarChart3, Database, Bot, Sparkles, Filter, Grid3X3, List, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface Agent {
-  id: string;
-  agentId: string;
-  name: string;
-  version: string;
-  provider: {
-    name: string;
-    verified: boolean;
-  };
-  description: string;
-  category: string;
-  tags: string[];
-  capabilities: string[];
-  pricing: {
-    model: 'free' | 'subscription' | 'usage' | 'freemium';
-    price?: number;
-    currency?: string;
-  };
-  stats: {
-    installs: number;
-    rating: number;
-    reviews: number;
-  };
-  featured: boolean;
-  verified: boolean;
-  screenshots?: string[];
-}
+import { useMarketplace } from '@/hooks/useMarketplace';
+import { Agent } from '@/lib/api/marketplace';
 
 interface MarketplaceFilters {
   category: string;
@@ -40,62 +14,25 @@ interface MarketplaceFilters {
   view: 'grid' | 'list';
 }
 
-const categories = [
-  { id: 'all', name: 'All Agents', icon: Bot, color: 'text-gray-600', bgColor: 'bg-gray-100' },
-  { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare, color: 'text-green-600', bgColor: 'bg-green-100' },
-  { id: 'voice', name: 'Voice Agents', icon: Zap, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  { id: 'data', name: 'Data & Analytics', icon: BarChart3, color: 'text-purple-600', bgColor: 'bg-purple-100' },
-  { id: 'automation', name: 'Automation', icon: Database, color: 'text-orange-600', bgColor: 'bg-orange-100' },
-];
+const categoryIcons = {
+  'all': Bot,
+  'whatsapp': MessageSquare,
+  'voice': Zap,
+  'data': BarChart3,
+  'automation': Database,
+  'lead-gen': Database,
+  'support': MessageSquare,
+};
 
-// Mock data - will be replaced with API calls
-const mockAgents: Agent[] = [
-  {
-    id: '1',
-    agentId: 'whatsapp-ai-responder',
-    name: 'WhatsApp AI Responder',
-    version: '2.1.0',
-    provider: { name: 'Local AI Co.', verified: true },
-    description: 'Automatically respond to WhatsApp messages with intelligent, context-aware replies',
-    category: 'whatsapp',
-    tags: ['automation', 'messaging', 'ai'],
-    capabilities: ['auto-reply', 'sentiment-analysis', 'context-awareness'],
-    pricing: { model: 'freemium', price: 999, currency: 'INR' },
-    stats: { installs: 15670, rating: 4.8, reviews: 2341 },
-    featured: true,
-    verified: true,
-  },
-  {
-    id: '2',
-    agentId: 'cozmox-voice-agent',
-    name: 'Cozmox Voice Assistant',
-    version: '1.5.2',
-    provider: { name: 'Cozmox AI', verified: true },
-    description: 'AI-powered voice calls with natural conversation and lead qualification',
-    category: 'voice',
-    tags: ['voice', 'calls', 'lead-qualification'],
-    capabilities: ['voice-calls', 'lead-scoring', 'appointment-booking'],
-    pricing: { model: 'usage', price: 5, currency: 'INR' },
-    stats: { installs: 8340, rating: 4.6, reviews: 892 },
-    featured: true,
-    verified: true,
-  },
-  {
-    id: '3',
-    agentId: 'data-enricher-pro',
-    name: 'Data Enricher Pro',
-    version: '3.0.1',
-    provider: { name: 'DataFlow Inc', verified: false },
-    description: 'Automatically enrich contact data with social profiles, company info, and more',
-    category: 'data',
-    tags: ['data-enrichment', 'contacts', 'automation'],
-    capabilities: ['social-lookup', 'company-data', 'email-verification'],
-    pricing: { model: 'subscription', price: 1999, currency: 'INR' },
-    stats: { installs: 3240, rating: 4.2, reviews: 456 },
-    featured: false,
-    verified: false,
-  }
-];
+const categoryColors = {
+  'all': { color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  'whatsapp': { color: 'text-green-600', bgColor: 'bg-green-100' },
+  'voice': { color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  'data': { color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  'automation': { color: 'text-orange-600', bgColor: 'bg-orange-100' },
+  'lead-gen': { color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
+  'support': { color: 'text-cyan-600', bgColor: 'bg-cyan-100' },
+};
 
 export function ModernAgentMarketplace() {
   const [filters, setFilters] = useState<MarketplaceFilters>({
@@ -105,69 +42,52 @@ export function ModernAgentMarketplace() {
     sort: 'popular',
     view: 'grid'
   });
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load agents from API
-  useEffect(() => {
-    // TODO: Replace with actual API call
-    setLoading(true);
-    setTimeout(() => {
-      setAgents(mockAgents);
-      setFeaturedAgents(mockAgents.filter(agent => agent.featured));
-      setLoading(false);
-    }, 800);
-  }, []);
+  // Use the marketplace hook
+  const {
+    agents,
+    featuredAgents,
+    categories,
+    loading,
+    error,
+    updateFilters,
+    installAgent,
+  } = useMarketplace({
+    category: filters.category !== 'all' ? filters.category : undefined,
+    search: filters.search || undefined,
+    pricing: filters.pricing !== 'all' ? filters.pricing : undefined,
+    sort: filters.sort,
+    limit: 20,
+  });
 
-  // Filter and sort agents
-  const filteredAgents = useMemo(() => {
-    let filtered = agents;
-
-    // Category filter
-    if (filters.category !== 'all') {
-      filtered = filtered.filter(agent => agent.category === filters.category);
-    }
-
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(agent =>
-        agent.name.toLowerCase().includes(searchLower) ||
-        agent.description.toLowerCase().includes(searchLower) ||
-        agent.provider.name.toLowerCase().includes(searchLower) ||
-        agent.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Pricing filter
-    if (filters.pricing !== 'all') {
-      filtered = filtered.filter(agent => agent.pricing.model === filters.pricing);
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      switch (filters.sort) {
-        case 'popular':
-          return b.stats.installs - a.stats.installs;
-        case 'rating':
-          return b.stats.rating - a.stats.rating;
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'newest':
-          return b.id.localeCompare(a.id); // Mock sorting by ID
-        default:
-          return 0;
-      }
+  // Handle filter changes
+  const handleFilterChange = (newFilters: Partial<MarketplaceFilters>) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    
+    // Update API filters
+    updateFilters({
+      category: updatedFilters.category !== 'all' ? updatedFilters.category : undefined,
+      search: updatedFilters.search || undefined,
+      pricing: updatedFilters.pricing !== 'all' ? updatedFilters.pricing : undefined,
+      sort: updatedFilters.sort,
     });
+  };
 
-    return filtered;
-  }, [agents, filters]);
-
-  const handleInstall = (agent: Agent) => {
-    // TODO: Implement installation logic
-    console.log('Installing agent:', agent.name);
+  const handleInstall = async (agent: Agent) => {
+    try {
+      const result = await installAgent(agent.agentId);
+      if (result.success) {
+        // Show success message
+        alert(`${agent.name} installed successfully!`);
+      } else {
+        // Show error message
+        alert(`Failed to install ${agent.name}: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   if (loading) {
@@ -183,6 +103,40 @@ export function ModernAgentMarketplace() {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Bot className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load marketplace</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Build categories list with API data
+  const categoriesWithIcons = [
+    { id: 'all', name: 'All Agents', icon: Bot, color: 'text-gray-600', bgColor: 'bg-gray-100' },
+    ...categories.map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: categoryIcons[cat.id as keyof typeof categoryIcons] || Bot,
+      color: categoryColors[cat.id as keyof typeof categoryColors]?.color || 'text-gray-600',
+      bgColor: categoryColors[cat.id as keyof typeof categoryColors]?.bgColor || 'bg-gray-100',
+    }))
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -224,7 +178,7 @@ export function ModernAgentMarketplace() {
                 type="text"
                 placeholder="Search AI agents, capabilities, or providers..."
                 value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                onChange={(e) => handleFilterChange({ search: e.target.value })}
                 className="w-full pl-12 pr-6 py-4 bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl 
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
                           shadow-lg shadow-black/5 text-gray-900 placeholder-gray-500
@@ -240,7 +194,7 @@ export function ModernAgentMarketplace() {
             transition={{ delay: 0.2 }}
             className="flex flex-wrap justify-center gap-3 mb-6"
           >
-            {categories.map((category) => {
+            {categoriesWithIcons.map((category) => {
               const Icon = category.icon;
               const isActive = filters.category === category.id;
               return (
@@ -248,7 +202,7 @@ export function ModernAgentMarketplace() {
                   key={category.id}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setFilters(prev => ({ ...prev, category: category.id }))}
+                  onClick={() => handleFilterChange({ category: category.id })}
                   className={`
                     flex items-center space-x-2 px-6 py-3 rounded-full transition-all duration-300
                     ${isActive 
@@ -279,7 +233,7 @@ export function ModernAgentMarketplace() {
             <h2 className="text-2xl font-bold text-gray-900">Featured Agents</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredAgents.map((agent, index) => (
+            {featuredAgents.map((agent: Agent, index: number) => (
               <motion.div
                 key={agent.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -288,7 +242,7 @@ export function ModernAgentMarketplace() {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group"
               >
-                <AgentCard agent={agent} onInstall={handleInstall} featured />
+                <AgentCard agent={agent} onInstall={handleInstall} featured categories={categoriesWithIcons} />
               </motion.div>
             ))}
           </div>
@@ -300,7 +254,7 @@ export function ModernAgentMarketplace() {
         <div className="flex items-center justify-between bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-white/30 shadow-lg shadow-black/5">
           <div className="flex items-center space-x-4">
             <span className="text-gray-600 font-medium">
-              {filteredAgents.length} agents found
+              {agents.length} agents found
             </span>
             {filters.search && (
               <span className="text-sm text-gray-500">
@@ -393,7 +347,7 @@ export function ModernAgentMarketplace() {
 
       {/* Agents Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        {filteredAgents.length > 0 ? (
+        {agents.length > 0 ? (
           <motion.div
             layout
             className={`grid gap-6 ${
@@ -403,7 +357,7 @@ export function ModernAgentMarketplace() {
             }`}
           >
             <AnimatePresence>
-              {filteredAgents.map((agent, index) => (
+              {agents.map((agent: Agent, index: number) => (
                 <motion.div
                   key={agent.id}
                   layout
@@ -417,6 +371,7 @@ export function ModernAgentMarketplace() {
                     agent={agent} 
                     onInstall={handleInstall} 
                     listView={filters.view === 'list'}
+                    categories={categoriesWithIcons}
                   />
                 </motion.div>
               ))}
@@ -451,12 +406,14 @@ function AgentCard({
   agent, 
   onInstall, 
   featured = false, 
-  listView = false 
+  listView = false,
+  categories
 }: { 
   agent: Agent; 
   onInstall: (agent: Agent) => void; 
   featured?: boolean;
   listView?: boolean;
+  categories: any[];
 }) {
   const categoryConfig = categories.find(cat => cat.id === agent.category) || categories[0];
   const Icon = categoryConfig.icon;

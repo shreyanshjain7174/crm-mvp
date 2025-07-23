@@ -28,6 +28,8 @@
     "typecheck": "npm run typecheck:frontend && npm run typecheck:backend",
     "typecheck:frontend": "cd apps/frontend && npm run typecheck",
     "typecheck:backend": "cd apps/backend && npm run typecheck",
+    "ci-check": "./scripts/check-ci.sh",
+    "quick-commit": "./scripts/quick-commit.sh",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
