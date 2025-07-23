@@ -15,6 +15,7 @@ import { statsRoutes } from './routes/stats';
 import agentRoutes from './routes/agents';
 import billingRoutes from './routes/billing';
 import { agentMonitoringRoutes } from './routes/agent-monitoring';
+import marketplaceRoutes from './routes/marketplace';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
@@ -116,6 +117,7 @@ async function buildApp() {
   await app.register(agentRoutes, { prefix: '/api/agents' });
   await app.register(billingRoutes, { prefix: '/api/billing' });
   await app.register(agentMonitoringRoutes, { prefix: '/api/monitoring' });
+  await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
 
   return app;
 }
