@@ -2,43 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, LogIn, Loader2, Bot, Sparkles, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Loader2, Bot, Sparkles, CheckCircle, User, Building, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { DEMO_MODE } from '@/lib/demo-mode';
-import { validateLogin } from '@/lib/validation';
+import { validateRegister } from '@/lib/validation';
 
-interface LoginFormProps {
+interface RegisterFormProps {
   onSuccess?: () => void;
 }
 
-export function ModernLoginForm({ onSuccess }: LoginFormProps) {
-  const { login, loading } = useAuth();
-  const searchParams = useSearchParams();
+export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
+  const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    password: ''
+    company: '',
+    password: '',
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isValidEmail, setIsValidEmail] = useState(false);
+  const [isValidName, setIsValidName] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: '', color: '' });
-
-  useEffect(() => {
-    // Check if user was redirected after account deletion
-    if (searchParams.get('deleted') === 'true') {
-      setSuccessMessage('Your account has been successfully deleted. Thank you for using our service.');
-    }
-  }, [searchParams]);
+  const [passwordsMatch, setPasswordsMatch] = useState(false);
 
   // Validate email in real-time
   useEffect(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsValidEmail(emailRegex.test(formData.email));
   }, [formData.email]);
+
+  // Validate name in real-time
+  useEffect(() => {
+    setIsValidName(formData.name.trim().length >= 2);
+  }, [formData.name]);
 
   // Calculate password strength (proactive feedback)
   useEffect(() => {
@@ -76,14 +77,29 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
     setPasswordStrength({ score, text, color });
   }, [formData.password]);
 
+  // Check password confirmation match
+  useEffect(() => {
+    if (formData.confirmPassword && formData.password) {
+      setPasswordsMatch(formData.password === formData.confirmPassword);
+    } else {
+      setPasswordsMatch(false);
+    }
+  }, [formData.password, formData.confirmPassword]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setFormErrors({});
 
+    // Check password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setFormErrors({ confirmPassword: 'Passwords do not match' });
+      return;
+    }
+
     // Skip validation in demo mode for easier testing
     if (!DEMO_MODE) {
-      const validationResult = validateLogin(formData);
+      const validationResult = validateRegister(formData);
       
       if (!validationResult.success) {
         setFormErrors(validationResult.errors || {});
@@ -92,10 +108,15 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
     }
 
     try {
-      await login(formData);
+      await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        company: formData.company || undefined
+      });
       onSuccess?.();
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed');
+      setError(error instanceof Error ? error.message : 'Registration failed');
     }
   };
 
@@ -104,6 +125,11 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const isFormValid = () => {
+    if (DEMO_MODE) return true;
+    return isValidEmail && isValidName && formData.password && passwordsMatch;
   };
 
   return (
@@ -126,14 +152,14 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
           >
             <div className="flex items-center justify-center space-x-2">
               <Sparkles className="w-4 h-4" />
-              <span className="font-medium">🎭 DEMO MODE ACTIVE - Use any credentials to login</span>
+              <span className="font-medium">🎭 DEMO MODE ACTIVE - Use any credentials to register</span>
               <Sparkles className="w-4 h-4" />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Login Container */}
+      {/* Main Register Container */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -157,7 +183,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             transition={{ delay: 0.3 }}
             className="text-3xl font-bold text-gray-900 mb-2"
           >
-            Sign in to your account
+            Join the AI revolution
           </motion.h1>
           
           <motion.p
@@ -166,11 +192,11 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             transition={{ delay: 0.4 }}
             className="text-gray-700 font-medium"
           >
-            Access your <span className="text-indigo-600 font-semibold">proactive AI</span> platform
+            Create your account on the <span className="text-indigo-600 font-semibold">proactive AI</span> platform
           </motion.p>
         </div>
 
-        {/* Login Form */}
+        {/* Register Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -182,27 +208,25 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
           
           <div className="relative z-10">
             {/* Form Header */}
-            <div className="flex items-center justify-center space-x-2 mb-6">
-              <LogIn className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Login</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <UserPlus className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Create Account</h2>
+              </div>
+              <Link href="/login">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back to Login
+                </motion.button>
+              </Link>
             </div>
 
-            {/* Success/Error Messages */}
+            {/* Error Messages */}
             <AnimatePresence>
-              {successMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-4 p-4 bg-green-50/80 backdrop-blur-sm border border-green-200/50 rounded-2xl"
-                >
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <p className="text-sm text-green-800">{successMessage}</p>
-                  </div>
-                </motion.div>
-              )}
-
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -223,15 +247,86 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-blue-600" />
                     <p className="text-sm text-blue-800">
-                      <strong>Demo Mode:</strong> Use any credentials to explore the full CRM system.
+                      <strong>Demo Mode:</strong> Use any credentials to explore the full AI platform.
                     </p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Login Form */}
+            {/* Register Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800">Full Name</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    disabled={loading}
+                    className={`
+                      w-full px-4 py-3 pl-12 bg-white/80 backdrop-blur-sm border rounded-xl
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
+                      transition-all duration-300 text-gray-900 placeholder-gray-500
+                      ${formErrors.name 
+                        ? 'border-red-300 bg-red-50/50' 
+                        : formData.name && isValidName
+                        ? 'border-green-300 bg-green-50/30 hover:border-green-400'
+                        : 'border-gray-200 hover:border-gray-300 focus:border-indigo-400'
+                      }
+                    `}
+                  />
+                  
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  
+                  {/* Validation Indicator */}
+                  <AnimatePresence>
+                    {formData.name && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                      >
+                        {isValidName ? (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <div className="w-5 h-5 border-2 border-orange-300 rounded-full" />
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
+                <AnimatePresence>
+                  {isValidName && formData.name && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="text-xs text-green-600 flex items-center space-x-1"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Valid name</span>
+                    </motion.p>
+                  )}
+                  
+                  {formErrors.name && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="text-xs text-red-600"
+                    >
+                      {formErrors.name}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Email Field */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800">Email Address</label>
@@ -246,12 +341,12 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     className={`
                       w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
-                      transition-all duration-300 pr-10
+                      transition-all duration-300 pr-10 text-gray-900 placeholder-gray-500
                       ${formErrors.email 
                         ? 'border-red-300 bg-red-50/50' 
                         : formData.email && isValidEmail
-                        ? 'border-green-300 bg-green-50/50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-green-300 bg-green-50/30 hover:border-green-400'
+                        : 'border-gray-200 hover:border-gray-300 focus:border-indigo-400'
                       }
                     `}
                   />
@@ -301,6 +396,27 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 </AnimatePresence>
               </div>
 
+              {/* Company Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800">Company Name <span className="text-gray-500">(Optional)</span></label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    placeholder="Enter your company name"
+                    disabled={loading}
+                    className="w-full px-4 py-3 pl-12 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl
+                              focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
+                              transition-all duration-300 text-gray-900 placeholder-gray-500
+                              hover:border-gray-300 focus:border-indigo-400"
+                  />
+                  
+                  <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
+              </div>
+
               {/* Password Field */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800">Password</label>
@@ -310,7 +426,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Enter your password"
+                    placeholder="Create a strong password"
                     disabled={loading}
                     className={`
                       w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
@@ -386,15 +502,94 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 </AnimatePresence>
               </div>
 
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm your password"
+                    disabled={loading}
+                    className={`
+                      w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
+                      transition-all duration-300 pr-12 text-gray-900 placeholder-gray-500
+                      ${formErrors.confirmPassword 
+                        ? 'border-red-300 bg-red-50/50' 
+                        : formData.confirmPassword && passwordsMatch
+                        ? 'border-green-300 bg-green-50/30 hover:border-green-400'
+                        : formData.confirmPassword && !passwordsMatch
+                        ? 'border-red-300 bg-red-50/30'
+                        : 'border-gray-200 hover:border-gray-300 focus:border-indigo-400'
+                      }
+                    `}
+                  />
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-indigo-600 transition-colors duration-200 rounded-md hover:bg-indigo-50"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </motion.button>
+                </div>
+                
+                {/* Password Match Indicator */}
+                <AnimatePresence>
+                  {formData.confirmPassword && formData.password && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className={`text-xs flex items-center space-x-1 ${
+                        passwordsMatch ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {passwordsMatch ? (
+                        <>
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Passwords match</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3 h-3 border border-red-400 rounded-full" />
+                          <span>Passwords don&apos;t match</span>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                  
+                  {formErrors.confirmPassword && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="text-xs text-red-600"
+                    >
+                      {formErrors.confirmPassword}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Submit Button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                disabled={loading || (!DEMO_MODE && (!isValidEmail || !formData.password))}
+                disabled={loading || (!DEMO_MODE && !isFormValid())}
                 className={`w-full py-3 rounded-xl font-medium shadow-lg transition-all duration-300
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50
-                          ${loading || (!DEMO_MODE && (!isValidEmail || !formData.password))
+                          ${loading || (!DEMO_MODE && !isFormValid())
                             ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-gray-400/25' 
                             : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/25'
                           }`}
@@ -403,12 +598,12 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Signing in...</span>
+                      <span>Creating account...</span>
                     </>
                   ) : (
                     <>
-                      <LogIn className="w-4 h-4" />
-                      <span>Sign In</span>
+                      <UserPlus className="w-4 h-4" />
+                      <span>Create Account</span>
                     </>
                   )}
                 </div>
@@ -422,15 +617,15 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                   <div className="w-full border-t border-gray-200/50" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/80 backdrop-blur-sm text-gray-700 font-medium rounded-full border border-white/30 shadow-sm">
-                    Don&apos;t have an account?
+                  <span className="px-4 bg-white/50 backdrop-blur-sm text-gray-500 rounded-full">
+                    Already have an account?
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Create Account Button */}
-            <Link href="/register">
+            {/* Sign In Button */}
+            <Link href="/login">
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -440,7 +635,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                           transition-all duration-300 font-medium rounded-xl group"
               >
                 <div className="flex items-center justify-center space-x-2">
-                  <span>Create New Account</span>
+                  <span>Sign In Instead</span>
                   <motion.div
                     initial={{ x: 0 }}
                     whileHover={{ x: 2 }}
@@ -461,8 +656,8 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
           transition={{ delay: 0.8 }}
           className="text-center mt-6"
         >
-          <p className="text-sm text-gray-700 font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
-            Demo: admin@demo.com / password123
+          <p className="text-xs text-gray-500">
+            Join the future of AI-powered CRM automation
           </p>
         </motion.div>
       </motion.div>
