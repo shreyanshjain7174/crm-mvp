@@ -25,6 +25,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isValidEmail, setIsValidEmail] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, text: '', color: '' });
 
   useEffect(() => {
     // Check if user was redirected after account deletion
@@ -38,6 +39,42 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsValidEmail(emailRegex.test(formData.email));
   }, [formData.email]);
+
+  // Calculate password strength (proactive feedback)
+  useEffect(() => {
+    if (!formData.password) {
+      setPasswordStrength({ score: 0, text: '', color: '' });
+      return;
+    }
+
+    let score = 0;
+    let text = '';
+    let color = '';
+
+    // Length check
+    if (formData.password.length >= 8) score += 1;
+    if (formData.password.length >= 12) score += 1;
+
+    // Character variety checks
+    if (/[a-z]/.test(formData.password)) score += 1;
+    if (/[A-Z]/.test(formData.password)) score += 1;
+    if (/[0-9]/.test(formData.password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(formData.password)) score += 1;
+
+    // Set feedback based on score
+    if (score <= 2) {
+      text = 'Weak password';
+      color = 'text-red-600';
+    } else if (score <= 4) {
+      text = 'Good password';
+      color = 'text-yellow-600';
+    } else {
+      text = 'Strong password';
+      color = 'text-green-600';
+    }
+
+    setPasswordStrength({ score, text, color });
+  }, [formData.password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +155,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent mb-2"
+            className="text-3xl font-bold text-gray-900 mb-2"
           >
             Sign in to your account
           </motion.h1>
@@ -127,9 +164,9 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-gray-600"
+            className="text-gray-700 font-medium"
           >
-            Access your agentic CRM dashboard
+            Access your <span className="text-indigo-600 font-semibold">proactive AI</span> platform
           </motion.p>
         </div>
 
@@ -197,7 +234,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Email Address</label>
+                <label className="text-sm font-semibold text-gray-800">Email Address</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -266,7 +303,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Password</label>
+                <label className="text-sm font-semibold text-gray-800">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -278,10 +315,12 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     className={`
                       w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
-                      transition-all duration-300 pr-12
+                      transition-all duration-300 pr-12 text-gray-900 placeholder-gray-500
                       ${formErrors.password 
                         ? 'border-red-300 bg-red-50/50' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        : formData.password 
+                        ? 'border-green-300 bg-green-50/30 hover:border-green-400'
+                        : 'border-gray-200 hover:border-gray-300 focus:border-indigo-400'
                       }
                     `}
                   />
@@ -291,7 +330,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     whileTap={{ scale: 0.95 }}
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-indigo-600 transition-colors duration-200 rounded-md hover:bg-indigo-50"
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5" />
@@ -300,6 +339,38 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     )}
                   </motion.button>
                 </div>
+                
+                {/* Proactive Password Strength Indicator */}
+                <AnimatePresence>
+                  {formData.password && passwordStrength.text && !DEMO_MODE && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="flex items-center space-x-2 mt-1"
+                    >
+                      <div className="flex space-x-1">
+                        {[...Array(6)].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`h-1 w-3 rounded-full transition-all duration-300 ${
+                              i < passwordStrength.score
+                                ? passwordStrength.score <= 2
+                                  ? 'bg-red-400'
+                                  : passwordStrength.score <= 4
+                                  ? 'bg-yellow-400'
+                                  : 'bg-green-400'
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                        {passwordStrength.text}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
                 <AnimatePresence>
                   {formErrors.password && (
@@ -320,11 +391,13 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl
-                          hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 
-                          focus:ring-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed
-                          transition-all duration-300 font-medium shadow-lg shadow-indigo-500/25"
+                disabled={loading || (!DEMO_MODE && (!isValidEmail || !formData.password))}
+                className={`w-full py-3 rounded-xl font-medium shadow-lg transition-all duration-300
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/50
+                          ${loading || (!DEMO_MODE && (!isValidEmail || !formData.password))
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-gray-400/25' 
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/25'
+                          }`}
               >
                 <div className="flex items-center justify-center space-x-2">
                   {loading ? (
@@ -359,13 +432,23 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             {/* Create Account Button */}
             <Link href="/register">
               <motion.button
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700
-                          hover:bg-white/90 hover:border-gray-300/50 focus:outline-none focus:ring-2 
-                          focus:ring-indigo-500/50 transition-all duration-300 font-medium rounded-xl"
+                          hover:bg-white/90 hover:border-indigo-300/50 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/10
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
+                          transition-all duration-300 font-medium rounded-xl group"
               >
-                Create New Account
+                <div className="flex items-center justify-center space-x-2">
+                  <span>Create New Account</span>
+                  <motion.div
+                    initial={{ x: 0 }}
+                    whileHover={{ x: 2 }}
+                    className="group-hover:text-indigo-600 transition-colors"
+                  >
+                    →
+                  </motion.div>
+                </div>
               </motion.button>
             </Link>
           </div>
