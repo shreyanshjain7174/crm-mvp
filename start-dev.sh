@@ -187,49 +187,37 @@ check_and_handle_app_port() {
 check_and_handle_app_port 3000 "Frontend"
 check_and_handle_app_port 3001 "Backend"
 
-# Start PostgreSQL if not running
-if [ "$POSTGRES_RUNNING" = false ]; then
-    echo "🐳 Starting PostgreSQL container..."
-    docker run -d \
-        --name crm-postgres \
-        -e POSTGRES_DB=crm_dev_db \
-        -e POSTGRES_USER=crm_dev_user \
-        -e POSTGRES_PASSWORD=dev_password \
-        -p 5432:5432 \
-        postgres:15-alpine || docker start crm-postgres
-fi
+# Stop any conflicting production containers
+echo "🛑 Stopping production containers if running..."
+docker stop crm-postgres crm-redis 2>/dev/null || true
+docker rm crm-postgres crm-redis 2>/dev/null || true
 
-# Start Redis if not running
-if [ "$REDIS_RUNNING" = false ]; then
-    echo "🐳 Starting Redis container..."
-    docker run -d \
-        --name crm-redis \
-        -p 6379:6379 \
-        redis:7-alpine || docker start crm-redis
-fi
+# Start development environment with docker-compose
+echo "🐳 Starting development environment (PostgreSQL, Redis, pgAdmin)..."
+docker-compose -f docker-compose.dev.yml up -d db redis pgadmin
 
-# Wait for databases to be ready
-echo "⏳ Waiting for databases to be ready..."
-sleep 3
-
-# Setup database if needed
-echo "🔧 Setting up database..."
-docker exec crm-postgres psql -U postgres -c "CREATE USER crm_dev_user WITH PASSWORD 'dev_password';" 2>/dev/null || true
-docker exec crm-postgres psql -U postgres -c "CREATE DATABASE crm_dev_db OWNER crm_dev_user;" 2>/dev/null || true
-docker exec crm-postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE crm_dev_db TO crm_dev_user;" 2>/dev/null || true
+# Wait for containers to be healthy
+echo "⏳ Waiting for development containers to be ready..."
+sleep 5
 
 # Check if databases are running
-if ! docker ps | grep -q crm-postgres; then
+if ! docker ps | grep -q crm-dev-db; then
     echo "❌ PostgreSQL failed to start"
     exit 1
 fi
 
-if ! docker ps | grep -q crm-redis; then
+if ! docker ps | grep -q crm-dev-redis; then
     echo "❌ Redis failed to start"
     exit 1
 fi
 
-echo "✅ Databases are running"
+if ! docker ps | grep -q crm-dev-pgadmin; then
+    echo "❌ pgAdmin failed to start"
+    exit 1
+fi
+
+echo "✅ Development environment is running"
+echo "🗄️  pgAdmin: http://localhost:5050 (admin@example.com / dev_admin_password)"
 
 # Check if .env file exists in backend
 if [ ! -f "apps/backend/.env" ]; then
@@ -264,20 +252,14 @@ npm run dev
 # Cleanup function
 cleanup() {
     echo ""
-    echo "🛑 Shutting down..."
+    echo "🛑 Shutting down development environment..."
     
-    # Only stop containers if we started them
-    if [ "$POSTGRES_RUNNING" = false ]; then
-        echo "Stopping PostgreSQL container..."
-        docker stop crm-postgres >/dev/null 2>&1
-    fi
-    
-    if [ "$REDIS_RUNNING" = false ]; then
-        echo "Stopping Redis container..."
-        docker stop crm-redis >/dev/null 2>&1
-    fi
+    # Stop development containers (but keep them for reuse)
+    echo "Stopping development containers..."
+    docker-compose -f docker-compose.dev.yml stop
     
     echo "✅ Shutdown complete"
+    echo "💡 Run './start-dev.sh' again to restart or 'docker-compose -f docker-compose.dev.yml down' to fully cleanup"
     exit 0
 }
 
