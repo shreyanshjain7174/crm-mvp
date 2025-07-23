@@ -234,7 +234,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Email Address</label>
+                <label className="text-sm font-bold text-gray-900">Email Address</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -303,7 +303,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Password</label>
+                <label className="text-sm font-bold text-gray-900">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -422,7 +422,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                   <div className="w-full border-t border-gray-200/50" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/80 backdrop-blur-sm text-gray-700 font-medium rounded-full border border-white/30 shadow-sm">
+                  <span className="px-4 bg-white/90 backdrop-blur-sm text-gray-800 font-semibold rounded-full border border-gray-200/50 shadow-md">
                     Don&apos;t have an account?
                   </span>
                 </div>
@@ -434,10 +434,10 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700
-                          hover:bg-white/90 hover:border-indigo-300/50 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/10
+                className="w-full py-3 bg-white/90 backdrop-blur-sm border border-gray-200/50 text-gray-800 font-semibold
+                          hover:bg-white hover:border-indigo-300/60 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/15
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
-                          transition-all duration-300 font-medium rounded-xl group"
+                          transition-all duration-300 rounded-xl group shadow-md"
               >
                 <div className="flex items-center justify-center space-x-2">
                   <span>Create New Account</span>

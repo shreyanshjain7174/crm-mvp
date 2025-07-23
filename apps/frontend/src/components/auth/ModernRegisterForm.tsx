@@ -258,7 +258,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Name Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Full Name</label>
+                <label className="text-sm font-bold text-gray-900">Full Name</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -329,7 +329,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
 
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Email Address</label>
+                <label className="text-sm font-bold text-gray-900">Email Address</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -398,7 +398,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
 
               {/* Company Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Company Name <span className="text-gray-500">(Optional)</span></label>
+                <label className="text-sm font-bold text-gray-900">Company Name <span className="text-gray-600">(Optional)</span></label>
                 <div className="relative">
                   <input
                     type="text"
@@ -419,7 +419,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Password</label>
+                <label className="text-sm font-bold text-gray-900">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -504,7 +504,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
 
               {/* Confirm Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-800">Confirm Password</label>
+                <label className="text-sm font-bold text-gray-900">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -617,7 +617,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
                   <div className="w-full border-t border-gray-200/50" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/50 backdrop-blur-sm text-gray-500 rounded-full">
+                  <span className="px-4 bg-white/90 backdrop-blur-sm text-gray-800 font-semibold rounded-full border border-gray-200/50 shadow-md">
                     Already have an account?
                   </span>
                 </div>
@@ -629,10 +629,10 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700
-                          hover:bg-white/90 hover:border-indigo-300/50 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/10
+                className="w-full py-3 bg-white/90 backdrop-blur-sm border border-gray-200/50 text-gray-800 font-semibold
+                          hover:bg-white hover:border-indigo-300/60 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/15
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
-                          transition-all duration-300 font-medium rounded-xl group"
+                          transition-all duration-300 rounded-xl group shadow-md"
               >
                 <div className="flex items-center justify-center space-x-2">
                   <span>Sign In Instead</span>
@@ -656,7 +656,7 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
           transition={{ delay: 0.8 }}
           className="text-center mt-6"
         >
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-gray-700 font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
             Join the future of AI-powered CRM automation
           </p>
         </motion.div>
