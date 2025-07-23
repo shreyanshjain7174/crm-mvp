@@ -193,7 +193,7 @@ docker stop crm-postgres crm-redis 2>/dev/null || true
 docker rm crm-postgres crm-redis 2>/dev/null || true
 
 # Start development environment with docker-compose
-echo "🐳 Starting development environment (PostgreSQL, Redis, pgAdmin)...")
+echo "🐳 Starting development environment (PostgreSQL, Redis, pgAdmin)..."
 docker-compose -f docker-compose.dev.yml up -d db redis pgadmin
 
 # Wait for containers to be healthy
