@@ -1,7 +1,7 @@
-import { AgentMarketplace } from '../../components/marketplace/AgentMarketplace';
+import { ModernAgentMarketplace } from '../../components/marketplace/ModernAgentMarketplace';
 
 export default function MarketplacePage() {
-  return <AgentMarketplace />;
+  return <ModernAgentMarketplace />;
 }
 
 export const metadata = {
