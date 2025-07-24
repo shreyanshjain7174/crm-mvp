@@ -72,7 +72,11 @@ export class AgentSandbox extends EventEmitter {
           mock: {
             // Provide mock versions of commonly needed modules
             'crypto': {
-              randomUUID: () => require('crypto').randomUUID()
+              randomUUID: () => {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                const crypto = require('crypto');
+                return crypto.randomUUID();
+              }
             }
           }
         },
@@ -154,7 +158,7 @@ export class AgentSandbox extends EventEmitter {
           });
         },
         
-        on: (eventName: string, callback: Function) => {
+        on: (eventName: string, callback: (...args: any[]) => void) => {
           this.on(eventName, callback);
         }
       }

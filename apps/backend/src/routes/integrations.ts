@@ -697,7 +697,7 @@ async function importCSVData(fileData: string, fileName: string, mapping: any, u
   };
 }
 
-async function importGmailContacts(userId: string, db: any) {
+async function importGmailContacts(_userId: string, _db: any) {
   // In production, this would use Google People API
   // For now, return mock data
   return {

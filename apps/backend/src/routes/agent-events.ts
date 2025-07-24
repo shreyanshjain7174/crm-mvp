@@ -241,7 +241,6 @@ export async function agentEventsRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: z.infer<typeof publishCrmEventSchema> }>('/publish/crm', async (request, reply) => {
     try {
       const eventData = publishCrmEventSchema.parse(request.body);
-      const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Get subscribed agents
       let subscriptionQuery = `

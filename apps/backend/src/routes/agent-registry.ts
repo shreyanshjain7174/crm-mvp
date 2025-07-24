@@ -443,7 +443,7 @@ export async function agentRegistryRoutes(fastify: FastifyInstance) {
     }
   }>('/discover', async (request, reply) => {
     try {
-      const { category, capability, provider, limit = 50, offset = 0 } = request.query;
+      const { capability, provider, limit = 50, offset = 0 } = request.query;
 
       let whereClause = `WHERE status = 'active'`;
       const params: any[] = [];

@@ -6,7 +6,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { sandboxManager, AgentSandbox, AgentContext, ResourceLimits, Permission } from './agent-sandbox';
+import { sandboxManager, AgentContext, ResourceLimits, Permission } from './agent-sandbox';
 import { logger } from '../utils/logger';
 import { EventEmitter } from 'events';
 
@@ -297,7 +297,7 @@ export class AgentRuntime extends EventEmitter {
       LIMIT $2
     `, [userId, limit]);
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       id: row.id,
       agentId: row.agent_id,
       userId: row.user_id,

@@ -180,7 +180,6 @@ export async function agentProtocolRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: z.infer<typeof heartbeatSchema> }>('/heartbeat', async (request, reply) => {
     try {
       const { agentId, instanceId, status, metrics, message } = heartbeatSchema.parse(request.body);
-      const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Verify agent session exists
       const sessionResult = await fastify.db.query(`
@@ -261,7 +260,7 @@ export async function agentProtocolRoutes(fastify: FastifyInstance) {
    */
   fastify.post<{ Body: z.infer<typeof dataReceiveSchema> }>('/data/receive', async (request, reply) => {
     try {
-      const { agentId, instanceId, data, timestamp } = dataReceiveSchema.parse(request.body);
+      const { agentId, instanceId, data } = dataReceiveSchema.parse(request.body);
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Verify agent session
@@ -350,7 +349,6 @@ export async function agentProtocolRoutes(fastify: FastifyInstance) {
   fastify.post<{ Body: z.infer<typeof dataSendSchema> }>('/data/send', async (request, reply) => {
     try {
       const { agentId, instanceId, data } = dataSendSchema.parse(request.body);
-      const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Verify agent session
       const sessionResult = await fastify.db.query(`
@@ -564,7 +562,7 @@ async function processInteractionData(agentId: string, userId: string, payload: 
   return { id: result.rows[0].id, type: 'interaction' };
 }
 
-async function processCustomData(agentId: string, userId: string, payload: any, db: any) {
+async function processCustomData(_agentId: string, _userId: string, _payload: any, _db: any) {
   // Store custom data in agent-specific table or JSON field
   return { id: 'custom', type: 'custom', processed: true };
 }
@@ -597,8 +595,9 @@ async function queryContacts(userId: string, filters: any, limit = 50, offset = 
   return queryLeads(userId, filters, limit, offset, db);
 }
 
-async function queryCustom(agentId: string, filters: any, limit = 50, offset = 0, db: any) {
-  // Query agent-specific data
+async function queryCustom(agentId: string, filters: any, _limit = 50, _offset = 0, _db: any) {
+  // Query agent-specific data for the specified agent
+  console.log(`Querying custom data for agent: ${agentId} with filters:`, filters);
   return [];
 }
 
