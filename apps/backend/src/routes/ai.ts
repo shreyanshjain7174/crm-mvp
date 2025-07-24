@@ -37,6 +37,28 @@ export async function aiRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get all pending AI suggestions
+  fastify.get('/suggestions/pending', {
+    preHandler: [fastify.authenticate]
+  }, async (request, reply) => {
+    try {
+      const result = await fastify.db.query(`
+        SELECT s.*, 
+          row_to_json(l) as lead
+        FROM ai_suggestions s
+        JOIN leads l ON s.lead_id = l.id
+        WHERE s.approved = false AND l.user_id = $1
+        ORDER BY s.created_at DESC
+      `, [(request as any).user.userId]);
+      const suggestions = result.rows;
+      
+      return suggestions;
+    } catch (error) {
+      fastify.log.error('Error fetching pending AI suggestions:', error);
+      reply.status(500).send({ error: 'Failed to fetch pending suggestions' });
+    }
+  });
+
   // Get AI suggestions for a lead
   fastify.get<{ Params: { leadId: string } }>('/suggestions/:leadId', async (request, reply) => {
     try {

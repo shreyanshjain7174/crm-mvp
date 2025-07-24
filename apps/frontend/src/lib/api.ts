@@ -385,6 +385,60 @@ class ApiClient {
     });
   }
 
+  // Integrations API
+  async getIntegrations(): Promise<{
+    integrations: any[];
+    summary: {
+      total: number;
+      connected: number;
+      available: number;
+      premium: number;
+    };
+  }> {
+    return this.request('/api/integrations');
+  }
+
+  async connectIntegration(data: {
+    integrationId: string;
+    authCode?: string;
+    config?: Record<string, any>;
+    redirectUri?: string;
+  }): Promise<any> {
+    return this.request('/api/integrations/connect', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async disconnectIntegration(integrationId: string): Promise<{ message: string }> {
+    return this.request(`/api/integrations/${integrationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateIntegration(integrationId: string, data: {
+    enabled?: boolean;
+    config?: Record<string, any>;
+    settings?: Record<string, any>;
+  }): Promise<any> {
+    return this.request(`/api/integrations/${integrationId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async importData(data: {
+    integrationId: string;
+    fileData: string;
+    fileName: string;
+    mapping?: Record<string, string>;
+  }): Promise<any> {
+    return this.request('/api/integrations/import', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Stats API
   async getUserProgress(): Promise<{
     stage: string;

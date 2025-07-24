@@ -160,7 +160,12 @@ export const FEATURE_GATES = {
   // Workflows
   'workflows:view': 'intermediate',
   'workflows:create': 'advanced',
-  'workflows:manage': 'expert'
+  'workflows:manage': 'expert',
+  
+  // Integrations
+  'integrations:view': 'intermediate',
+  'integrations:connect': 'advanced',
+  'integrations:manage': 'expert'
 } as const;
 
 export type FeatureKey = keyof typeof FEATURE_GATES;

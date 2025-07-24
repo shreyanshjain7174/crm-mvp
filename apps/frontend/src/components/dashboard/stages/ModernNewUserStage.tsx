@@ -50,7 +50,7 @@ export function ModernNewUserStage({ onAddContact }: ModernNewUserStageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Elements */}
       <FloatingParticles count={40} color="#6366F1" className="opacity-20" />
       

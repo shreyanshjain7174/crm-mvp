@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Advanced Analytics</h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Deep insights into your CRM performance and business metrics
           </p>
         </div>
@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            className="border border-input rounded-md px-3 py-2 text-sm bg-background text-foreground"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -111,15 +111,15 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Total Revenue</p>
                 <p className="text-2xl font-bold">₹2,45,680</p>
                 <div className="flex items-center mt-2">
                   <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
                   <span className="text-sm font-medium text-green-600">+18.3%</span>
-                  <span className="text-sm text-gray-500 ml-1">vs last period</span>
+                  <span className="text-sm text-muted-foreground ml-1">vs last period</span>
                 </div>
               </div>
-              <div className="p-3 rounded-full bg-gray-50 text-green-600">
+              <div className="p-3 rounded-full bg-muted text-green-600">
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>
@@ -130,15 +130,15 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Lead Conversion</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Lead Conversion</p>
                 <p className="text-2xl font-bold">24.8%</p>
                 <div className="flex items-center mt-2">
                   <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
                   <span className="text-sm font-medium text-green-600">+5.2%</span>
-                  <span className="text-sm text-gray-500 ml-1">vs last period</span>
+                  <span className="text-sm text-muted-foreground ml-1">vs last period</span>
                 </div>
               </div>
-              <div className="p-3 rounded-full bg-gray-50 text-blue-600">
+              <div className="p-3 rounded-full bg-muted text-blue-600">
                 <Target className="h-6 w-6" />
               </div>
             </div>
@@ -149,15 +149,15 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Response Time</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Response Time</p>
                 <p className="text-2xl font-bold">1.2h</p>
                 <div className="flex items-center mt-2">
                   <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
                   <span className="text-sm font-medium text-green-600">-67.4%</span>
-                  <span className="text-sm text-gray-500 ml-1">vs last period</span>
+                  <span className="text-sm text-muted-foreground ml-1">vs last period</span>
                 </div>
               </div>
-              <div className="p-3 rounded-full bg-gray-50 text-purple-600">
+              <div className="p-3 rounded-full bg-muted text-purple-600">
                 <Clock className="h-6 w-6" />
               </div>
             </div>
@@ -168,15 +168,15 @@ export default function AnalyticsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Customer Satisfaction</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Customer Satisfaction</p>
                 <p className="text-2xl font-bold">4.8/5</p>
                 <div className="flex items-center mt-2">
                   <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
                   <span className="text-sm font-medium text-green-600">+0.3</span>
-                  <span className="text-sm text-gray-500 ml-1">vs last period</span>
+                  <span className="text-sm text-muted-foreground ml-1">vs last period</span>
                 </div>
               </div>
-              <div className="p-3 rounded-full bg-gray-50 text-yellow-600">
+              <div className="p-3 rounded-full bg-muted text-yellow-600">
                 <Star className="h-6 w-6" />
               </div>
             </div>
@@ -216,14 +216,14 @@ export default function AnalyticsPage() {
                     <span className="text-sm font-medium">{item.source}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">{item.count}</span>
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                    <span className="text-sm text-muted-foreground">{item.count}</span>
+                    <div className="w-20 bg-muted rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${item.color}`}
                         style={{ width: `${item.percentage}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm text-gray-500 w-8">{item.percentage}%</span>
+                    <span className="text-sm text-muted-foreground w-8">{item.percentage}%</span>
                   </div>
                 </div>
               ))}
@@ -244,14 +244,14 @@ export default function AnalyticsPage() {
                 { month: 'March', leads: 321, converted: 87, rate: 27.1 },
                 { month: 'April', leads: 298, converted: 74, rate: 24.8 },
               ].map((item) => (
-                <div key={item.month} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={item.month} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <p className="font-medium">{item.month}</p>
-                    <p className="text-sm text-gray-600">{item.leads} leads</p>
+                    <p className="text-sm text-muted-foreground">{item.leads} leads</p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-green-600">{item.converted} converted</p>
-                    <p className="text-sm text-gray-600">{item.rate}% rate</p>
+                    <p className="text-sm text-muted-foreground">{item.rate}% rate</p>
                   </div>
                 </div>
               ))}
@@ -268,19 +268,19 @@ export default function AnalyticsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900">Response Accuracy</h3>
+              <h3 className="text-lg font-semibold text-foreground">Response Accuracy</h3>
               <p className="text-3xl font-bold text-primary mt-2">89.5%</p>
-              <p className="text-sm text-gray-600 mt-1">+3.2% this month</p>
+              <p className="text-sm text-muted-foreground mt-1">+3.2% this month</p>
             </div>
             <div className="text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900">Messages Generated</h3>
+              <h3 className="text-lg font-semibold text-foreground">Messages Generated</h3>
               <p className="text-3xl font-bold text-green-600 mt-2">2,847</p>
-              <p className="text-sm text-gray-600 mt-1">+12% this month</p>
+              <p className="text-sm text-muted-foreground mt-1">+12% this month</p>
             </div>
             <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-green-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900">Approval Rate</h3>
+              <h3 className="text-lg font-semibold text-foreground">Approval Rate</h3>
               <p className="text-3xl font-bold text-yellow-600 mt-2">92.3%</p>
-              <p className="text-sm text-gray-600 mt-1">+1.8% this month</p>
+              <p className="text-sm text-muted-foreground mt-1">+1.8% this month</p>
             </div>
           </div>
         </CardContent>
@@ -340,8 +340,8 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-center py-8">
                 <PieChart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Pipeline Analytics</h3>
-                <p className="text-gray-600">Detailed pipeline performance metrics coming soon</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Pipeline Analytics</h3>
+                <p className="text-muted-foreground">Detailed pipeline performance metrics coming soon</p>
               </div>
             </CardContent>
           </Card>
@@ -356,8 +356,8 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-center py-8">
                 <LineChart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Performance Dashboard</h3>
-                <p className="text-gray-600">Advanced performance tracking coming soon</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">Performance Dashboard</h3>
+                <p className="text-muted-foreground">Advanced performance tracking coming soon</p>
               </div>
             </CardContent>
           </Card>
@@ -374,7 +374,7 @@ export default function AnalyticsPage() {
                 <div className="text-center">
                   <div className="text-4xl mb-2">🤖</div>
                   <h3 className="text-xl font-semibold mb-2">AI Performance Dashboard</h3>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Comprehensive AI analytics and machine learning insights
                   </p>
                 </div>
@@ -384,7 +384,7 @@ export default function AnalyticsPage() {
                     <CardContent className="p-4 text-center">
                       <Zap className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
                       <p className="text-2xl font-bold text-yellow-600">24.5h</p>
-                      <p className="text-sm text-gray-600">Time Saved This Month</p>
+                      <p className="text-sm text-muted-foreground">Time Saved This Month</p>
                     </CardContent>
                   </Card>
                   
@@ -392,7 +392,7 @@ export default function AnalyticsPage() {
                     <CardContent className="p-4 text-center">
                       <Activity className="h-8 w-8 mx-auto text-blue-600 mb-2" />
                       <p className="text-2xl font-bold text-blue-600">94.2%</p>
-                      <p className="text-sm text-gray-600">AI Accuracy Rate</p>
+                      <p className="text-sm text-muted-foreground">AI Accuracy Rate</p>
                     </CardContent>
                   </Card>
                   
@@ -400,7 +400,7 @@ export default function AnalyticsPage() {
                     <CardContent className="p-4 text-center">
                       <Target className="h-8 w-8 mx-auto text-green-600 mb-2" />
                       <p className="text-2xl font-bold text-green-600">78%</p>
-                      <p className="text-sm text-gray-600">Automation Coverage</p>
+                      <p className="text-sm text-muted-foreground">Automation Coverage</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -435,7 +435,7 @@ export default function AnalyticsPage() {
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-sm mb-1">{report.name}</h4>
-                            <p className="text-xs text-gray-600 mb-3">{report.description}</p>
+                            <p className="text-xs text-muted-foreground mb-3">{report.description}</p>
                             <Button size="sm" variant="outline" className="w-full">
                               Generate Report
                             </Button>

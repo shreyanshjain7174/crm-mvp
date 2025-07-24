@@ -13,12 +13,18 @@ import { aiIntegrationRoutes } from './routes/ai-integration';
 import { authRoutes } from './routes/auth';
 import { statsRoutes } from './routes/stats';
 import agentRoutes from './routes/agents';
+import { agentProtocolRoutes } from './routes/agent-protocol';
+import agentRegistryRoutes from './routes/agent-registry';
+import agentEventsRoutes from './routes/agent-events';
+import agentRuntimeRoutes from './routes/agent-runtime';
+import integrationsRoutes from './routes/integrations';
 import billingRoutes from './routes/billing';
 import { agentMonitoringRoutes } from './routes/agent-monitoring';
 import marketplaceRoutes from './routes/marketplace';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
+import { initializeAgentRuntime } from './services/agent-runtime';
 
 dotenv.config();
 
@@ -98,7 +104,10 @@ async function buildApp() {
     // Initialize socket service
     socketService.initialize(io);
     
-    logger.info('Socket.io server initialized');
+    // Initialize agent runtime
+    initializeAgentRuntime(app);
+    
+    logger.info('Socket.io server and agent runtime initialized');
   });
 
   // Health check
@@ -115,6 +124,11 @@ async function buildApp() {
   await app.register(aiIntegrationRoutes, { prefix: '/api/ai-workflows' });
   await app.register(statsRoutes, { prefix: '/api/stats' });
   await app.register(agentRoutes, { prefix: '/api/agents' });
+  await app.register(agentProtocolRoutes, { prefix: '/api/agents/protocol' });
+  await app.register(agentRegistryRoutes, { prefix: '/api/agents/registry' });
+  await app.register(agentEventsRoutes, { prefix: '/api/agents/events' });
+  await app.register(agentRuntimeRoutes, { prefix: '/api/agents/runtime' });
+  await app.register(integrationsRoutes, { prefix: '/api/integrations' });
   await app.register(billingRoutes, { prefix: '/api/billing' });
   await app.register(agentMonitoringRoutes, { prefix: '/api/monitoring' });
   await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });

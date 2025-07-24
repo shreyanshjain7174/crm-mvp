@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { Search, Star, Download, Zap, MessageSquare, BarChart3, Database, Bot, Sparkles, Filter, Grid3X3, List, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMarketplace } from '@/hooks/useMarketplace';
@@ -25,13 +25,13 @@ const categoryIcons = {
 };
 
 const categoryColors = {
-  'all': { color: 'text-gray-600', bgColor: 'bg-gray-100' },
-  'whatsapp': { color: 'text-green-600', bgColor: 'bg-green-100' },
-  'voice': { color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  'data': { color: 'text-purple-600', bgColor: 'bg-purple-100' },
-  'automation': { color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  'lead-gen': { color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
-  'support': { color: 'text-cyan-600', bgColor: 'bg-cyan-100' },
+  'all': { color: 'text-muted-foreground', bgColor: 'bg-muted' },
+  'whatsapp': { color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/20' },
+  'voice': { color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
+  'data': { color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/20' },
+  'automation': { color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/20' },
+  'lead-gen': { color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'bg-indigo-100 dark:bg-indigo-900/20' },
+  'support': { color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-100 dark:bg-cyan-900/20' },
 };
 
 export function ModernAgentMarketplace() {
@@ -61,6 +61,18 @@ export function ModernAgentMarketplace() {
     limit: 20,
   });
 
+  // Build categories list with API data (memoized for performance)
+  const categoriesWithIcons = useMemo(() => [
+    { id: 'all', name: 'All Agents', icon: Bot, color: 'text-muted-foreground', bgColor: 'bg-muted' },
+    ...categories.map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: categoryIcons[cat.id as keyof typeof categoryIcons] || Bot,
+      color: categoryColors[cat.id as keyof typeof categoryColors]?.color || 'text-muted-foreground',
+      bgColor: categoryColors[cat.id as keyof typeof categoryColors]?.bgColor || 'bg-muted',
+    }))
+  ], [categories]);
+
   // Handle filter changes
   const handleFilterChange = (newFilters: Partial<MarketplaceFilters>) => {
     const updatedFilters = { ...filters, ...newFilters };
@@ -80,24 +92,28 @@ export function ModernAgentMarketplace() {
       const result = await installAgent(agent.agentId);
       if (result.success) {
         // Show success message
-        alert(`${agent.name} installed successfully!`);
+        console.log(`✅ ${agent.name} installed successfully!`);
+        // In a real implementation, you might show a toast notification
+        alert(`🎉 ${agent.name} installed successfully! You can now use it in your workflows.`);
       } else {
         // Show error message
+        console.error(`❌ Failed to install ${agent.name}:`, result.error);
         alert(`Failed to install ${agent.name}: ${result.error}`);
       }
     } catch (error) {
+      console.error(`❌ Installation failed for ${agent.name}:`, error);
       alert(`Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center min-h-screen">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full"
+            className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
           />
         </div>
       </div>
@@ -126,18 +142,6 @@ export function ModernAgentMarketplace() {
     );
   }
 
-  // Build categories list with API data
-  const categoriesWithIcons = [
-    { id: 'all', name: 'All Agents', icon: Bot, color: 'text-gray-600', bgColor: 'bg-gray-100' },
-    ...categories.map((cat: any) => ({
-      id: cat.id,
-      name: cat.name,
-      icon: categoryIcons[cat.id as keyof typeof categoryIcons] || Bot,
-      color: categoryColors[cat.id as keyof typeof categoryColors]?.color || 'text-gray-600',
-      bgColor: categoryColors[cat.id as keyof typeof categoryColors]?.bgColor || 'bg-gray-100',
-    }))
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Glassmorphism Header */}
@@ -157,10 +161,10 @@ export function ModernAgentMarketplace() {
                 <Bot className="w-8 h-8 text-white" />
               </motion.div>
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent mb-3">
+            <h1 className="text-4xl font-bold text-foreground mb-3">
               AI Agent Marketplace
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Discover powerful AI agents to automate your workflow. From WhatsApp bots to voice assistants, find the perfect AI companion for your business.
             </p>
           </motion.div>
@@ -402,7 +406,7 @@ export function ModernAgentMarketplace() {
 }
 
 // Agent Card Component
-function AgentCard({ 
+const AgentCard = memo(function AgentCard({ 
   agent, 
   onInstall, 
   featured = false, 
@@ -439,11 +443,11 @@ function AgentCard({
 
   return (
     <div className={`
-      group relative bg-white/80 backdrop-blur-sm border border-white/30 rounded-2xl p-6 
-      shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-black/10 
+      group relative bg-card border border-border rounded-2xl p-6 
+      shadow-lg hover:shadow-xl 
       transition-all duration-300 overflow-hidden
       ${listView ? 'flex items-center space-x-6' : ''}
-      ${featured ? 'ring-2 ring-yellow-400/30' : ''}
+      ${featured ? 'ring-2 ring-yellow-400/30 dark:ring-yellow-400/50' : ''}
     `}>
       {/* Featured Badge */}
       {featured && (
@@ -466,7 +470,7 @@ function AgentCard({
         
         <div className={listView ? 'flex-1' : ''}>
           <div className="flex items-center space-x-2 mb-2">
-            <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
               {agent.name}
             </h3>
             {agent.verified && (
@@ -478,11 +482,11 @@ function AgentCard({
             )}
           </div>
           
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
             {agent.description}
           </p>
           
-          <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-4">
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span>{agent.stats.rating}</span>
@@ -491,7 +495,7 @@ function AgentCard({
               <Download className="w-4 h-4" />
               <span>{agent.stats.installs.toLocaleString()}</span>
             </div>
-            <div className="text-gray-400">•</div>
+            <div className="text-muted-foreground/50">•</div>
             <span>{agent.provider.name}</span>
           </div>
         </div>
@@ -500,11 +504,11 @@ function AgentCard({
       {/* Pricing & Action */}
       <div className={`${listView ? 'flex-shrink-0' : ''} flex items-center justify-between`}>
         <div className="flex flex-col">
-          <span className="text-lg font-semibold text-gray-900">
+          <span className="text-lg font-semibold text-foreground">
             {getPricingDisplay()}
           </span>
           {agent.pricing.model === 'freemium' && (
-            <span className="text-xs text-gray-500">Free tier available</span>
+            <span className="text-xs text-muted-foreground">Free tier available</span>
           )}
         </div>
         
@@ -512,13 +516,13 @@ function AgentCard({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onInstall(agent)}
-          className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl
-                    hover:from-indigo-700 hover:to-purple-700 transition-all duration-300
-                    font-medium text-sm shadow-lg shadow-indigo-500/25"
+          className="px-6 py-2 bg-primary text-primary-foreground rounded-xl
+                    hover:bg-primary/90 transition-all duration-300
+                    font-medium text-sm shadow-lg"
         >
           Install
         </motion.button>
       </div>
     </div>
   );
-}
+});

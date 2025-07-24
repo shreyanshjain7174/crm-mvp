@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, Monitor } from 'lucide-react';
-import { useTheme } from './theme-provider';
+import { useEnhancedTheme } from '@/contexts/enhanced-theme-context';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -18,7 +18,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ variant = 'default', className = '' }: ThemeToggleProps) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useEnhancedTheme();
 
   if (variant === 'minimal') {
     return (

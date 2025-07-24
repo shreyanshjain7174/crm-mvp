@@ -17,7 +17,8 @@ import {
   Workflow,
   ChevronRight,
   Menu,
-  X
+  X,
+  Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,7 +50,6 @@ const navigationItems: NavigationItem[] = [
     icon: Users,
     href: '/dashboard/contacts',
     requiredFeature: 'contacts:list',
-    badge: '1.2k',
   },
   {
     id: 'conversations',
@@ -57,7 +57,6 @@ const navigationItems: NavigationItem[] = [
     icon: MessageSquare,
     href: '/dashboard/conversations',
     requiredFeature: 'messaging:whatsapp',
-    badge: '5',
   },
   {
     id: 'pipeline',
@@ -113,6 +112,14 @@ const navigationItems: NavigationItem[] = [
     requiredFeature: 'calendar:view',
   },
   {
+    id: 'integrations',
+    label: 'Integrations',
+    icon: Link2,
+    href: '/dashboard/integrations',
+    requiredFeature: 'integrations:view',
+    isNew: true,
+  },
+  {
     id: 'settings',
     label: 'Settings',
     icon: Settings,
@@ -138,6 +145,21 @@ export function ModernNavigation({
   
   const canAccessFeature = useUserProgressStore(state => state.canAccessFeature);
   const stage = useUserProgressStore(state => state.stage);
+  const stats = useUserProgressStore(state => state.stats);
+
+  // Function to get real badge count for navigation items
+  const getBadgeCount = (itemId: string): string | undefined => {
+    switch (itemId) {
+      case 'contacts':
+        return stats.contactsAdded > 0 ? stats.contactsAdded.toString() : undefined;
+      case 'conversations':
+        return stats.messagesSent > 0 ? stats.messagesSent.toString() : undefined;
+      case 'ai-agents':
+        return stats.aiInteractions > 0 ? stats.aiInteractions.toString() : undefined;
+      default:
+        return undefined;
+    }
+  };
 
   const toggleExpanded = (itemId: string) => {
     const newExpanded = new Set(expandedItems);
@@ -254,7 +276,7 @@ export function ModernNavigation({
 
                     <div className="flex items-center space-x-2">
                       {/* Count badge */}
-                      {item.badge && (
+                      {(item.badge || getBadgeCount(item.id)) && (
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -264,7 +286,7 @@ export function ModernNavigation({
                             variant="outline" 
                             className="px-1.5 py-0.5 text-xs"
                           >
-                            {item.badge}
+                            {getBadgeCount(item.id) || item.badge}
                           </Badge>
                         </motion.div>
                       )}

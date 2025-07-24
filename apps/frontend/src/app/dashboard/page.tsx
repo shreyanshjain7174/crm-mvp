@@ -1,15 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { ProgressiveDashboard } from '@/components/dashboard/ProgressiveDashboard';
-import { AchievementSystem } from '@/components/help/AchievementToast';
-import { ContextualGuide, useContextualHints } from '@/components/help/ContextualGuide';
-import { DiscoveryPrompt } from '@/components/help/DiscoveryPrompt';
-import { ConnectionStatus } from '@/components/ui/connection-status';
-import { AddContactModal } from '@/components/contacts/AddContactModal';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserProgressStore } from '@/stores/userProgress';
+
+// Dynamic imports for better code splitting
+const ProgressiveDashboard = lazy(() => import('@/components/dashboard/ProgressiveDashboard').then(module => ({ default: module.ProgressiveDashboard })));
+const AchievementSystem = lazy(() => import('@/components/help/AchievementToast').then(module => ({ default: module.AchievementSystem })));
+const ContextualGuide = lazy(() => import('@/components/help/ContextualGuide').then(module => ({ default: module.ContextualGuide })));
+const DiscoveryPrompt = lazy(() => import('@/components/help/DiscoveryPrompt').then(module => ({ default: module.DiscoveryPrompt })));
+const ConnectionStatus = lazy(() => import('@/components/ui/connection-status').then(module => ({ default: module.ConnectionStatus })));
+const AddContactModal = lazy(() => import('@/components/contacts/AddContactModal').then(module => ({ default: module.AddContactModal })));
+
+// Import hooks directly since they're lightweight
+import { useContextualHints } from '@/components/help/ContextualGuide';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -146,26 +151,34 @@ export default function DashboardPage() {
       )}
 
       {/* Main progressive dashboard */}
-      <ProgressiveDashboard onAddContact={handleAddContact} />
+      <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>}>
+        <ProgressiveDashboard onAddContact={handleAddContact} />
+      </Suspense>
       
       {/* Add Contact Modal for new users */}
-      <AddContactModal 
-        isOpen={isAddContactModalOpen}
-        onClose={() => setIsAddContactModalOpen(false)}
-        onSuccess={handleContactSuccess}
-      />
+      <Suspense fallback={null}>
+        <AddContactModal 
+          isOpen={isAddContactModalOpen}
+          onClose={() => setIsAddContactModalOpen(false)}
+          onSuccess={handleContactSuccess}
+        />
+      </Suspense>
       
       {/* Help and guidance systems */}
-      <ContextualGuide hints={hints} />
-      <DiscoveryPrompt onAction={handleDiscoveryAction} />
-      
-      {/* Achievement celebrations */}
-      <AchievementSystem />
+      <Suspense fallback={null}>
+        <ContextualGuide hints={hints} />
+        <DiscoveryPrompt onAction={handleDiscoveryAction} />
+        <AchievementSystem />
+      </Suspense>
       
       {/* Connection status for advanced users */}
       {(stage === 'advanced' || stage === 'expert') && (
         <div className="fixed bottom-4 right-4">
-          <ConnectionStatus showDetails={false} />
+          <Suspense fallback={null}>
+            <ConnectionStatus showDetails={false} />
+          </Suspense>
         </div>
       )}
     </>

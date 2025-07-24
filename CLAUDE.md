@@ -17,6 +17,9 @@
 - Test-driven development (TDD)
 - Never create files unless necessary
 - No proactive documentation unless requested
+- **CRITICAL: Human-like code** - Never write code that looks AI-generated
+- **NO EMOJIS** - Code, comments, documentation must be emoji-free and developer-friendly
+- Write production-quality code that reviewers would accept as human-written
 
 ### Automation Philosophy
 - **Automate repetitive tasks** - Just like our AI agents do for users
@@ -30,9 +33,15 @@
 # Comprehensive CI validation
 npm run ci-check              # Runs lint, typecheck, tests with timing
 
+# Code coverage validation
+npm run coverage              # Run tests with coverage report
+npm run coverage:check        # Run tests with coverage validation and thresholds
+npm run coverage:report       # Generate and open HTML coverage report
+
 # Quick development workflows
 npm run quick-commit "message" # Full commit workflow with CI validation
 ./scripts/check-ci.sh          # Direct script execution with verbose logs
+./scripts/coverage-check.sh    # Standalone coverage validation with detailed reporting
 
 # Suggested automation opportunities:
 # - Pre-commit hooks for automatic formatting

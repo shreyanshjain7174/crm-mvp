@@ -164,7 +164,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-gray-700 font-medium"
+            className="text-gray-800 font-medium"
           >
             Access your <span className="text-indigo-600 font-semibold">proactive AI</span> platform
           </motion.p>
@@ -315,7 +315,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     className={`
                       w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
-                      transition-all duration-300 pr-12 text-gray-900 placeholder-gray-500
+                      transition-all duration-300 pr-12 text-gray-900 placeholder-gray-600
                       ${formErrors.password 
                         ? 'border-red-300 bg-red-50/50' 
                         : formData.password 
@@ -461,7 +461,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
           transition={{ delay: 0.8 }}
           className="text-center mt-6"
         >
-          <p className="text-sm text-gray-700 font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
+          <p className="text-sm text-gray-800 font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
             Demo: admin@demo.com / password123
           </p>
         </motion.div>

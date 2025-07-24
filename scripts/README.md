@@ -99,7 +99,7 @@ The system will guide you through:
 - Stage 1: First contact → unlock contact management
 - Stage 2: First message → unlock WhatsApp features  
 - Stage 3: 10+ contacts → unlock pipeline view
-- Stage 4: 50+ messages → unlock AI assistant
+- Stage 4: 5+ messages → unlock AI assistant
 - Stage 5: 25+ AI interactions → unlock advanced features
 
 ## Development Workflow

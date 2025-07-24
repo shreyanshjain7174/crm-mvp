@@ -1,0 +1,127 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, staging, fix/*, feat/* ]
+    paths:
+      - 'apps/backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [ main, staging ]
+    paths:
+      - 'apps/backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: crm_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: apps/backend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: apps/backend
+      run: npm ci
+
+    - name: Run ESLint
+      working-directory: apps/backend
+      run: npm run lint
+
+    - name: Run TypeScript check
+      working-directory: apps/backend
+      run: npm run typecheck
+
+    - name: Run tests with coverage
+      working-directory: apps/backend
+      run: npm run coverage:check
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://test:test@localhost:5432/crm_test
+        JWT_SECRET: test-secret-key-for-ci
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: apps/backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: false
+
+    - name: Generate coverage badge
+      working-directory: apps/backend
+      run: |
+        if [ -f "coverage/badge.json" ]; then
+          echo "Coverage badge data generated"
+          cat coverage/badge.json
+        fi
+
+    - name: Build application
+      working-directory: apps/backend
+      run: npm run build
+
+    - name: Archive coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: apps/backend/coverage/
+        retention-days: 30
+
+    - name: Comment PR with coverage
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'apps/backend/coverage/coverage-summary.json';
+          
+          if (fs.existsSync(path)) {
+            const coverage = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const lines = coverage.total.lines.pct;
+            const functions = coverage.total.functions.pct;
+            const branches = coverage.total.branches.pct;
+            const statements = coverage.total.statements.pct;
+            
+            const comment = `## Coverage Report
+            
+            | Coverage Type | Percentage |
+            |---------------|------------|
+            | Lines         | ${lines}%     |
+            | Functions     | ${functions}%    |
+            | Branches      | ${branches}%    |
+            | Statements    | ${statements}%   |
+            
+            Coverage thresholds:
+            - Global: 85% (lines, functions, statements), 80% (branches)
+            - Routes: 95% (lines, functions)
+            - Services: 90% (lines, functions)
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }

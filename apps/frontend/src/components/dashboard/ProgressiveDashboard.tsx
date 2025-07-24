@@ -38,8 +38,11 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   
   // Show stage-specific components based on user progression
   // Prioritize local stats over stage to ensure blank dashboard for truly new users
-  if (stats.contactsAdded === 0 || stage === 'new') {
-    console.log('Rendering ModernNewUserStage - Stage:', stage, 'Contacts:', stats.contactsAdded);
+  // This ensures no populated data is shown until the user actually adds their first contact
+  const isNewUser = stats.contactsAdded === 0 && stats.messagesSent === 0 && stats.aiInteractions === 0;
+  
+  if (isNewUser || stage === 'new') {
+    console.log('Rendering ModernNewUserStage (Empty State) - Stage:', stage, 'Stats:', stats);
     return (
       <ModernNewUserStage 
         onAddContact={onAddContact || (() => {})} 
@@ -50,7 +53,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show beginner stage for users who just started
   if (stage === 'beginner' && stats.contactsAdded < 5) {
     return (
-      <ModernDashboard>
+      <ModernDashboard userStats={stats} showStatsCards={true}>
         <BeginnerStage 
           onSendMessage={() => {/* Navigate to messages */}}
           onViewContacts={() => {/* Navigate to contacts */}}
@@ -62,7 +65,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show intermediate stage for users building their network
   if (stage === 'intermediate') {
     return (
-      <ModernDashboard>
+      <ModernDashboard userStats={stats} showStatsCards={true}>
         <IntermediateStage />
       </ModernDashboard>
     );
@@ -71,20 +74,20 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show advanced stage for AI-powered users with modern elements
   if (stage === 'advanced') {
     return (
-      <ModernDashboard />
+      <ModernDashboard userStats={stats} showStatsCards={true} />
     );
   }
   
   // Show expert stage for CRM masters with modern dashboard
   if (stage === 'expert') {
     return (
-      <ModernDashboard />
+      <ModernDashboard userStats={stats} showStatsCards={true} />
     );
   }
   
   // For users with some progress, show progressive dashboard wrapped in modern design
   return (
-    <ModernDashboard>
+    <ModernDashboard userStats={stats} showStatsCards={true}>
       <div className="space-y-6">
         {/* Welcome back message for returning users */}
         <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-lg p-6 border border-border backdrop-blur-sm">

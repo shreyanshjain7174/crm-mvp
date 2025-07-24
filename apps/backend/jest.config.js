@@ -16,9 +16,31 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/index.ts', // Main entry point
     '!src/types/**/*', // Type definitions
+    '!src/db/migrations/**/*', // SQL migration files
+    '!src/sample-agents/**/*' // Sample agent files
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov', 'html', 'json', 'json-summary'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 85,
+      lines: 85,
+      statements: 85
+    },
+    './src/routes/': {
+      branches: 90,
+      functions: 95,
+      lines: 95,
+      statements: 95
+    },
+    './src/services/': {
+      branches: 85,
+      functions: 90,
+      lines: 90,
+      statements: 90
+    }
+  },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 30000
 };

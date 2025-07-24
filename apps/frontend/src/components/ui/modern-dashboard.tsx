@@ -27,9 +27,21 @@ import { GlassCard } from '@/components/ui/glass-card';
 import { GlowingButton, AnimatedCard, FloatingElement, PulseIndicator, TypewriterText, ScrollReveal } from '@/components/ui/modern-animations';
 import { cn } from '@/lib/utils';
 
+interface UserStats {
+  contactsAdded: number;
+  messagesSent: number;
+  aiInteractions: number;
+  templatesUsed: number;
+  pipelineActions: number;
+  loginStreak: number;
+  totalSessions: number;
+}
+
 interface ModernDashboardProps {
   children?: React.ReactNode;
   className?: string;
+  userStats?: UserStats;
+  showStatsCards?: boolean;
 }
 
 // Floating particles component for background
@@ -288,7 +300,7 @@ const ModernNotificationBell = ({ count = 3 }: { count?: number }) => {
   );
 };
 
-export function ModernDashboard({ children, className }: ModernDashboardProps) {
+export function ModernDashboard({ children, className, userStats, showStatsCards = false }: ModernDashboardProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -422,41 +434,43 @@ export function ModernDashboard({ children, className }: ModernDashboardProps) {
           </div>
         </motion.div>
 
-        {/* Modern stats grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <ModernStatCard
-            title="Total Contacts"
-            value="1,234"
-            trend={{ value: 12, isPositive: true }}
-            icon={Users}
-            color="blue"
-            delay={0.1}
-          />
-          <ModernStatCard
-            title="Active Conversations"
-            value="56"
-            trend={{ value: 8, isPositive: true }}
-            icon={MessageSquare}
-            color="green"
-            delay={0.2}
-          />
-          <ModernStatCard
-            title="Conversion Rate"
-            value="24%"
-            trend={{ value: 3, isPositive: true }}
-            icon={Target}
-            color="purple"
-            delay={0.3}
-          />
-          <ModernStatCard
-            title="AI Automations"
-            value="89"
-            trend={{ value: 15, isPositive: true }}
-            icon={Zap}
-            color="orange"
-            delay={0.4}
-          />
-        </div>
+        {/* Modern stats grid - only show if enabled and user has data */}
+        {showStatsCards && userStats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <ModernStatCard
+              title="Total Contacts"
+              value={userStats.contactsAdded.toString()}
+              trend={{ value: userStats.contactsAdded > 0 ? 12 : 0, isPositive: true }}
+              icon={Users}
+              color="blue"
+              delay={0.1}
+            />
+            <ModernStatCard
+              title="Messages Sent"
+              value={userStats.messagesSent.toString()}
+              trend={{ value: userStats.messagesSent > 0 ? 8 : 0, isPositive: true }}
+              icon={MessageSquare}
+              color="green"
+              delay={0.2}
+            />
+            <ModernStatCard
+              title="Pipeline Actions"
+              value={userStats.pipelineActions.toString()}
+              trend={{ value: userStats.pipelineActions > 0 ? 3 : 0, isPositive: true }}
+              icon={Target}
+              color="purple"
+              delay={0.3}
+            />
+            <ModernStatCard
+              title="AI Interactions"
+              value={userStats.aiInteractions.toString()}
+              trend={{ value: userStats.aiInteractions > 0 ? 15 : 0, isPositive: true }}
+              icon={Zap}
+              color="orange"
+              delay={0.4}
+            />
+          </div>
+        )}
 
         {/* AI Assistant floating card */}
         <ScrollReveal delay={0.5}>

@@ -16,6 +16,15 @@
     "test": "jest",
     "test:watch": "npx jest --watch",
     "test:coverage": "npx jest --coverage",
+    "test:stats": "./scripts/run-stats-tests.sh",
+    "test:stats:basic": "npx jest tests/routes/stats.test.ts --verbose",
+    "test:stats:integration": "npx jest tests/routes/stats-integration.test.ts --verbose",
+    "test:stats:comprehensive": "npx jest tests/routes/stats-comprehensive.test.ts --verbose",
+    "coverage": "npx jest --coverage",
+    "coverage:check": "./scripts/coverage-check.sh",
+    "coverage:report": "npx jest --coverage && open coverage/lcov-report/index.html",
+    "ci-check": "./scripts/check-ci.sh",
+    "quick-commit": "./scripts/quick-commit.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -39,6 +48,7 @@
     "supertest": "^7.1.3",
     "ts-jest": "^29.4.0",
     "uuid": "^9.0.0",
+    "isolated-vm": "^4.7.2",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
   },
