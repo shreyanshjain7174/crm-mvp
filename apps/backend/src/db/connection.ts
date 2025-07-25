@@ -1,4 +1,6 @@
 import { Pool } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -190,9 +192,12 @@ export async function initializeDatabase() {
       await runAgentMigrations(client);
       await runBillingMigrations(client);
       await runMonitoringMigrations(client);
-      console.log('Agent, billing, and monitoring migrations applied successfully');
+      await runContactsMigrations(client);
+      await runAchievementsMigrations(client);
+      await runNotificationsMigrations(client);
+      console.log('Agent, billing, monitoring, contacts, achievements, and notifications migrations applied successfully');
     } catch (migrationError) {
-      console.warn('Agent migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
+      console.warn('Migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
     }
 
     console.log('Database initialized successfully');
@@ -412,4 +417,28 @@ async function runMonitoringMigrations(client: any) {
     CREATE INDEX IF NOT EXISTS idx_agent_alerts_resolved ON agent_alerts(resolved);
     CREATE INDEX IF NOT EXISTS idx_agent_alerts_created_at ON agent_alerts(created_at DESC);
   `);
+}
+
+// Contacts system migrations
+async function runContactsMigrations(client: any) {
+  // Apply the contacts migration SQL
+  const contactsMigrationPath = path.join(__dirname, 'migrations/015_contacts_schema.sql');
+  const contactsMigration = fs.readFileSync(contactsMigrationPath, 'utf8');
+  await client.query(contactsMigration);
+}
+
+// Achievements system migrations
+async function runAchievementsMigrations(client: any) {
+  // Apply the achievements migration SQL
+  const achievementsMigrationPath = path.join(__dirname, 'migrations/016_achievements_schema.sql');
+  const achievementsMigration = fs.readFileSync(achievementsMigrationPath, 'utf8');
+  await client.query(achievementsMigration);
+}
+
+// Notifications system migrations
+async function runNotificationsMigrations(client: any) {
+  // Apply the notifications migration SQL
+  const notificationsMigrationPath = path.join(__dirname, 'migrations/017_notifications_schema.sql');
+  const notificationsMigration = fs.readFileSync(notificationsMigrationPath, 'utf8');
+  await client.query(notificationsMigration);
 }

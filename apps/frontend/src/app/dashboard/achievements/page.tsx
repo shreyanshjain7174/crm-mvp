@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AchievementCard } from '@/components/achievements/AchievementCard';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { 
   Trophy, 
   Star, 
@@ -18,38 +19,73 @@ import {
   Filter,
   TrendingUp
 } from 'lucide-react';
-import { useUserProgressStore } from '@/stores/userProgress';
-import { 
-  ACHIEVEMENTS, 
-  Achievement,
-  checkAchievements,
-  calculateTotalPoints,
-  getNextMilestoneAchievements
-} from '@/lib/constants/achievements';
 import { cn } from '@/lib/utils';
+import { useAchievements, Achievement } from '@/hooks/use-achievements';
 
 type FilterType = 'all' | 'unlocked' | 'locked' | 'common' | 'rare' | 'epic' | 'legendary';
 type CategoryType = 'all' | 'milestone' | 'feature' | 'usage' | 'social' | 'efficiency';
 
 export default function AchievementsPage() {
-  const { stats, stage, achievements: userAchievements } = useUserProgressStore();
   const [filter, setFilter] = useState<FilterType>('all');
   const [category, setCategory] = useState<CategoryType>('all');
+
+  // Use real backend data
+  const {
+    availableAchievements,
+    userAchievements,
+    stats,
+    stage,
+    overview,
+    loading,
+    error,
+    unlockAchievement
+  } = useAchievements();
+  
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading achievements...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load achievements</h3>
+            <p className="text-gray-600">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // Get unlocked achievement IDs
   const unlockedIds = useMemo(() => new Set(userAchievements.map(a => a.id)), [userAchievements]);
   
   // Calculate progress for locked achievements
   const getAchievementProgress = (achievement: Achievement): number => {
-    if (unlockedIds.has(achievement.id)) return 100;
+    if (achievement.isUnlocked) return 100;
     
-    if (achievement.requirements.length === 1 && achievement.requirements[0].type === 'stat') {
+    if (achievement.requirements && achievement.requirements.length === 1 && achievement.requirements[0].type === 'stat') {
       const req = achievement.requirements[0];
-      const [statName, , value] = req.condition.split(/\s*(>=|<=|>|<|==)\s*/);
-      const statValue = stats[statName as keyof typeof stats] || 0;
-      const targetValue = parseInt(value);
+      const match = req.condition.match(/(\w+)\s*(>=|<=|>|<|==)\s*(\d+)/);
       
-      return Math.min((statValue / targetValue) * 100, 99); // Never show 100% unless unlocked
+      if (match) {
+        const [, statName, , valueStr] = match;
+        const statValue = stats[statName] || 0;
+        const targetValue = parseInt(valueStr);
+        
+        return Math.min((statValue / targetValue) * 100, 99); // Never show 100% unless unlocked
+      }
     }
     
     return 0;
@@ -57,7 +93,7 @@ export default function AchievementsPage() {
 
   // Filter achievements
   const filteredAchievements = useMemo(() => {
-    let filtered = ACHIEVEMENTS;
+    let filtered = availableAchievements;
     
     // Apply category filter
     if (category !== 'all') {
@@ -67,10 +103,10 @@ export default function AchievementsPage() {
     // Apply status/rarity filter
     switch (filter) {
       case 'unlocked':
-        filtered = filtered.filter(a => unlockedIds.has(a.id));
+        filtered = filtered.filter(a => a.isUnlocked);
         break;
       case 'locked':
-        filtered = filtered.filter(a => !unlockedIds.has(a.id));
+        filtered = filtered.filter(a => !a.isUnlocked);
         break;
       case 'common':
       case 'rare':
@@ -82,8 +118,8 @@ export default function AchievementsPage() {
     
     // Sort: unlocked first, then by rarity, then by points
     return filtered.sort((a, b) => {
-      const aUnlocked = unlockedIds.has(a.id);
-      const bUnlocked = unlockedIds.has(b.id);
+      const aUnlocked = a.isUnlocked || false;
+      const bUnlocked = b.isUnlocked || false;
       
       if (aUnlocked !== bUnlocked) {
         return bUnlocked ? 1 : -1;
@@ -95,23 +131,14 @@ export default function AchievementsPage() {
       
       return b.points - a.points;
     });
-  }, [filter, category, unlockedIds]);
+  }, [filter, category, availableAchievements]);
 
-  // Statistics
-  const stats_achievements = {
-    total: ACHIEVEMENTS.length,
-    unlocked: userAchievements.length,
-    points: calculateTotalPoints(userAchievements),
-    percentage: Math.round((userAchievements.length / ACHIEVEMENTS.length) * 100)
-  };
-
-  const nextMilestones = getNextMilestoneAchievements(stats, stage);
-
-  const getRarityCount = (rarity: Achievement['rarity']) => {
-    const total = ACHIEVEMENTS.filter(a => a.rarity === rarity).length;
-    const unlocked = userAchievements.filter(a => a.rarity === rarity).length;
-    return { total, unlocked };
-  };
+  // Get next milestone achievements (simple implementation for demo)
+  const nextMilestones = useMemo(() => {
+    return availableAchievements
+      .filter(a => !a.isUnlocked && a.category === 'milestone')
+      .slice(0, 3);
+  }, [availableAchievements]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -133,7 +160,7 @@ export default function AchievementsPage() {
           <CardContent className="p-4 text-center">
             <Award className="h-8 w-8 mx-auto text-blue-600 mb-2" />
             <p className="text-2xl font-bold text-blue-600">
-              {stats_achievements.unlocked}/{stats_achievements.total}
+              {overview.totalUnlocked}/{overview.totalAvailable}
             </p>
             <p className="text-sm text-gray-600">Achievements</p>
           </CardContent>
@@ -142,7 +169,7 @@ export default function AchievementsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <Star className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-            <p className="text-2xl font-bold text-yellow-600">{stats_achievements.points}</p>
+            <p className="text-2xl font-bold text-yellow-600">{overview.totalPoints}</p>
             <p className="text-sm text-gray-600">Total Points</p>
           </CardContent>
         </Card>
@@ -150,7 +177,7 @@ export default function AchievementsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <TrendingUp className="h-8 w-8 mx-auto text-green-600 mb-2" />
-            <p className="text-2xl font-bold text-green-600">{stats_achievements.percentage}%</p>
+            <p className="text-2xl font-bold text-green-600">{overview.completionPercentage}%</p>
             <p className="text-sm text-gray-600">Completion</p>
           </CardContent>
         </Card>
@@ -159,7 +186,7 @@ export default function AchievementsPage() {
           <CardContent className="p-4 text-center">
             <Crown className="h-8 w-8 mx-auto text-purple-600 mb-2" />
             <p className="text-2xl font-bold text-purple-600">
-              {getRarityCount('legendary').unlocked}/{getRarityCount('legendary').total}
+              {overview.byRarity.legendary.unlocked}/{overview.byRarity.legendary.total}
             </p>
             <p className="text-sm text-gray-600">Legendary</p>
           </CardContent>
@@ -179,20 +206,20 @@ export default function AchievementsPage() {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span>Achievement Completion</span>
-                <span className="font-medium">{stats_achievements.percentage}%</span>
+                <span className="font-medium">{overview.completionPercentage}%</span>
               </div>
-              <Progress value={stats_achievements.percentage} className="h-3" />
+              <Progress value={overview.completionPercentage} className="h-3" />
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               {(['common', 'rare', 'epic', 'legendary'] as const).map(rarity => {
-                const { total, unlocked } = getRarityCount(rarity);
-                const percentage = total > 0 ? Math.round((unlocked / total) * 100) : 0;
+                const rarityData = overview.byRarity[rarity];
+                const percentage = rarityData.total > 0 ? Math.round((rarityData.unlocked / rarityData.total) * 100) : 0;
                 
                 return (
                   <div key={rarity} className="p-3 border rounded-lg">
                     <div className="text-sm font-medium capitalize mb-1">{rarity}</div>
-                    <div className="text-lg font-bold">{unlocked}/{total}</div>
+                    <div className="text-lg font-bold">{rarityData.unlocked}/{rarityData.total}</div>
                     <div className="text-xs text-gray-500">{percentage}%</div>
                   </div>
                 );
@@ -270,7 +297,7 @@ export default function AchievementsPage() {
               <AchievementCard
                 key={achievement.id}
                 achievement={achievement}
-                isUnlocked={unlockedIds.has(achievement.id)}
+                isUnlocked={achievement.isUnlocked || false}
                 progress={getAchievementProgress(achievement)}
                 showProgress={true}
               />

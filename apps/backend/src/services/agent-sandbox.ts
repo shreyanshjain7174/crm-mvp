@@ -1,4 +1,4 @@
-import { NodeVM, VMScript } from 'vm2';
+import * as ivm from 'isolated-vm';
 import { logger } from '../utils/logger';
 import { EventEmitter } from 'events';
 
@@ -33,45 +33,121 @@ export interface SandboxResult {
 }
 
 export class AgentSandbox extends EventEmitter {
-  private vm: NodeVM | null = null;
-  private context: AgentContext;
+  private isolate: ivm.Isolate | null = null;
+  private context: ivm.Context | null = null;
+  private agentContext: AgentContext;
   private startTime: number = 0;
   private apiCallCount: number = 0;
   private isExecuting: boolean = false;
 
   constructor(context: AgentContext) {
     super();
-    this.context = context;
-    this.initializeVM();
+    this.agentContext = context;
+    this.initializeIsolate();
   }
 
-  private initializeVM(): void {
+  private async initializeIsolate(): Promise<void> {
     try {
-      this.vm = new NodeVM({
-        console: 'inherit',
-        sandbox: this.createSandboxEnvironment(),
-        require: {
-          external: false,
-          builtin: [],
-          root: './',
-          mock: {
-            'crypto': {
-              randomUUID: () => {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                const crypto = require('crypto');
-                return crypto.randomUUID();
-              }
-            }
-          }
-        },
-        timeout: this.context.resourceLimits.timeout,
-        eval: false,
-        wasm: false
+      // Create isolated VM with memory limits
+      this.isolate = new ivm.Isolate({ 
+        memoryLimit: this.agentContext.resourceLimits.memory || 128,
+        inspector: false
       });
+      
+      // Create context within the isolate
+      this.context = await this.isolate.createContext();
+      
+      // Set up sandbox environment
+      await this.setupSandboxEnvironment();
+      
+      logger.info(`Sandbox initialized for agent ${this.agentContext.agentId}`);
     } catch (error) {
-      logger.error('Failed to initialize VM:', error);
+      logger.error('Failed to initialize isolate:', error);
       throw new Error('Sandbox initialization failed');
     }
+  }
+
+  private async setupSandboxEnvironment(): Promise<void> {
+    if (!this.context || !this.isolate) {
+      throw new Error('Context not initialized');
+    }
+
+    // Create console object
+    const consoleObj = this.isolate.compileScriptSync(`
+      new Object({
+        log: function(...args) {
+          $0.applyIgnored(undefined, [JSON.stringify(args)]);
+        },
+        error: function(...args) {
+          $1.applyIgnored(undefined, [JSON.stringify(args)]);
+        },
+        warn: function(...args) {
+          $2.applyIgnored(undefined, [JSON.stringify(args)]);
+        }
+      })
+    `);
+
+    await this.context.global.set('console', await consoleObj.run(this.context, [
+      new ivm.Callback((...args: any[]) => logger.info('Agent log:', ...args)),
+      new ivm.Callback((...args: any[]) => logger.error('Agent error:', ...args)),
+      new ivm.Callback((...args: any[]) => logger.warn('Agent warning:', ...args))
+    ]));
+
+    // Set up API object
+    const apiObj = this.isolate.compileScriptSync(`
+      new Object({
+        call: function(endpoint, data) {
+          return $0.applySync(undefined, [endpoint, JSON.stringify(data || {})]);
+        }
+      })
+    `);
+
+    await this.context.global.set('api', await apiObj.run(this.context, [
+      new ivm.Callback((endpoint: string, data: string) => {
+        this.apiCallCount++;
+        if (this.apiCallCount > this.agentContext.resourceLimits.maxAPICalls) {
+          throw new Error('API call limit exceeded');
+        }
+        
+        this.emit('api-call', {
+          agentId: this.agentContext.agentId,
+          endpoint,
+          data: JSON.parse(data),
+          timestamp: new Date()
+        });
+        
+        return JSON.stringify({ success: true, endpoint, data });
+      })
+    ]));
+
+    // Set up setTimeout with limits
+    await this.context.global.set('setTimeout', new ivm.Callback((callback: any, delay: number) => {
+      if (delay > this.agentContext.resourceLimits.timeout) {
+        throw new Error('Timeout exceeds resource limits');
+      }
+      // Note: This is a simplified implementation
+      // In production, you'd want more sophisticated timeout handling
+      return setTimeout(() => {
+        if (typeof callback === 'function') {
+          callback();
+        }
+      }, delay);
+    }));
+
+    // Add basic JSON support
+    await this.context.global.set('JSON', this.isolate.compileScriptSync(`
+      new Object({
+        stringify: function(obj) {
+          return $0.applySync(undefined, [obj]);
+        },
+        parse: function(str) {
+          return $1.applySync(undefined, [str]);
+        }
+      })
+    `).runSync(this.context, [
+      new ivm.Callback((obj: any) => JSON.stringify(obj)),
+      new ivm.Callback((str: string) => JSON.parse(str))
+    ]));
   }
 
   async execute(code: string, inputData: any = {}): Promise<SandboxResult> {
@@ -79,39 +155,48 @@ export class AgentSandbox extends EventEmitter {
       throw new Error('Sandbox is already executing code');
     }
 
+    if (!this.context || !this.isolate) {
+      throw new Error('Sandbox not properly initialized');
+    }
+
     this.isExecuting = true;
     this.startTime = Date.now();
     this.apiCallCount = 0;
 
     try {
-      if (!this.vm) {
-        throw new Error('Sandbox VM not initialized');
-      }
+      // Set input data in the context
+      await this.context.global.set('input', JSON.parse(JSON.stringify(inputData)));
 
-      // Make input data available in sandbox
-      this.vm.freeze(inputData, 'input');
-
-      const script = new VMScript(`
+      // Wrap code in async function
+      const wrappedCode = `
         (async function() {
-          ${code}
+          try {
+            ${code}
+          } catch (error) {
+            throw new Error(error.message || 'Execution error');
+          }
         })();
-      `);
+      `;
 
-      const result = await this.vm.run(script);
+      // Compile and run the script with timeout
+      const script = await this.isolate.compileScript(wrappedCode);
+      const timeout = this.agentContext.resourceLimits.timeout || 5000;
+      
+      const result = await script.run(this.context, { timeout });
       const executionTime = Date.now() - this.startTime;
 
       this.emit('execution-completed', {
-        agentId: this.context.agentId,
+        agentId: this.agentContext.agentId,
         executionTime,
         success: true
       });
 
       return {
         success: true,
-        result,
+        result: result && typeof result.copy === 'function' ? result.copy() : result,
         resourceUsage: {
           executionTime,
-          memoryUsed: process.memoryUsage().heapUsed / 1024 / 1024,
+          memoryUsed: this.isolate.getHeapStatisticsSync().used_heap_size / 1024 / 1024,
           apiCallsMade: this.apiCallCount
         }
       };
@@ -119,7 +204,7 @@ export class AgentSandbox extends EventEmitter {
       const executionTime = Date.now() - this.startTime;
       
       this.emit('execution-failed', {
-        agentId: this.context.agentId,
+        agentId: this.agentContext.agentId,
         error: error instanceof Error ? error.message : 'Unknown error',
         executionTime
       });
@@ -131,7 +216,7 @@ export class AgentSandbox extends EventEmitter {
         error: error instanceof Error ? error.message : 'Execution failed',
         resourceUsage: {
           executionTime,
-          memoryUsed: process.memoryUsage().heapUsed / 1024 / 1024,
+          memoryUsed: this.isolate ? this.isolate.getHeapStatisticsSync().used_heap_size / 1024 / 1024 : 0,
           apiCallsMade: this.apiCallCount
         }
       };
@@ -140,66 +225,35 @@ export class AgentSandbox extends EventEmitter {
     }
   }
 
-  private createSandboxEnvironment() {
-    return {
-      console: {
-        log: (...args: any[]) => logger.info('Agent log:', ...args),
-        error: (...args: any[]) => logger.error('Agent error:', ...args),
-        warn: (...args: any[]) => logger.warn('Agent warning:', ...args)
-      },
-      
-      setTimeout: (callback: () => void, delay: number) => {
-        if (delay > this.context.resourceLimits.timeout) {
-          throw new Error('Timeout exceeds resource limits');
-        }
-        return setTimeout(callback, delay);
-      },
-      
-      api: {
-        call: (endpoint: string, data?: any) => {
-          this.apiCallCount++;
-          if (this.apiCallCount > this.context.resourceLimits.maxAPICalls) {
-            throw new Error('API call limit exceeded');
-          }
-          
-          this.emit('api-call', {
-            agentId: this.context.agentId,
-            endpoint,
-            data,
-            timestamp: new Date()
-          });
-        },
-        
-        on: (eventName: string, callback: (...args: any[]) => void) => {
-          this.on(eventName, callback);
-        }
-      }
-    };
-  }
-
   destroy(): void {
-    if (this.vm) {
-      this.vm = null;
+    if (this.context) {
+      this.context.release();
+      this.context = null;
+    }
+    if (this.isolate) {
+      this.isolate.dispose();
+      this.isolate = null;
     }
     this.removeAllListeners();
   }
 
   getContext(): AgentContext {
-    return { ...this.context };
+    return { ...this.agentContext };
   }
 
-  updateResourceLimits(limits: Partial<ResourceLimits>): void {
-    this.context.resourceLimits = { ...this.context.resourceLimits, ...limits };
-    if (this.vm) {
-      this.initializeVM();
-    }
+  async updateResourceLimits(limits: Partial<ResourceLimits>): Promise<void> {
+    this.agentContext.resourceLimits = { ...this.agentContext.resourceLimits, ...limits };
+    
+    // Reinitialize with new limits
+    this.destroy();
+    await this.initializeIsolate();
   }
 }
 
 class SandboxManager {
   private sandboxes: Map<string, AgentSandbox> = new Map();
 
-  createSandbox(context: AgentContext): AgentSandbox {
+  async createSandbox(context: AgentContext): Promise<AgentSandbox> {
     const sandboxId = `${context.agentId}:${context.sessionId}`;
     
     if (this.sandboxes.has(sandboxId)) {

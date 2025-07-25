@@ -4,273 +4,330 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Send, Phone, Bot, Clock } from 'lucide-react';
-
-type MessageStatus = 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
-type Direction = 'INBOUND' | 'OUTBOUND';
-
-interface Message {
-  id: string;
-  leadName: string;
-  leadPhone: string;
-  content: string;
-  direction: Direction;
-  status: MessageStatus;
-  timestamp: string;
-  isAiGenerated?: boolean;
-  aiConfidence?: number;
-}
-
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    leadName: 'Rajesh Kumar',
-    leadPhone: '+91 98765 43210',
-    content: 'Hi, I\'m interested in your services. Can you provide more details?',
-    direction: 'INBOUND',
-    status: 'READ',
-    timestamp: 'Today 2:30 PM'
-  },
-  {
-    id: '2',
-    leadName: 'Rajesh Kumar',
-    leadPhone: '+91 98765 43210',
-    content: 'Thank you for your interest! I\'d be happy to help. Our services include comprehensive CRM solutions tailored for SMEs. Would you like to schedule a demo?',
-    direction: 'OUTBOUND',
-    status: 'DELIVERED',
-    timestamp: 'Today 2:35 PM',
-    isAiGenerated: true,
-    aiConfidence: 89
-  },
-  {
-    id: '3',
-    leadName: 'Priya Sharma',
-    leadPhone: '+91 87654 32109',
-    content: 'What are your pricing plans?',
-    direction: 'INBOUND',
-    status: 'READ',
-    timestamp: 'Yesterday 4:15 PM'
-  },
-  {
-    id: '4',
-    leadName: 'Priya Sharma',
-    leadPhone: '+91 87654 32109',
-    content: 'Our pricing starts at ₹2,999/month for our basic plan. It includes lead management, WhatsApp integration, and AI assistance. Would you like me to send you a detailed pricing sheet?',
-    direction: 'OUTBOUND',
-    status: 'READ',
-    timestamp: 'Yesterday 4:20 PM',
-    isAiGenerated: true,
-    aiConfidence: 92
-  },
-  {
-    id: '5',
-    leadName: 'Amit Patel',
-    leadPhone: '+91 76543 21098',
-    content: 'Hello, I got your contact from a friend. Can we discuss your CRM solution?',
-    direction: 'INBOUND',
-    status: 'READ',
-    timestamp: '2 days ago'
-  }
-];
+import { Search, Send, Phone, Bot, Clock, MessageCircle, TrendingUp, Zap, MoreVertical } from 'lucide-react';
+import { useMessages, useMessageStats } from '@/hooks/use-messages';
+import { format } from 'date-fns';
 
 export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterDirection, setFilterDirection] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
 
-  const getStatusColor = (status: MessageStatus) => {
+  const {
+    messages,
+    loading: messagesLoading,
+    error: messagesError,
+    pagination,
+    markAsRead,
+    sendMessage
+  } = useMessages({
+    page: currentPage,
+    limit: 20,
+    search: searchTerm,
+    direction: filterDirection,
+    status: filterStatus
+  });
+
+  const {
+    stats,
+    loading: statsLoading
+  } = useMessageStats();
+
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'SENT': return 'bg-blue-100 text-blue-800';
       case 'DELIVERED': return 'bg-green-100 text-green-800';
       case 'READ': return 'bg-gray-100 text-gray-800';
       case 'FAILED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredMessages = mockMessages.filter(message =>
-    message.leadName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    message.leadPhone.includes(searchTerm)
-  );
+  const getDirectionIcon = (direction: string) => {
+    return direction === 'INBOUND' ? '↓' : '↑';
+  };
 
-  const conversations = filteredMessages.reduce((acc, message) => {
+  const handleSendMessage = async () => {
+    if (!selectedLead || !newMessage.trim()) return;
+    
+    try {
+      await sendMessage({
+        leadId: selectedLead,
+        content: newMessage.trim(),
+        isAiGenerated: false
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  if (messagesLoading || statsLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (messagesError) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-red-600">Error loading messages: {messagesError}</div>
+      </div>
+    );
+  }
+
+  // Group messages by lead for conversation view
+  const conversations = messages.reduce((acc, message) => {
     const key = message.leadPhone;
     if (!acc[key]) {
       acc[key] = [];
     }
     acc[key].push(message);
     return acc;
-  }, {} as Record<string, Message[]>);
+  }, {} as Record<string, typeof messages>);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Messages</h1>
-          <p className="text-gray-600">WhatsApp conversations and AI suggestions</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Messages</h1>
+        <p className="mt-2 text-gray-600">Manage customer communications</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Messages</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="bg-indigo-100 rounded-full p-3">
+              <MessageCircle className="w-6 h-6 text-indigo-600" />
+            </div>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge className="bg-green-100 text-green-800">
-            WhatsApp Connected
-          </Badge>
-          <Button variant="outline">
-            <Bot className="h-4 w-4 mr-2" />
-            AI Settings
-          </Button>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Sent Today</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.todayCount}</p>
+            </div>
+            <div className="bg-green-100 rounded-full p-3">
+              <Send className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">AI Generated</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.aiGenerated}</p>
+            </div>
+            <div className="bg-purple-100 rounded-full p-3">
+              <Bot className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Received</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.received}</p>
+            </div>
+            <div className="bg-blue-100 rounded-full p-3">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-        {/* Conversations List */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="text-lg">Conversations</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-col md:flex-row gap-4 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search conversations..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-full"
+                placeholder="Search messages, leads, or phone numbers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {Object.entries(conversations).map(([phone, messages]) => {
-                const latestMessage = messages[messages.length - 1];
-                const unreadCount = messages.filter(m => 
-                  m.direction === 'INBOUND' && m.status === 'DELIVERED'
-                ).length;
 
-                return (
-                  <div
-                    key={phone}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 ${
-                      selectedLead === phone ? 'bg-primary/5 border-l-4 border-l-primary' : ''
-                    }`}
-                    onClick={() => setSelectedLead(phone)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{latestMessage.leadName}</h4>
-                      {unreadCount > 0 && (
-                        <Badge className="bg-red-100 text-red-800 text-xs">
-                          {unreadCount}
-                        </Badge>
+            <select
+              value={filterDirection}
+              onChange={(e) => setFilterDirection(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All Directions</option>
+              <option value="INBOUND">Inbound</option>
+              <option value="OUTBOUND">Outbound</option>
+            </select>
+
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">All Status</option>
+              <option value="SENT">Sent</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="READ">Read</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="divide-y divide-gray-200">
+          {messages.map((message) => (
+            <div key={message.id} className="p-6 hover:bg-gray-50">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  {/* Message Header */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {getDirectionIcon(message.direction)}
+                        </span>
+                        <span className="text-lg font-semibold text-gray-900">
+                          {message.leadName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Phone className="w-4 h-4" />
+                        {message.leadPhone}
+                      </div>
+                      {message.isAiGenerated && (
+                        <div className="flex items-center gap-1">
+                          <Bot className="w-4 h-4 text-purple-600" />
+                          <span className="text-xs text-purple-600 font-medium">
+                            AI ({message.aiConfidence}%)
+                          </span>
+                        </div>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">{latestMessage.content}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500">{latestMessage.timestamp}</span>
-                      <Badge className={`text-xs ${getStatusColor(latestMessage.status)}`}>
-                        {latestMessage.status}
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(message.status)}>
+                        {message.status}
                       </Badge>
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+                      </span>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Chat Interface */}
-        <Card className="col-span-2">
-          {selectedLead ? (
-            <>
-              <CardHeader className="border-b">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {conversations[selectedLead]?.[0]?.leadName}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">{selectedLead}</p>
+                  {/* Message Content */}
+                  <div className={`p-4 rounded-lg ${
+                    message.direction === 'INBOUND' 
+                      ? 'bg-gray-100 border-l-4 border-gray-400' 
+                      : 'bg-indigo-50 border-l-4 border-indigo-400'
+                  }`}>
+                    <p className="text-gray-900">{message.content}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Bot className="h-4 w-4" />
-                      AI Suggest
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col h-96">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto space-y-4 p-4">
-                  {conversations[selectedLead]?.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.direction === 'OUTBOUND' ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.direction === 'OUTBOUND'
-                            ? 'bg-primary text-white'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}
+
+                  {/* Actions */}
+                  <div className="mt-3 flex items-center gap-2">
+                    {message.status !== 'read' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => markAsRead(message.id)}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className={`text-xs ${
-                            message.direction === 'OUTBOUND' ? 'text-white/70' : 'text-gray-500'
-                          }`}>
-                            {message.timestamp}
-                          </span>
-                          {message.isAiGenerated && (
-                            <div className="flex items-center space-x-1">
-                              <Bot className="h-3 w-3" />
-                              <span className="text-xs">AI ({message.aiConfidence}%)</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Message Input */}
-                <div className="border-t p-4">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Type your message..."
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                    />
-                    <Button>
-                      <Send className="h-4 w-4" />
+                        Mark as Read
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedLead(message.leadId || '')}
+                    >
+                      Reply
                     </Button>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <Button variant="outline" size="sm">
-                      <Bot className="h-4 w-4 mr-2" />
-                      Generate AI Response
-                    </Button>
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>Response time: ~2 minutes</span>
-                    </div>
-                  </div>
                 </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-500">
-                <Bot className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
-                <p>Choose a conversation from the left to start messaging</p>
               </div>
-            </CardContent>
-          )}
-        </Card>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * pagination.limit) + 1} to{' '}
+                {Math.min(currentPage * pagination.limit, pagination.total)} of{' '}
+                {pagination.total} messages
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={currentPage === pagination.totalPages}
+                  className="px-3 py-1 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Quick Reply Modal/Section */}
+      {selectedLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-4">Send Message</h3>
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedLead(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

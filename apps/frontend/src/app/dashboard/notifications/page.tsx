@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Loader2 } from 'lucide-react';
 import { 
   Bell, 
   Check, 
@@ -37,142 +38,40 @@ import {
   Mail,
   Globe
 } from 'lucide-react';
-import { useUserProgressStore } from '@/stores/userProgress';
 import { cn } from '@/lib/utils';
-
-interface Notification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  category: 'lead' | 'message' | 'ai' | 'system' | 'pipeline';
-  title: string;
-  message: string;
-  timestamp: string;
-  isRead: boolean;
-  isStarred: boolean;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  actionRequired: boolean;
-  relatedEntity?: {
-    type: 'contact' | 'lead' | 'workflow';
-    id: string;
-    name: string;
-  };
-}
+import { useNotifications, useNotificationStats, useNotificationPreferences } from '@/hooks/use-notifications';
 
 export default function NotificationsPage() {
-  const { stats } = useUserProgressStore();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'starred' | 'urgent'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock notifications data
-  useEffect(() => {
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'info',
-        category: 'lead',
-        title: 'New Lead Added',
-        message: 'Rajesh Kumar has been added as a new lead from WhatsApp',
-        timestamp: '2 minutes ago',
-        isRead: false,
-        isStarred: false,
-        priority: 'medium',
-        actionRequired: true,
-        relatedEntity: { type: 'contact', id: '123', name: 'Rajesh Kumar' }
-      },
-      {
-        id: '2',
-        type: 'success',
-        category: 'ai',
-        title: 'AI Response Approved',
-        message: 'Your AI-generated response to Priya Sharma has been successfully sent',
-        timestamp: '5 minutes ago',
-        isRead: false,
-        isStarred: true,
-        priority: 'low',
-        actionRequired: false,
-        relatedEntity: { type: 'contact', id: '456', name: 'Priya Sharma' }
-      },
-      {
-        id: '3',
-        type: 'warning',
-        category: 'pipeline',
-        title: 'Lead Score Threshold Reached',
-        message: 'Amit Patel has reached a lead score of 85. Consider moving to qualified stage.',
-        timestamp: '15 minutes ago',
-        isRead: true,
-        isStarred: false,
-        priority: 'high',
-        actionRequired: true,
-        relatedEntity: { type: 'lead', id: '789', name: 'Amit Patel' }
-      },
-      {
-        id: '4',
-        type: 'error',
-        category: 'system',
-        title: 'Workflow Execution Failed',
-        message: 'The "Welcome New Leads" workflow failed to execute due to template error',
-        timestamp: '1 hour ago',
-        isRead: true,
-        isStarred: false,
-        priority: 'urgent',
-        actionRequired: true,
-        relatedEntity: { type: 'workflow', id: 'wf-001', name: 'Welcome New Leads' }
-      },
-      {
-        id: '5',
-        type: 'info',
-        category: 'message',
-        title: 'New WhatsApp Message',
-        message: 'Received message from Sunita Singh: "Can we schedule a call tomorrow?"',
-        timestamp: '2 hours ago',
-        isRead: true,
-        isStarred: false,
-        priority: 'medium',
-        actionRequired: true,
-        relatedEntity: { type: 'contact', id: '101', name: 'Sunita Singh' }
-      },
-      {
-        id: '6',
-        type: 'success',
-        category: 'pipeline',
-        title: 'Lead Converted',
-        message: 'Congratulations! Ravi Gupta has been successfully converted to a customer',
-        timestamp: '3 hours ago',
-        isRead: true,
-        isStarred: true,
-        priority: 'medium',
-        actionRequired: false,
-        relatedEntity: { type: 'lead', id: '202', name: 'Ravi Gupta' }
-      },
-      {
-        id: '7',
-        type: 'info',
-        category: 'ai',
-        title: 'AI Suggestion Available',
-        message: 'New AI suggestions available for improving your follow-up messages',
-        timestamp: '4 hours ago',
-        isRead: true,
-        isStarred: false,
-        priority: 'low',
-        actionRequired: false
-      },
-      {
-        id: '8',
-        type: 'warning',
-        category: 'system',
-        title: 'System Maintenance Scheduled',
-        message: 'Scheduled maintenance window: Tonight 11 PM - 1 AM IST',
-        timestamp: '6 hours ago',
-        isRead: true,
-        isStarred: false,
-        priority: 'medium',
-        actionRequired: false
-      }
-    ];
-    setNotifications(mockNotifications);
-  }, []);
+  // Use real backend data
+  const { 
+    notifications, 
+    loading: notificationsLoading, 
+    error: notificationsError,
+    markAsRead, 
+    toggleStar, 
+    markAllAsRead, 
+    deleteNotification 
+  } = useNotifications({
+    filter,
+    category: categoryFilter,
+    search: searchQuery,
+    limit: 20
+  });
+
+  const { 
+    stats: notificationStats, 
+    loading: statsLoading 
+  } = useNotificationStats();
+
+  const { 
+    preferences, 
+    loading: preferencesLoading, 
+    updatePreferences 
+  } = useNotificationPreferences();
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -204,40 +103,32 @@ export default function NotificationsPage() {
     }
   };
 
-  const filteredNotifications = notifications.filter(notification => {
-    const matchesFilter = filter === 'all' || 
-      (filter === 'unread' && !notification.isRead) ||
-      (filter === 'starred' && notification.isStarred) ||
-      (filter === 'urgent' && notification.priority === 'urgent');
-    
-    const matchesCategory = categoryFilter === 'all' || notification.category === categoryFilter;
-    
-    const matchesSearch = searchQuery === '' || 
-      notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      notification.message.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesFilter && matchesCategory && matchesSearch;
-  });
+  // Show loading state
+  if (notificationsLoading || statsLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading notifications...</span>
+        </div>
+      </div>
+    );
+  }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-  const urgentCount = notifications.filter(n => n.priority === 'urgent').length;
-  const starredCount = notifications.filter(n => n.isStarred).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, isRead: true } : n
-    ));
-  };
-
-  const toggleStar = (id: string) => {
-    setNotifications(prev => prev.map(n => 
-      n.id === id ? { ...n, isStarred: !n.isStarred } : n
-    ));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  };
+  // Show error state
+  if (notificationsError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load notifications</h3>
+            <p className="text-gray-600">{notificationsError}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -268,7 +159,7 @@ export default function NotificationsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <Bell className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-            <p className="text-2xl font-bold text-blue-600">{notifications.length}</p>
+            <p className="text-2xl font-bold text-blue-600">{notificationStats.total}</p>
             <p className="text-sm text-gray-600">Total Notifications</p>
           </CardContent>
         </Card>
@@ -276,7 +167,7 @@ export default function NotificationsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <Eye className="h-8 w-8 mx-auto text-orange-600 mb-2" />
-            <p className="text-2xl font-bold text-orange-600">{unreadCount}</p>
+            <p className="text-2xl font-bold text-orange-600">{notificationStats.unread}</p>
             <p className="text-sm text-gray-600">Unread</p>
           </CardContent>
         </Card>
@@ -284,7 +175,7 @@ export default function NotificationsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <Star className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-            <p className="text-2xl font-bold text-yellow-600">{starredCount}</p>
+            <p className="text-2xl font-bold text-yellow-600">{notificationStats.starred}</p>
             <p className="text-sm text-gray-600">Starred</p>
           </CardContent>
         </Card>
@@ -292,7 +183,7 @@ export default function NotificationsPage() {
         <Card>
           <CardContent className="p-4 text-center">
             <AlertCircle className="h-8 w-8 mx-auto text-red-600 mb-2" />
-            <p className="text-2xl font-bold text-red-600">{urgentCount}</p>
+            <p className="text-2xl font-bold text-red-600">{notificationStats.urgent}</p>
             <p className="text-sm text-gray-600">Urgent</p>
           </CardContent>
         </Card>
@@ -354,7 +245,7 @@ export default function NotificationsPage() {
 
         {/* Inbox Tab */}
         <TabsContent value="inbox" className="space-y-4">
-          {filteredNotifications.length === 0 ? (
+          {notifications.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <Bell className="h-12 w-12 mx-auto text-gray-300 mb-4" />
@@ -363,7 +254,7 @@ export default function NotificationsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredNotifications.map((notification) => (
+            notifications.map((notification) => (
               <Card 
                 key={notification.id} 
                 className={cn(
@@ -494,24 +385,39 @@ export default function NotificationsPage() {
               <CardTitle>Notification Preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {[
-                { category: 'New Leads', description: 'When new leads are added to your CRM', enabled: true },
-                { category: 'WhatsApp Messages', description: 'New incoming WhatsApp messages', enabled: true },
-                { category: 'AI Suggestions', description: 'AI-generated response suggestions', enabled: true },
-                { category: 'Pipeline Changes', description: 'When leads move through pipeline stages', enabled: false },
-                { category: 'Lead Scoring', description: 'Lead score threshold alerts', enabled: true },
-                { category: 'System Updates', description: 'System maintenance and updates', enabled: false },
-                { category: 'Workflow Alerts', description: 'Automation workflow notifications', enabled: true },
-                { category: 'Achievement Unlocks', description: 'When you unlock new features or achievements', enabled: true }
-              ].map((pref, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <Label className="font-medium">{pref.category}</Label>
-                    <p className="text-sm text-gray-600">{pref.description}</p>
-                  </div>
-                  <Switch defaultChecked={pref.enabled} />
+              {preferencesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading preferences...</span>
                 </div>
-              ))}
+              ) : (
+                preferences.map((pref) => (
+                  <div key={pref.category} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <Label className="font-medium capitalize">{pref.category}</Label>
+                      <p className="text-sm text-gray-600">
+                        {pref.category === 'lead' && 'When new leads are added to your CRM'}
+                        {pref.category === 'message' && 'New incoming messages from contacts'}
+                        {pref.category === 'ai' && 'AI-generated response suggestions and updates'}
+                        {pref.category === 'pipeline' && 'When leads move through pipeline stages'}
+                        {pref.category === 'system' && 'System maintenance and updates'}
+                        {pref.category === 'workflow' && 'Automation workflow notifications'}
+                        {pref.category === 'achievement' && 'When you unlock new features or achievements'}
+                        {pref.category === 'contact' && 'Contact-related notifications and updates'}
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={pref.inAppEnabled} 
+                      onCheckedChange={async (checked) => {
+                        await updatePreferences(pref.category, {
+                          ...pref,
+                          inAppEnabled: checked
+                        });
+                      }}
+                    />
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -2,6 +2,7 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+// Temporarily removing fastify-zod as it's causing issues
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { pool, initializeDatabase } from './db/connection';
@@ -21,10 +22,14 @@ import integrationsRoutes from './routes/integrations';
 import billingRoutes from './routes/billing';
 import { agentMonitoringRoutes } from './routes/agent-monitoring';
 import marketplaceRoutes from './routes/marketplace';
+import contactRoutes from './routes/contacts';
+import achievementRoutes from './routes/achievements';
+import notificationRoutes from './routes/notifications';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
 import { initializeAgentRuntime } from './services/agent-runtime';
+import { initializeDataSeeding } from './services/data-seeder';
 
 dotenv.config();
 
@@ -56,14 +61,25 @@ async function buildApp() {
     secret: process.env.JWT_SECRET || 'fallback-secret'
   });
 
+  // Temporarily removing fastify-zod registration
+
   // Initialize database
   await initializeDatabase();
   
-  // Initialize Socket.io after server is ready
-  let io: Server;
-  
   // Decorate fastify instance
   app.decorate('db', pool);
+  
+  // Initialize realistic sample data
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      await initializeDataSeeding(app);
+    } catch (error) {
+      logger.warn('Data seeding failed (this is normal in production):', error);
+    }
+  }
+  
+  // Initialize Socket.io after server is ready
+  let io: Server;
   app.decorate('authenticate', authenticate);
   
   // Add Socket.io setup hook
@@ -132,6 +148,9 @@ async function buildApp() {
   await app.register(billingRoutes, { prefix: '/api/billing' });
   await app.register(agentMonitoringRoutes, { prefix: '/api/monitoring' });
   await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
+  await app.register(contactRoutes, { prefix: '/api/contacts' });
+  await app.register(achievementRoutes, { prefix: '/api/achievements' });
+  await app.register(notificationRoutes, { prefix: '/api/notifications' });
 
   return app;
 }
