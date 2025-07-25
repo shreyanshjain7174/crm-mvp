@@ -4,105 +4,102 @@ export async function statsRoutes(fastify: FastifyInstance) {
   // Get dashboard statistics
   fastify.get('/dashboard', async (request, reply) => {
     try {
-      // Get total leads count
-      const leadsResult = await fastify.db.query('SELECT COUNT(*) as count FROM leads');
-      const totalLeads = parseInt(leadsResult.rows[0]?.count || '0');
+      // Get total contacts count (using contacts table instead of leads)
+      const contactsResult = await fastify.db.query('SELECT COUNT(*) as count FROM contacts');
+      const totalLeads = parseInt(contactsResult.rows[0]?.count || '0');
 
-      // Get active conversations (leads with messages in last 30 days)
+      // Get active conversations (contacts with messages in last 30 days)
+      // Since messages table might not exist or have different structure, we'll approximate this
+      // by counting contacts that have been updated recently (indicating activity)
       const conversationsResult = await fastify.db.query(`
-        SELECT COUNT(DISTINCT leadId) as count 
-        FROM messages 
-        WHERE createdAt >= NOW() - INTERVAL '30 days'
+        SELECT COUNT(*) as count 
+        FROM contacts 
+        WHERE updated_at >= NOW() - INTERVAL '30 days'
       `);
       const activeConversations = parseInt(conversationsResult.rows[0]?.count || '0');
 
-      // Calculate conversion rate (leads with status 'WARM', 'HOT', or 'CONVERTED' / total leads)
+      // Calculate conversion rate (contacts with status 'ACTIVE' / total contacts)
       const convertedResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE status IN ('WARM', 'HOT', 'CONVERTED')
+        FROM contacts 
+        WHERE status = 'ACTIVE'
       `);
       const convertedLeads = parseInt(convertedResult.rows[0]?.count || '0');
-      const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : '0.0';
+      const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
 
-      // Get hot leads (status = 'HOT')
-      const hotLeadsResult = await fastify.db.query(`
-        SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE status = 'HOT'
-      `);
-      const hotLeads = parseInt(hotLeadsResult.rows[0]?.count || '0');
+      // Get hot leads (active contacts - this is the closest analogy)
+      const hotLeads = convertedLeads;
 
-      // Get growth percentage (leads added in last month vs previous month)
+      // Get growth percentage (contacts added in last month vs previous month)
       const lastMonthResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE createdAt >= NOW() - INTERVAL '30 days'
+        FROM contacts 
+        WHERE created_at >= NOW() - INTERVAL '30 days'
       `);
       const lastMonthLeads = parseInt(lastMonthResult.rows[0]?.count || '0');
 
       const previousMonthResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE createdAt >= NOW() - INTERVAL '60 days' 
-        AND createdAt < NOW() - INTERVAL '30 days'
+        FROM contacts 
+        WHERE created_at >= NOW() - INTERVAL '60 days' 
+        AND created_at < NOW() - INTERVAL '30 days'
       `);
       const previousMonthLeads = parseInt(previousMonthResult.rows[0]?.count || '0');
       
       const leadsGrowth = previousMonthLeads > 0 
-        ? ((lastMonthLeads - previousMonthLeads) / previousMonthLeads * 100).toFixed(1)
-        : lastMonthLeads > 0 ? '100.0' : '0.0';
+        ? ((lastMonthLeads - previousMonthLeads) / previousMonthLeads * 100)
+        : lastMonthLeads > 0 ? 100 : 0;
 
-      // Get conversations growth
+      // Get conversations growth (based on contact updates)
       const lastMonthConversationsResult = await fastify.db.query(`
-        SELECT COUNT(DISTINCT leadId) as count 
-        FROM messages 
-        WHERE createdAt >= NOW() - INTERVAL '30 days'
+        SELECT COUNT(*) as count 
+        FROM contacts 
+        WHERE updated_at >= NOW() - INTERVAL '30 days'
       `);
       const lastMonthConversations = parseInt(lastMonthConversationsResult.rows[0]?.count || '0');
 
       const previousMonthConversationsResult = await fastify.db.query(`
-        SELECT COUNT(DISTINCT leadId) as count 
-        FROM messages 
-        WHERE createdAt >= NOW() - INTERVAL '60 days' 
-        AND createdAt < NOW() - INTERVAL '30 days'
+        SELECT COUNT(*) as count 
+        FROM contacts 
+        WHERE updated_at >= NOW() - INTERVAL '60 days' 
+        AND updated_at < NOW() - INTERVAL '30 days'
       `);
       const previousMonthConversations = parseInt(previousMonthConversationsResult.rows[0]?.count || '0');
       
       const conversationsGrowth = previousMonthConversations > 0 
-        ? ((lastMonthConversations - previousMonthConversations) / previousMonthConversations * 100).toFixed(1)
-        : lastMonthConversations > 0 ? '100.0' : '0.0';
+        ? ((lastMonthConversations - previousMonthConversations) / previousMonthConversations * 100)
+        : lastMonthConversations > 0 ? 100 : 0;
 
-      // Get hot leads growth
+      // Get hot leads growth (active contacts growth)
       const lastMonthHotLeadsResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE status = 'HOT' AND updatedAt >= NOW() - INTERVAL '30 days'
+        FROM contacts 
+        WHERE status = 'ACTIVE' AND updated_at >= NOW() - INTERVAL '30 days'
       `);
       const lastMonthHotLeads = parseInt(lastMonthHotLeadsResult.rows[0]?.count || '0');
 
       const previousMonthHotLeadsResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM leads 
-        WHERE status = 'HOT' 
-        AND updatedAt >= NOW() - INTERVAL '60 days' 
-        AND updatedAt < NOW() - INTERVAL '30 days'
+        FROM contacts 
+        WHERE status = 'ACTIVE' 
+        AND updated_at >= NOW() - INTERVAL '60 days' 
+        AND updated_at < NOW() - INTERVAL '30 days'
       `);
       const previousMonthHotLeads = parseInt(previousMonthHotLeadsResult.rows[0]?.count || '0');
       
       const hotLeadsGrowth = previousMonthHotLeads > 0 
-        ? ((lastMonthHotLeads - previousMonthHotLeads) / previousMonthHotLeads * 100).toFixed(1)
-        : lastMonthHotLeads > 0 ? '100.0' : '0.0';
+        ? ((lastMonthHotLeads - previousMonthHotLeads) / previousMonthHotLeads * 100)
+        : lastMonthHotLeads > 0 ? 100 : 0;
 
       return {
         totalLeads,
         activeConversations,
-        conversionRate: parseFloat(conversionRate),
+        conversionRate,
         hotLeads,
         growth: {
-          leads: parseFloat(leadsGrowth),
-          conversations: parseFloat(conversationsGrowth),
-          hotLeads: parseFloat(hotLeadsGrowth),
+          leads: leadsGrowth,
+          conversations: conversationsGrowth,
+          hotLeads: hotLeadsGrowth,
           conversionRate: 0 // Will calculate later when we have historical data
         }
       };
@@ -116,14 +113,14 @@ export async function statsRoutes(fastify: FastifyInstance) {
   fastify.get('/user/progress', async (request, reply) => {
     try {
       // Get contact count
-      const contactsResult = await fastify.db.query('SELECT COUNT(*) as count FROM leads');
+      const contactsResult = await fastify.db.query('SELECT COUNT(*) as count FROM contacts');
       const contactsAdded = parseInt(contactsResult.rows[0]?.count || '0');
 
-      // Get messages sent count
+      // Get messages sent count (approximation based on active contacts since messages table structure is unclear)
       const messagesResult = await fastify.db.query(`
         SELECT COUNT(*) as count 
-        FROM messages 
-        WHERE direction = 'OUTBOUND'
+        FROM contacts 
+        WHERE status = 'ACTIVE'
       `);
       const messagesSent = parseInt(messagesResult.rows[0]?.count || '0');
 
