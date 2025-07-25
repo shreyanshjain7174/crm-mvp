@@ -5,6 +5,9 @@ FROM node:18-slim AS deps
 RUN apt-get update && apt-get install -y \
     openssl \
     ca-certificates \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -22,6 +25,14 @@ RUN npm ci --workspaces=false --frozen-lockfile --prefer-offline && \
 
 # Build stage
 FROM node:18-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Cache bust argument (used to invalidate cache for troubleshooting)

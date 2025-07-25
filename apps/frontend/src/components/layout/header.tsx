@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Search, LogOut, Settings, CheckCircle, AlertCircle, Info, Clock, Eye } from 'lucide-react';
+import { Bell, Search, LogOut, Settings, CheckCircle, AlertCircle, Info, Clock, Eye, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,10 @@ export function Header() {
 
   const handleNotifications = () => {
     router.push('/dashboard/notifications');
+  };
+
+  const handleIntegrations = () => {
+    router.push('/dashboard/integrations');
   };
 
   const getNotificationIcon = (type: string) => {
@@ -147,6 +151,17 @@ export function Header() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* Browse Integrations Button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleIntegrations}
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 text-blue-700 hover:text-blue-800"
+          >
+            <Link2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Browse Integrations</span>
+          </Button>
           
           <div className="h-6 w-px bg-gray-300" />
           

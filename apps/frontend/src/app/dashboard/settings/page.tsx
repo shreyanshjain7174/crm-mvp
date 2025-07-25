@@ -181,7 +181,6 @@ export default function SettingsPage() {
     { id: 'security', name: 'Security', icon: Shield },
     { id: 'data', name: 'Data & Backup', icon: Database },
     { id: 'appearance', name: 'Appearance', icon: Palette },
-    { id: 'integrations', name: 'Integrations', icon: Globe },
   ];
 
   return (
@@ -928,112 +927,6 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {activeTab === 'integrations' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Third-party Integrations</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">Communication Platforms</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                          <Smartphone className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">WhatsApp Business</p>
-                          <p className="text-sm text-gray-600">Connected via Meta Cloud API</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                          <Globe className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Telegram Business</p>
-                          <p className="text-sm text-gray-600">Business messaging via Telegram</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">Connect</Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">CRM & Sales Tools</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                          <Database className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Google Sheets</p>
-                          <p className="text-sm text-gray-600">Export leads and analytics to Google Sheets</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">Connect</Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                          <Globe className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Zapier</p>
-                          <p className="text-sm text-gray-600">Connect with 5000+ apps via Zapier</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">Connect</Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">AI & Analytics</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                          <Bot className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">OpenAI GPT-4</p>
-                          <p className="text-sm text-gray-600">AI-powered response generation</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                          <BarChart3 className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">Google Analytics</p>
-                          <p className="text-sm text-gray-600">Track website visitor conversions</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm">Connect</Button>
-                    </div>
-                  </div>
-                </div>
-
-                <Button onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Integration Settings
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
       

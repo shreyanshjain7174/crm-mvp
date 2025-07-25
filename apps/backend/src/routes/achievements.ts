@@ -237,7 +237,7 @@ export async function achievementRoutes(fastify: FastifyInstance) {
 
       const totalPoints = parseInt(totalPointsResult.rows[0]?.total_points || '0');
       const totals = definitionsResult.rows[0];
-      const totalUnlocked = Object.values(userCounts).reduce((sum: number, count: number) => sum + count, 0) as number;
+      const totalUnlocked = Object.values(userCounts).reduce((sum: number, count) => sum + (count as number), 0);
       const totalAvailable = parseInt(totals?.total_available || '0');
 
       reply.send({

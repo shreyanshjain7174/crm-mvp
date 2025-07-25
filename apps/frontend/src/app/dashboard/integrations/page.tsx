@@ -18,10 +18,11 @@ import {
   AlertCircle,
   Plus,
   ExternalLink,
-  Link2
+  Link2,
+  Upload
 } from 'lucide-react';
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
-import { apiClient } from '@/lib/api';
+import { useIntegrations } from '@/hooks/use-integrations';
 import { useToast } from '@/hooks/use-toast';
 
 interface Integration {
@@ -55,61 +56,49 @@ const categoryIcons = {
 
 export default function IntegrationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [loading, setLoading] = useState(true);
   const [connectingId, setConnectingId] = useState<string | null>(null);
-  const [summary, setSummary] = useState({ total: 0, connected: 0, available: 0, premium: 0 });
   const canAccessIntegrations = useCanAccessFeature()('integrations:view');
   const { toast } = useToast();
+  
+  // Use the new integrations hook
+  const {
+    integrations: rawIntegrations,
+    stats,
+    loading,
+    error,
+    connectIntegration: connectIntegrationAPI,
+    disconnectIntegration: disconnectIntegrationAPI,
+    refetch
+  } = useIntegrations();
 
-  // Fetch integrations from API
+  // Map API integrations to component format
+  const integrations = rawIntegrations.map((integration: any) => ({
+    id: integration.id,
+    name: integration.name,
+    description: integration.description,
+    icon: iconMap[integration.id] || Link2,
+    category: integration.category as 'messaging' | 'email' | 'calendar' | 'data' | 'automation',
+    status: integration.pricing === 'premium' ? 'premium' : integration.status as 'connected' | 'available' | 'premium',
+    featured: integration.featured,
+    setupComplexity: integration.setupComplexity as 'easy' | 'medium' | 'advanced'
+  }));
+
+  // Show error toast if there's an API error
   useEffect(() => {
-    const fetchIntegrations = async () => {
-      try {
-        setLoading(true);
-        const response = await apiClient.getIntegrations();
-        if (response) {
-          setIntegrations(response.integrations.map((integration: any) => ({
-            id: integration.id,
-            name: integration.name,
-            description: integration.description,
-            icon: iconMap[integration.id] || Link2,
-            category: integration.category as 'messaging' | 'email' | 'calendar' | 'data' | 'automation',
-            status: integration.status as 'connected' | 'available' | 'premium',
-            featured: integration.featured,
-            setupComplexity: integration.setupComplexity as 'easy' | 'medium' | 'advanced'
-          })));
-          setSummary(response.summary);
-        }
-      } catch (error) {
-        console.error('Failed to fetch integrations:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load integrations. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (canAccessIntegrations) {
-      fetchIntegrations();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load integrations. Please try again.",
+        variant: "destructive"
+      });
     }
-  }, [canAccessIntegrations, toast]);
+  }, [error, toast]);
 
   // Handle integration connection
   const handleConnect = async (integrationId: string) => {
     try {
       setConnectingId(integrationId);
-      await apiClient.connectIntegration({ integrationId });
-      
-      // Update local state
-      setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId 
-          ? { ...integration, status: 'connected' as const }
-          : integration
-      ));
+      await connectIntegrationAPI({ integrationId });
       
       toast({
         title: "Success",
@@ -130,14 +119,7 @@ export default function IntegrationsPage() {
   // Handle integration disconnection
   const handleDisconnect = async (integrationId: string) => {
     try {
-      await apiClient.disconnectIntegration(integrationId);
-      
-      // Update local state
-      setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId 
-          ? { ...integration, status: 'available' as const }
-          : integration
-      ));
+      await disconnectIntegrationAPI(integrationId);
       
       toast({
         title: "Disconnected",
@@ -148,6 +130,69 @@ export default function IntegrationsPage() {
       toast({
         title: "Disconnection Failed",
         description: "Failed to disconnect integration",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle sample data import
+  const handleSampleImport = async (dataType: 'customers' | 'leads') => {
+    try {
+      // Generate sample CSV data
+      let sampleData = '';
+      
+      if (dataType === 'customers') {
+        sampleData = `name,phone,email,company
+John Smith,+1-555-0101,john.smith@example.com,Acme Corp
+Jane Doe,+1-555-0102,jane.doe@techstart.io,TechStart
+Michael Brown,+1-555-0103,m.brown@innovate.com,Innovate Inc
+Sarah Wilson,+1-555-0104,sarah.w@digitalfirm.net,Digital Firm
+David Chen,+1-555-0105,d.chen@globaltech.org,GlobalTech`;
+      } else {
+        sampleData = `name,phone,email,source,notes
+Alex Johnson,+1-555-0201,alex.j@prospect.com,website,"Interested in premium package"
+Lisa Martinez,+1-555-0202,lisa.m@potential.net,referral,"Referred by existing customer"
+Robert Taylor,+1-555-0203,rob.taylor@leadgen.io,social media,"Found us on LinkedIn"
+Emily Davis,+1-555-0204,emily.d@hotlead.com,trade show,"Met at Tech Conference 2024"
+Thomas Anderson,+1-555-0205,t.anderson@matrix.com,email campaign,"Responded to newsletter"`;
+      }
+
+      // Convert to base64 for API
+      const base64Data = btoa(sampleData);
+      
+      // Import via CSV integration
+      const response = await fetch('/api/integrations/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          integrationId: 'csv-import',
+          fileData: base64Data,
+          fileName: `sample_${dataType}.csv`,
+          mapping: {}
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Import failed');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Import Successful",
+        description: `Imported ${result.data.imported} ${dataType} records successfully!`
+      });
+
+      // Refresh integrations data
+      refetch();
+    } catch (error) {
+      console.error('Sample import failed:', error);
+      toast({
+        title: "Import Failed",
+        description: `Failed to import sample ${dataType} data`,
         variant: "destructive"
       });
     }
@@ -225,7 +270,7 @@ export default function IntegrationsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Connected</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {summary.connected}
+                  {stats.connected}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -239,7 +284,7 @@ export default function IntegrationsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Available</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {summary.available}
+                  {stats.available}
                 </p>
               </div>
               <Plus className="h-8 w-8 text-blue-600" />
@@ -253,7 +298,7 @@ export default function IntegrationsPage() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Premium</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {summary.premium}
+                  {stats.premium}
                 </p>
               </div>
               <Zap className="h-8 w-8 text-purple-600" />
@@ -384,9 +429,13 @@ export default function IntegrationsPage() {
               <p className="text-sm text-muted-foreground mb-3">
                 Includes: Customer ID, Name, Company, Contact Info, Location
               </p>
-              <Button size="sm" variant="outline">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Download Sample
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleSampleImport('customers')}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import Sample
               </Button>
             </div>
             <div className="p-4 border rounded-lg">
@@ -394,9 +443,13 @@ export default function IntegrationsPage() {
               <p className="text-sm text-muted-foreground mb-3">
                 Includes: Lead Owner, Contact Info, Source, Deal Stage, Notes
               </p>
-              <Button size="sm" variant="outline">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Download Sample
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleSampleImport('leads')}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Import Sample
               </Button>
             </div>
           </div>

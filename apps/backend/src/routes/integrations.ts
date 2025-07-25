@@ -6,30 +6,40 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
-// Integration Schemas
-const connectIntegrationSchema = z.object({
-  integrationId: z.string(),
-  authCode: z.string().optional(),
-  config: z.record(z.any()).optional(),
-  redirectUri: z.string().optional()
-});
+// Integration JSON Schemas
+const connectIntegrationSchema = {
+  type: 'object',
+  properties: {
+    integrationId: { type: 'string', minLength: 1 },
+    authCode: { type: 'string' },
+    config: { type: 'object' },
+    redirectUri: { type: 'string' }
+  },
+  required: ['integrationId']
+};
 
-const updateIntegrationSchema = z.object({
-  enabled: z.boolean().optional(),
-  config: z.record(z.any()).optional(),
-  settings: z.record(z.any()).optional()
-});
+const updateIntegrationSchema = {
+  type: 'object',
+  properties: {
+    enabled: { type: 'boolean' },
+    config: { type: 'object' },
+    settings: { type: 'object' }
+  }
+};
 
-const importDataSchema = z.object({
-  integrationId: z.string(),
-  fileData: z.string(), // Base64 encoded file content
-  fileName: z.string(),
-  mapping: z.record(z.string()).optional() // Field mapping
-});
+const importDataSchema = {
+  type: 'object',
+  properties: {
+    integrationId: { type: 'string', minLength: 1 },
+    fileData: { type: 'string', minLength: 1 },
+    fileName: { type: 'string', minLength: 1 },
+    mapping: { type: 'object' }
+  },
+  required: ['integrationId', 'fileData', 'fileName']
+};
 
 export async function integrationsRoutes(fastify: FastifyInstance) {
   // Apply authentication to all integration routes
@@ -57,7 +67,7 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
           row.integration_id, 
           {
             status: row.status,
-            config: JSON.parse(row.config || '{}'),
+            config: row.config || {},
             connectedAt: row.connected_at,
             lastSyncAt: row.last_sync_at
           }
@@ -193,9 +203,13 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
    * 
    * Initiates connection to a third-party service
    */
-  fastify.post<{ Body: z.infer<typeof connectIntegrationSchema> }>('/connect', async (request, reply) => {
+  fastify.post('/connect', {
+    schema: {
+      body: connectIntegrationSchema
+    }
+  }, async (request, reply) => {
     try {
-      const { integrationId, authCode, config, redirectUri } = connectIntegrationSchema.parse(request.body);
+      const { integrationId, authCode, config, redirectUri } = request.body as any;
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Handle different integration types
@@ -242,12 +256,12 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
         success: true,
         data: connectionResult
       });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: any) {
+      if (error.validation) {
         return reply.status(400).send({
           success: false,
           error: 'Invalid connection data',
-          details: error.errors
+          details: error.validation
         });
       }
       
@@ -266,9 +280,19 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
    * 
    * Disconnects and removes integration
    */
-  fastify.delete<{ Params: { integrationId: string } }>('/:integrationId', async (request, reply) => {
+  fastify.delete('/:integrationId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          integrationId: { type: 'string', minLength: 1 }
+        },
+        required: ['integrationId']
+      }
+    }
+  }, async (request, reply) => {
     try {
-      const { integrationId } = request.params;
+      const { integrationId } = request.params as { integrationId: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Remove integration connection
@@ -321,13 +345,21 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
    * 
    * Updates integration configuration and settings
    */
-  fastify.put<{ 
-    Params: { integrationId: string },
-    Body: z.infer<typeof updateIntegrationSchema>
-  }>('/:integrationId', async (request, reply) => {
+  fastify.put('/:integrationId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          integrationId: { type: 'string', minLength: 1 }
+        },
+        required: ['integrationId']
+      },
+      body: updateIntegrationSchema
+    }
+  }, async (request, reply) => {
     try {
-      const { integrationId } = request.params;
-      const { enabled, config, settings } = updateIntegrationSchema.parse(request.body);
+      const { integrationId } = request.params as any;
+      const { enabled, config, settings } = request.body as any;
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       // Update integration settings
@@ -376,12 +408,12 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
           updatedAt: updatedIntegration.updated_at
         }
       });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: any) {
+      if (error.validation) {
         return reply.status(400).send({
           success: false,
           error: 'Invalid update data',
-          details: error.errors
+          details: error.validation
         });
       }
       
@@ -399,9 +431,13 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
    * 
    * Imports data from external service or file
    */
-  fastify.post<{ Body: z.infer<typeof importDataSchema> }>('/import', async (request, reply) => {
+  fastify.post('/import', {
+    schema: {
+      body: importDataSchema
+    }
+  }, async (request, reply) => {
     try {
-      const { integrationId, fileData, fileName, mapping } = importDataSchema.parse(request.body);
+      const { integrationId, fileData, fileName, mapping } = request.body as any;
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       let importResult;
@@ -427,12 +463,12 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
         success: true,
         data: importResult
       });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
+    } catch (error: any) {
+      if (error.validation) {
         return reply.status(400).send({
           success: false,
           error: 'Invalid import data',
-          details: error.errors
+          details: error.validation
         });
       }
       
@@ -451,13 +487,27 @@ export async function integrationsRoutes(fastify: FastifyInstance) {
    * 
    * Returns activity logs for specific integration
    */
-  fastify.get<{ 
-    Params: { integrationId: string },
-    Querystring: { limit?: number, offset?: number }
-  }>('/:integrationId/logs', async (request, reply) => {
+  fastify.get('/:integrationId/logs', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          integrationId: { type: 'string', minLength: 1 }
+        },
+        required: ['integrationId']
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'number', minimum: 1, maximum: 100 },
+          offset: { type: 'number', minimum: 0 }
+        }
+      }
+    }
+  }, async (request, reply) => {
     try {
-      const { integrationId } = request.params;
-      const { limit = 50, offset = 0 } = request.query;
+      const { integrationId } = request.params as { integrationId: string };
+      const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number };
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
       const result = await fastify.db.query(`

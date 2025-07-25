@@ -168,13 +168,14 @@ COMMENT ON TABLE integration_rate_limits IS 'API usage tracking and rate limitin
 
 -- Sample data for development (optional)
 -- This would be removed in production
-INSERT INTO user_integrations (user_id, integration_id, status, config, connected_at) 
-SELECT 
-    id as user_id,
-    'whatsapp' as integration_id,
-    'connected' as status,
-    '{"phone_number_id": "demo_phone", "access_token": "demo_token"}' as config,
-    NOW() as connected_at
-FROM users 
-WHERE email = 'demo@example.com'
-ON CONFLICT (user_id, integration_id) DO NOTHING;
+-- Keeping integrations clean by default
+-- INSERT INTO user_integrations (user_id, integration_id, status, config, connected_at) 
+-- SELECT 
+--     id as user_id,
+--     'whatsapp' as integration_id,
+--     'connected' as status,
+--     '{"phone_number_id": "demo_phone", "access_token": "demo_token"}' as config,
+--     NOW() as connected_at
+-- FROM users 
+-- WHERE email = 'demo@example.com'
+-- ON CONFLICT (user_id, integration_id) DO NOTHING;

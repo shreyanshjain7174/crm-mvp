@@ -5,14 +5,19 @@ import { useState, useEffect, useCallback } from 'react';
 export interface Achievement {
   id: string;
   name: string;
-  description?: string;
-  category: string;
+  title: string;
+  description: string;
+  category: 'milestone' | 'feature' | 'usage' | 'social' | 'efficiency';
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   points: number;
-  requirements?: any[];
-  icon?: string;
+  requirements: {
+    type: 'stat' | 'action' | 'stage' | 'combo';
+    condition: string;
+    value?: number;
+  }[];
+  icon: string;
   isUnlocked?: boolean;
-  unlockedAt?: string;
+  unlockedAt?: Date;
 }
 
 export interface UserStats {
@@ -33,7 +38,7 @@ export interface AchievementOverview {
 }
 
 class AchievementsAPI {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     let token = localStorage.getItem('token');

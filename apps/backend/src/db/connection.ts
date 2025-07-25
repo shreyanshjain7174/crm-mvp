@@ -192,10 +192,11 @@ export async function initializeDatabase() {
       await runAgentMigrations(client);
       await runBillingMigrations(client);
       await runMonitoringMigrations(client);
+      await runIntegrationsMigrations(client);
       await runContactsMigrations(client);
       await runAchievementsMigrations(client);
       await runNotificationsMigrations(client);
-      console.log('Agent, billing, monitoring, contacts, achievements, and notifications migrations applied successfully');
+      console.log('Agent, billing, monitoring, integrations, contacts, achievements, and notifications migrations applied successfully');
     } catch (migrationError) {
       console.warn('Migration warning (may be expected):', migrationError instanceof Error ? migrationError.message : String(migrationError));
     }
@@ -417,6 +418,14 @@ async function runMonitoringMigrations(client: any) {
     CREATE INDEX IF NOT EXISTS idx_agent_alerts_resolved ON agent_alerts(resolved);
     CREATE INDEX IF NOT EXISTS idx_agent_alerts_created_at ON agent_alerts(created_at DESC);
   `);
+}
+
+// Integrations system migrations
+async function runIntegrationsMigrations(client: any) {
+  // Apply the integrations migration SQL
+  const integrationsMigrationPath = path.join(__dirname, 'migrations/013_integrations_schema.sql');
+  const integrationsMigration = fs.readFileSync(integrationsMigrationPath, 'utf8');
+  await client.query(integrationsMigration);
 }
 
 // Contacts system migrations

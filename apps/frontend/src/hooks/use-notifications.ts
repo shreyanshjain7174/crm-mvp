@@ -58,7 +58,7 @@ interface NotificationResponse {
 }
 
 class NotificationsAPI {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     let token = localStorage.getItem('token');

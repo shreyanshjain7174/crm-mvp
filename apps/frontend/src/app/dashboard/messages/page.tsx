@@ -246,7 +246,7 @@ export default function MessagesPage() {
 
                   {/* Actions */}
                   <div className="mt-3 flex items-center gap-2">
-                    {message.status !== 'read' && (
+                    {message.status !== 'READ' && (
                       <Button
                         size="sm"
                         variant="outline"

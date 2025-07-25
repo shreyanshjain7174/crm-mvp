@@ -30,7 +30,7 @@ export function useAuth() {
 }
 
 class AuthAPI {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   async login(email: string, password: string) {
     const response = await fetch(`${this.baseUrl}/api/auth/login`, {

@@ -5,10 +5,10 @@
  * and other application settings.
  */
 
-// API Configuration
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001/api';
+// API Configuration - Use relative URLs to go through proxy
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '/api';
 
-// WebSocket Configuration  
+// WebSocket Configuration - Use relative URLs to go through proxy
 export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
 
 // App Configuration

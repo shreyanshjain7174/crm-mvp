@@ -40,6 +40,55 @@ export default function AchievementsPage() {
     error,
     unlockAchievement
   } = useAchievements();
+
+  // All useMemo hooks must be before early returns
+  const unlockedIds = useMemo(() => new Set(userAchievements.map(a => a.id)), [userAchievements]);
+  
+  // Filter achievements
+  const filteredAchievements = useMemo(() => {
+    let filtered = availableAchievements;
+    
+    // Apply category filter
+    if (category !== 'all') {
+      filtered = filtered.filter(a => a.category === category);
+    }
+    
+    // Apply status/rarity filter
+    switch (filter) {
+      case 'unlocked':
+        filtered = filtered.filter(a => a.isUnlocked || unlockedIds.has(a.id));
+        break;
+      case 'locked':
+        filtered = filtered.filter(a => !a.isUnlocked && !unlockedIds.has(a.id));
+        break;
+      case 'rare':
+        filtered = filtered.filter(a => a.rarity === 'legendary' || a.rarity === 'epic');
+        break;
+    }
+    
+    // Sort achievements
+    return filtered.sort((a, b) => {
+      const aUnlocked = a.isUnlocked || unlockedIds.has(a.id);
+      const bUnlocked = b.isUnlocked || unlockedIds.has(b.id);
+      
+      if (aUnlocked !== bUnlocked) {
+        return aUnlocked ? -1 : 1;
+      }
+      
+      const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3 };
+      const rarityDiff = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+      if (rarityDiff !== 0) return rarityDiff;
+      
+      return b.points - a.points;
+    });
+  }, [filter, category, availableAchievements, unlockedIds]);
+
+  // Get next milestone achievements
+  const nextMilestones = useMemo(() => {
+    return availableAchievements
+      .filter(a => !a.isUnlocked && a.category === 'milestone')
+      .slice(0, 3);
+  }, [availableAchievements]);
   
   // Show loading state
   if (loading) {
@@ -68,9 +117,6 @@ export default function AchievementsPage() {
     );
   }
   
-  // Get unlocked achievement IDs
-  const unlockedIds = useMemo(() => new Set(userAchievements.map(a => a.id)), [userAchievements]);
-  
   // Calculate progress for locked achievements
   const getAchievementProgress = (achievement: Achievement): number => {
     if (achievement.isUnlocked) return 100;
@@ -92,53 +138,6 @@ export default function AchievementsPage() {
   };
 
   // Filter achievements
-  const filteredAchievements = useMemo(() => {
-    let filtered = availableAchievements;
-    
-    // Apply category filter
-    if (category !== 'all') {
-      filtered = filtered.filter(a => a.category === category);
-    }
-    
-    // Apply status/rarity filter
-    switch (filter) {
-      case 'unlocked':
-        filtered = filtered.filter(a => a.isUnlocked);
-        break;
-      case 'locked':
-        filtered = filtered.filter(a => !a.isUnlocked);
-        break;
-      case 'common':
-      case 'rare':
-      case 'epic':
-      case 'legendary':
-        filtered = filtered.filter(a => a.rarity === filter);
-        break;
-    }
-    
-    // Sort: unlocked first, then by rarity, then by points
-    return filtered.sort((a, b) => {
-      const aUnlocked = a.isUnlocked || false;
-      const bUnlocked = b.isUnlocked || false;
-      
-      if (aUnlocked !== bUnlocked) {
-        return bUnlocked ? 1 : -1;
-      }
-      
-      const rarityOrder = { common: 1, rare: 2, epic: 3, legendary: 4 };
-      const rarityDiff = rarityOrder[b.rarity] - rarityOrder[a.rarity];
-      if (rarityDiff !== 0) return rarityDiff;
-      
-      return b.points - a.points;
-    });
-  }, [filter, category, availableAchievements]);
-
-  // Get next milestone achievements (simple implementation for demo)
-  const nextMilestones = useMemo(() => {
-    return availableAchievements
-      .filter(a => !a.isUnlocked && a.category === 'milestone')
-      .slice(0, 3);
-  }, [availableAchievements]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">

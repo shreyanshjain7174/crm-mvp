@@ -2,6 +2,8 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import staticPlugin from '@fastify/static';
+import path from 'path';
 // Temporarily removing fastify-zod as it's causing issues
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
@@ -49,7 +51,21 @@ async function buildApp() {
 
   // Register plugins
   await app.register(cors, {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow localhost, ngrok domains, and configured FRONTEND_URL
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001', 
+        process.env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      // Allow ngrok domains
+      if (!origin || allowedOrigins.includes(origin) || /\.ngrok(?:-free)?\.app$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'), false);
+      }
+    },
     credentials: true
   });
   
@@ -86,7 +102,21 @@ async function buildApp() {
   app.addHook('onReady', async () => {
     io = new Server(app.server, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: (origin, callback) => {
+          // Allow localhost, ngrok domains, and configured FRONTEND_URL
+          const allowedOrigins = [
+            'http://localhost:3000',
+            'http://localhost:3001', 
+            process.env.FRONTEND_URL
+          ].filter(Boolean);
+          
+          // Allow ngrok domains
+          if (!origin || allowedOrigins.includes(origin) || /\.ngrok(?:-free)?\.app$/.test(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'), false);
+          }
+        },
         methods: ["GET", "POST"],
         credentials: true
       },
@@ -151,6 +181,26 @@ async function buildApp() {
   await app.register(contactRoutes, { prefix: '/api/contacts' });
   await app.register(achievementRoutes, { prefix: '/api/achievements' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
+
+  // Serve static files from frontend build in production
+  if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
+    // Register static file serving
+    await app.register(staticPlugin, {
+      root: path.join(__dirname, '../../../frontend/out'),
+      prefix: '/',
+    });
+
+    // Fallback for SPA routing - serve index.html for non-API routes
+    app.setNotFoundHandler(async (request, reply) => {
+      if (request.url.startsWith('/api/') || request.url.startsWith('/socket.io/')) {
+        reply.code(404).send({ error: 'Not Found' });
+        return;
+      }
+      
+      reply.type('text/html');
+      return reply.sendFile('index.html');
+    });
+  }
 
   return app;
 }
