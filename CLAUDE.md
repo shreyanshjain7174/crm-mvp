@@ -23,6 +23,7 @@ Building the operating system for AI agents in CRM, not the agents themselves. P
 - Feature branches with pull requests to main
 - Conventional commit messages (feat, fix, refactor, test, docs)
 - All CI checks must pass before merge
+- **NEVER use co-authored commits** - only signed commits by the actual developer
 
 ### Architecture Principles
 
@@ -213,13 +214,16 @@ npm run start              # Start production server
 - **DYNAMIC DATA**: Realistic data seeding with Indian business context
 - Database migrations with proper indexing and full-text search
 - Real-time notification delivery via Socket.io
-- **PRODUCTION-READY**: Messages, Contacts, Leads, Achievements, Notifications
+- **PRODUCTION-READY**: Messages, Contacts, Leads, Achievements, Notifications, Integrations
+- **DOCKER SETUP**: Proxy configuration with ngrok support for development
+- **INTEGRATIONS SYSTEM**: Complete backend APIs with marketplace-ready UI
 
 ### Next Priorities
 1. ✅ **COMPLETED**: Frontend-backend integration for all dashboard pages
 2. ✅ **COMPLETED**: Realistic data seeding system
 3. ✅ **COMPLETED**: Production-ready sandbox security (isolated-vm)
-4. Performance optimization and caching
-5. Enterprise authentication integration
-6. Agent marketplace frontend integration
-7. Additional dashboard pages (AI Assistant, Automation, Security, etc.)
+4. ✅ **COMPLETED**: Integrations system with Docker proxy setup
+5. Performance optimization and caching
+6. Enterprise authentication integration
+7. Agent marketplace frontend integration
+8. Additional dashboard pages (AI Assistant, Automation, Security, etc.)
