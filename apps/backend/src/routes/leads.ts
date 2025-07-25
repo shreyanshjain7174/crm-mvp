@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { authenticate } from '../middleware/auth';
 import { z } from 'zod';
 import { LeadStatus, Priority } from '../types/enums';
 
@@ -22,7 +23,7 @@ const updateLeadSchema = z.object({
 export async function leadRoutes(fastify: FastifyInstance) {
   // Get all leads
   fastify.get('/', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const result = await fastify.db.query(`
@@ -71,7 +72,7 @@ export async function leadRoutes(fastify: FastifyInstance) {
 
   // Create new lead
   fastify.post<{ Body: z.infer<typeof createLeadSchema> }>('/', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const data = createLeadSchema.parse(request.body);

@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { authenticate } from '../middleware/auth';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 
@@ -119,7 +120,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Get current user profile
   fastify.get('/me', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const result = await fastify.db.query(
@@ -141,7 +142,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Update user profile
   fastify.put('/profile', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const updateSchema = z.object({
@@ -185,7 +186,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Change password
   fastify.put('/change-password', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const changePasswordSchema = z.object({
@@ -234,7 +235,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Delete user account and all associated data
   fastify.delete('/account', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const userId = (request as any).user.userId;
@@ -288,7 +289,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Logout (client-side token removal, but we can track it)
   fastify.post('/logout', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (_request, _reply) => {
     // In a production app, you might want to maintain a blacklist of tokens
     // For now, we'll just return success and let the client remove the token
