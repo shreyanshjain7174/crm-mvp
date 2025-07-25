@@ -55,7 +55,26 @@ class ContactsAPI {
   private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const token = localStorage.getItem('token');
+    let token = localStorage.getItem('token');
+    
+    // Auto-login for development if no token
+    if (!token && process.env.NODE_ENV !== 'production') {
+      try {
+        const loginResponse = await fetch(`${this.baseUrl}/api/auth/dev-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json();
+          localStorage.setItem('token', loginData.token);
+          localStorage.setItem('user', JSON.stringify(loginData.user));
+          token = loginData.token;
+        }
+      } catch (error) {
+        console.warn('Auto-login failed:', error);
+      }
+    }
     
     const response = await fetch(`${this.baseUrl}/api/contacts${endpoint}`, {
       headers: {
@@ -67,6 +86,11 @@ class ContactsAPI {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Clear invalid token
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
