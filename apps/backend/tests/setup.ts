@@ -1,16 +1,48 @@
 import dotenv from 'dotenv';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 // Load test environment variables
 dotenv.config({ path: '.env.test' });
 
 // Mock console.log during tests to reduce noise
-global.console = {
-  ...console,
-  log: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+if (process.env.SILENT_TESTS === 'true') {
+  global.console = {
+    ...console,
+    log: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  };
+}
+
+// Start test containers before all tests
+beforeAll(async () => {
+  if (process.env.USE_TEST_CONTAINERS === 'true') {
+    console.log('Starting test containers...');
+    try {
+      await execAsync('docker compose -f docker-compose.test.yml up -d');
+      // Wait for containers to be ready
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (error) {
+      console.error('Failed to start test containers:', error);
+    }
+  }
+});
+
+// Stop test containers after all tests
+afterAll(async () => {
+  if (process.env.USE_TEST_CONTAINERS === 'true') {
+    console.log('Stopping test containers...');
+    try {
+      await execAsync('docker compose -f docker-compose.test.yml down');
+    } catch (error) {
+      console.error('Failed to stop test containers:', error);
+    }
+  }
+});
 
 // Mock database for testing
 const mockData = {

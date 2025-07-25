@@ -23,22 +23,34 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html', 'json', 'json-summary'],
   coverageThreshold: {
     global: {
-      branches: 1,
-      functions: 0,
-      lines: 1,
-      statements: 1
+      branches: 70,
+      functions: 70,
+      lines: 80,
+      statements: 80
     },
-    './src/routes/': {
-      branches: 3,
-      functions: 4,
-      lines: 5,
-      statements: 5
+    './src/routes/auth.ts': {
+      branches: 85,
+      functions: 90,
+      lines: 95,
+      statements: 95
+    },
+    './src/routes/contacts.ts': {
+      branches: 80,
+      functions: 85,
+      lines: 90,
+      statements: 90
+    },
+    './src/routes/messages.ts': {
+      branches: 75,
+      functions: 80,
+      lines: 85,
+      statements: 85
     },
     './src/services/': {
-      branches: 5,
-      functions: 5,
-      lines: 4,
-      statements: 4
+      branches: 75,
+      functions: 80,
+      lines: 85,
+      statements: 85
     }
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],

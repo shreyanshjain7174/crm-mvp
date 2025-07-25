@@ -1,0 +1,121 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, dev, feature/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-suite:
+          - { name: "Auth Routes", path: "tests/routes/auth.test.ts" }
+          - { name: "Contacts Routes", path: "tests/routes/contacts.test.ts" }
+          - { name: "Messages Routes", path: "tests/routes/messages.test.ts" }
+          - { name: "Stats Routes", path: "tests/routes/stats.test.ts" }
+          - { name: "WhatsApp Routes", path: "tests/routes/whatsapp.test.ts" }
+          - { name: "Services", path: "tests/services/*.test.ts" }
+          - { name: "Utilities", path: "tests/utils/*.test.ts" }
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: crm_test_db
+          POSTGRES_USER: crm_test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        cd apps/backend
+        npm ci
+
+    - name: Run test suite - ${{ matrix.test-suite.name }}
+      run: |
+        cd apps/backend
+        npm run test -- ${{ matrix.test-suite.path }} --coverage --coverageDirectory=coverage-${{ matrix.test-suite.name }}
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://crm_test_user:test_password@localhost:5432/crm_test_db
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+        SILENT_TESTS: true
+
+    - name: Upload coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ matrix.test-suite.name }}
+        path: apps/backend/coverage-${{ matrix.test-suite.name }}
+        retention-days: 7
+
+  coverage-merge:
+    needs: test-matrix
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        path: coverage-reports
+        pattern: coverage-*
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install nyc for coverage merging
+      run: npm install -g nyc
+
+    - name: Merge coverage reports
+      run: |
+        mkdir -p merged-coverage
+        nyc merge coverage-reports merged-coverage/coverage.json
+        nyc report --reporter=lcov --reporter=text-summary --report-dir=merged-coverage
+
+    - name: Upload merged coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: merged-coverage-report
+        path: merged-coverage
+        retention-days: 30
+
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        lcov-file: merged-coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}

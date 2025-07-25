@@ -213,13 +213,16 @@ export class AgentRuntime extends EventEmitter {
         throw new Error('Failed to create agent sandbox');
       }
 
+      // Await the sandbox promise
+      const sandboxInstance = await sandbox;
+
       // Set up sandbox event listeners
-      sandbox.on('agentEvent', (eventData) => {
+      sandboxInstance.on('agentEvent', (eventData: any) => {
         this.io.to(`user_${execution.userId}`).emit('agent-event', eventData);
       });
 
       // Execute agent code
-      const result = await sandbox.execute(manifest.code, execution.input);
+      const result = await sandboxInstance.execute(manifest.code, execution.input);
 
       // Update execution with results
       execution.status = result.success ? 'completed' : 'failed';

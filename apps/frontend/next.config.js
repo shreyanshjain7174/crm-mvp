@@ -3,6 +3,15 @@ const nextConfig = {
   env: {
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
   },
+  // Proxy API requests to backend in development
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/:path*`,
+      },
+    ]
+  },
   // Skip linting and type checking during Docker build (already done in CI)
   ...(process.env.DOCKER_BUILD === 'true' ? {
     eslint: {

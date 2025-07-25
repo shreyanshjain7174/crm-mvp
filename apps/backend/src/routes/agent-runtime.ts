@@ -349,7 +349,8 @@ export async function agentRuntimeRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        const result = await sandbox.execute(code, input);
+        const sandboxInstance = await sandbox;
+        const result = await sandboxInstance.execute(code, input);
 
         return reply.send({
           success: true,

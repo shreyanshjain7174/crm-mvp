@@ -59,22 +59,39 @@ jobs:
         npm ci --frozen-lockfile --prefer-offline --workspaces
 
     - name: Setup test database
-      run: npm run db:migrate
+      run: |
+        cd apps/backend
+        npm run db:migrate
       env:
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
 
-    - name: Run backend tests
-      run: npm run test:backend
+    - name: Run backend tests with coverage
+      run: |
+        cd apps/backend
+        npm run test:ci
       env:
         NODE_ENV: test
         DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
         REDIS_URL: redis://localhost:6379
         JWT_SECRET: test-jwt-secret
+        SILENT_TESTS: true
 
     - name: Run frontend tests
       run: npm run test:frontend
       env:
         CI: true
+
+    - name: Upload backend coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-coverage
+        path: apps/backend/coverage
+        retention-days: 7
+
+    - name: Check backend coverage thresholds
+      run: |
+        cd apps/backend
+        npm run coverage:check
 
     - name: Backend Type checking
       run: npm run typecheck:backend
