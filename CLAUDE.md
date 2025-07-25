@@ -3,6 +3,12 @@
 ## Project Overview
 Building the operating system for AI agents in CRM, not the agents themselves. Platform-first approach focused on enabling third-party AI agents through standardized protocols.
 
+## AI Assistant Guidelines
+- **Message Efficiency**: Minimize messages due to usage limits. Batch multiple operations in single responses.
+- **Proactive Execution**: Complete tasks fully without asking for confirmation at each step.
+- **Comprehensive Actions**: When given a task, execute all necessary steps to completion.
+- **Single Response**: Combine analysis, implementation, testing, and verification in one response when possible.
+
 ## Development Standards
 
 ### Code Quality
