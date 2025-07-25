@@ -295,4 +295,51 @@ export async function authRoutes(fastify: FastifyInstance) {
     // For now, we'll just return success and let the client remove the token
     return { message: 'Logout successful' };
   });
+
+  // Development only: Auto-login test user
+  if (process.env.NODE_ENV !== 'production') {
+    fastify.post('/dev-login', async (request, reply) => {
+      try {
+        // Get or create test user
+        const testEmail = 'test@example.com';
+        let result = await fastify.db.query(
+          'SELECT * FROM users WHERE email = $1',
+          [testEmail]
+        );
+        
+        let user = result.rows[0];
+        
+        if (!user) {
+          // Create test user
+          const hashedPassword = await bcrypt.hash('password123', 10);
+          result = await fastify.db.query(`
+            INSERT INTO users (email, password, name, company)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, email, name, company, created_at
+          `, [testEmail, hashedPassword, 'Test User', 'Test Company']);
+          user = result.rows[0];
+        }
+        
+        // Generate JWT token
+        const token = fastify.jwt.sign({ 
+          userId: user.id, 
+          email: user.email 
+        });
+        
+        return {
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            company: user.company
+          },
+          token,
+          message: 'Development login successful'
+        };
+      } catch (error) {
+        fastify.log.error('Dev login error:', error);
+        reply.status(500).send({ error: 'Dev login failed' });
+      }
+    });
+  }
 }
