@@ -52,9 +52,6 @@ class AuthAPI {
   async devLogin() {
     const response = await fetch(`${this.baseUrl}/api/auth/dev-login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
     });
 
     if (!response.ok) {

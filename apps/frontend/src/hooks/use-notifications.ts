@@ -68,7 +68,6 @@ class NotificationsAPI {
       try {
         const loginResponse = await fetch(`${this.baseUrl}/api/auth/dev-login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
         });
         
         if (loginResponse.ok) {
