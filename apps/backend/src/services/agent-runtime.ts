@@ -206,8 +206,8 @@ export class AgentRuntime extends EventEmitter {
       };
 
       // Create and run in sandbox
-      sandboxId = await sandboxManager.createSandbox(context);
-      const sandbox = sandboxManager.getSandbox(sandboxId);
+      const sandbox = sandboxManager.createSandbox(context);
+      sandboxId = `${context.agentId}:${context.sessionId}`;
 
       if (!sandbox) {
         throw new Error('Failed to create agent sandbox');
@@ -322,14 +322,9 @@ export class AgentRuntime extends EventEmitter {
       throw new Error('Execution not found or not running');
     }
 
-    // Find and destroy sandbox
-    const sandboxes = sandboxManager.getActiveSandboxes();
-    for (const sandboxId of sandboxes) {
-      if (sandboxId.includes(execution.agentId) && sandboxId.includes(execution.sessionId)) {
-        await sandboxManager.destroySandbox(sandboxId);
-        break;
-      }
-    }
+    // Destroy sandbox
+    const sandboxId = `${execution.agentId}:${execution.sessionId}`;
+    sandboxManager.destroySandbox(sandboxId);
 
     // Update execution status
     execution.status = 'failed';
@@ -347,7 +342,7 @@ export class AgentRuntime extends EventEmitter {
    */
   getStats(): any {
     const executions = Array.from(this.executions.values());
-    const sandboxStats = sandboxManager.getResourceUsage();
+    const activeSandboxes = sandboxManager.getActiveSandboxCount();
 
     return {
       executions: {
@@ -356,7 +351,7 @@ export class AgentRuntime extends EventEmitter {
         completed: executions.filter(e => e.status === 'completed').length,
         failed: executions.filter(e => e.status === 'failed').length
       },
-      sandboxes: sandboxStats,
+      sandboxes: activeSandboxes,
       uptime: process.uptime(),
       memoryUsage: process.memoryUsage()
     };
@@ -442,7 +437,7 @@ export class AgentRuntime extends EventEmitter {
     logger.info('Shutting down agent runtime...');
     
     // Stop all active sandboxes
-    await sandboxManager.destroyAll();
+    sandboxManager.destroyAllSandboxes();
     
     // Mark all running executions as failed
     for (const execution of this.executions.values()) {

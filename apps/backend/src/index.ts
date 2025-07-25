@@ -13,7 +13,7 @@ import { aiIntegrationRoutes } from './routes/ai-integration';
 import { authRoutes } from './routes/auth';
 import { statsRoutes } from './routes/stats';
 import agentRoutes from './routes/agents';
-import { agentProtocolRoutes } from './routes/agent-protocol';
+import agentProtocolRoutes from './routes/agent-protocol';
 import agentRegistryRoutes from './routes/agent-registry';
 import agentEventsRoutes from './routes/agent-events';
 import agentRuntimeRoutes from './routes/agent-runtime';

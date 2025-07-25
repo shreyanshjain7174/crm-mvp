@@ -68,8 +68,8 @@ export default function IntegrationsPage() {
       try {
         setLoading(true);
         const response = await apiClient.getIntegrations();
-        if (response.data) {
-          setIntegrations(response.data.integrations.map((integration: any) => ({
+        if (response) {
+          setIntegrations(response.integrations.map((integration: any) => ({
             id: integration.id,
             name: integration.name,
             description: integration.description,
@@ -79,7 +79,7 @@ export default function IntegrationsPage() {
             featured: integration.featured,
             setupComplexity: integration.setupComplexity as 'easy' | 'medium' | 'advanced'
           })));
-          setSummary(response.data.summary);
+          setSummary(response.summary);
         }
       } catch (error) {
         console.error('Failed to fetch integrations:', error);

@@ -1,270 +1,197 @@
-# CLAUDE.md (Condensed)
+# AI Agent Platform for SME CRMs
 
-## Project: AI Agent Platform for SME CRMs
-**Vision**: Build the operating system for AI agents in CRM, not the agents themselves.
+## Project Overview
+Building the operating system for AI agents in CRM, not the agents themselves. Platform-first approach focused on enabling third-party AI agents through standardized protocols.
 
-## Critical Guidelines
+## AI Assistant Guidelines
+- **Message Efficiency**: Minimize messages due to usage limits. Batch multiple operations in single responses.
+- **Proactive Execution**: Complete tasks fully without asking for confirmation at each step.
+- **Comprehensive Actions**: When given a task, execute all necessary steps to completion.
+- **Single Response**: Combine analysis, implementation, testing, and verification in one response when possible.
 
-### Commits
-- Use signed commits only: `git commit -s -m`
-- Create branches for all changes, make PRs
-- NO co-authored commits, NO Claude attribution
+## Development Standards
 
-### Code Standards
-- Update package.json when adding dependencies
-- **Use automated CI checks**: `npm run ci-check` (comprehensive validation)
-- Fix all ESLint/TypeScript errors before committing
-- Test-driven development (TDD)
-- Never create files unless necessary
-- No proactive documentation unless requested
-- **CRITICAL: Human-like code** - Never write code that looks AI-generated
-- **NO EMOJIS** - Code, comments, documentation must be emoji-free and developer-friendly
-- Write production-quality code that reviewers would accept as human-written
+### Code Quality
+- Clean Architecture principles with proper separation of concerns
+- TypeScript with strict type checking
+- Zod schema validation for all API endpoints
+- Comprehensive error handling with structured logging
+- Test-driven development with meaningful test coverage
 
-### Automation Philosophy
-- **Automate repetitive tasks** - Just like our AI agents do for users
-- Create scripts for multi-step processes (linting, type checking, testing)
-- Use package.json shortcuts for common workflows
-- Suggest automation opportunities when patterns emerge
-- Mirror platform philosophy: "Proactive assistance through intelligent automation"
+### Commit Standards
+- Signed commits: `git commit -s -m "type: description"`
+- Feature branches with pull requests to main
+- Conventional commit messages (feat, fix, refactor, test, docs)
+- All CI checks must pass before merge
 
-### Automation Tools & Scripts
-```bash
-# Comprehensive CI validation
-npm run ci-check              # Runs lint, typecheck, tests with timing
+### Architecture Principles
 
-# Code coverage validation
-npm run coverage              # Run tests with coverage report
-npm run coverage:check        # Run tests with coverage validation and thresholds
-npm run coverage:report       # Generate and open HTML coverage report
+#### Backend (Node.js/Fastify)
+- Route handlers focus solely on HTTP concerns
+- Business logic encapsulated in service classes  
+- Data access through repository pattern
+- Dependency injection for testability
+- Resource-based REST API design
 
-# Quick development workflows
-npm run quick-commit "message" # Full commit workflow with CI validation
-./scripts/check-ci.sh          # Direct script execution with verbose logs
-./scripts/coverage-check.sh    # Standalone coverage validation with detailed reporting
+#### Frontend (Next.js/TypeScript)
+- Component composition over inheritance
+- Custom hooks for business logic
+- Zustand for client state management
+- Server components where possible
+- Progressive enhancement strategy
 
-# Suggested automation opportunities:
-# - Pre-commit hooks for automatic formatting
-# - Automated PR description generation
-# - Bundle size monitoring alerts
-# - Performance regression detection
-# - Automated dependency updates with testing
-```
+### Testing Strategy
+- Unit tests for business logic
+- Integration tests for API endpoints
+- Component tests for UI interactions
+- E2E tests for critical user flows
+- Manual testing documentation for complex features
 
-### When to Create Automation
-1. **3+ Manual Steps**: If a workflow requires 3+ manual commands
-2. **Daily Repetition**: Tasks performed multiple times daily
-3. **Error-Prone Process**: Manual steps that frequently cause mistakes
-4. **Context Switching**: Workflows that interrupt development focus
-5. **Onboarding Friction**: Complex setup processes for new developers
+## Technical Stack
 
-## Platform Strategy
+### Core Technologies
+- **Backend**: Node.js, Fastify, TypeScript, PostgreSQL
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Database**: PostgreSQL with raw SQL migrations
+- **Authentication**: JWT with role-based access control
+- **Real-time**: Socket.io for agent communication
 
-### Core Pivot
-- **NOT** building AI agents → Building the **OS for AI agents**
-- Platform beats Product - Always
-- Own the UI real estate, not the AI capability
-- Revenue: Agent marketplace (30% commission) + CRM subscription
+### Development Tools
+- **Testing**: Jest, Supertest, React Testing Library
+- **Quality**: ESLint, Prettier, TypeScript compiler
+- **CI/CD**: GitHub Actions with comprehensive validation
+- **Monitoring**: Winston logging, error tracking
 
-### Progressive Disclosure Journey
-1. **Stage 1** (Min 1-5): Empty dashboard → Add contact → Unlocks contact list
-2. **Stage 2** (Min 5-30): Send WhatsApp → Unlocks chat interface
-3. **Stage 3** (Day 1-3): 10+ contacts → Unlocks pipeline view
-4. **Stage 4** (Day 1-2): 5+ messages → Unlocks AI assistant
-5. **Stage 5** (Week 2+): 10+ AI approvals → Full automation
+## Universal Agent Protocol
 
-## Architecture
-
-### Stack
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Shadcn/ui, Zustand
-- **Backend**: Node.js/Fastify, PostgreSQL, Redis, BullMQ
-- **Real-time**: Socket.io
-- **AI Integration**: Universal Agent Protocol (adapter system)
-
-### Universal Agent Interface
+### Core Concepts
 ```typescript
-interface UniversalAgentAdapter {
-  connect(): Promise<void>
-  disconnect(): Promise<void>
-  sendToAgent(data: CRMData): Promise<void>
-  receiveFromAgent(): Observable<AgentData>
-  getConfigUI(): ReactComponent
-  getActionButtons(): ActionButton[]
-  getDataDisplay(): DataRenderer
+interface AgentAdapter {
+  connect(credentials: AgentCredentials): Promise<Session>
+  disconnect(sessionId: string): Promise<void>
+  sendData(data: CRMData): Promise<ProcessingResult>
+  receiveData(): Observable<AgentData>
+  query(params: QueryParams): Promise<QueryResult>
 }
 ```
+
+### Integration Flow
+1. Agent authentication and capability discovery
+2. Permission-based resource access
+3. Bidirectional data synchronization
+4. Real-time event notifications
+5. Secure sandbox execution environment
+
+## Current Architecture
+
+### Backend Services
+- **Agent Protocol**: Core communication APIs
+- **Agent Registry**: Discovery and management
+- **Agent Sandbox**: Secure code execution
+- **Data Processor**: CRM data transformation
+- **Stats Service**: Analytics and reporting
+
+### Frontend Components
+- **Progressive Dashboard**: Stage-based feature disclosure
+- **Agent Marketplace**: Third-party agent discovery
+- **Integration Management**: Connection configuration
+- **Real-time Monitoring**: Agent status and logs
 
 ## Development Commands
 
 ```bash
 # Development
-npm run dev              # All services
-npm run dev:frontend     # Frontend only
-npm run dev:lead-service # Specific service
+npm run dev                 # Start all services
+npm run dev:backend         # Backend only
+npm run dev:frontend        # Frontend only
 
-# Database
-npm run db:migrate
-npm run db:seed
-npm run db:studio
+# Quality Assurance
+npm run lint               # ESLint validation
+npm run typecheck          # TypeScript compilation
+npm run test               # Run test suites
+npm run ci-check           # Full CI validation locally
 
-# Testing & Quality
-npm run ci-check        # 🚀 Automated CI validation (recommended)
-npm run test            # All tests
-npm run test:watch      # Watch mode
-npm run lint            # ESLint
-npm run typecheck       # TypeScript check
-
-# Build & Deploy
-npm run build
-npm run docker:build
-npm run deploy:staging
+# Production
+npm run build              # Production build
+npm run start              # Start production server
 ```
-
-## UI Theme: "Clarity"
-
-### Colors
-```css
---primary: #6366F1;        /* Indigo */
---gray-[50-950];           /* Full gray scale */
---success: #10B981;        /* Emerald */
---warning: #F59E0B;        /* Amber */
---error: #EF4444;          /* Red */
---ai-agent: #06B6D4;       /* Cyan */
---achievement: #8B5CF6;    /* Purple */
-```
-
-### Typography
-- Font: Inter (sans), JetBrains Mono (mono)
-- Fluid type scale: text-xs to text-3xl
-- Weights: 400 (normal) to 700 (bold)
-
-### Components
-- Surface elevation system (0-2)
-- Button variants: primary, ghost, agent
-- 8px grid spacing system
-- Border radius: sm (4px) to full
-
-## Progressive Disclosure Implementation
-
-### User Progress Tracking
-```typescript
-interface UserProgress {
-  stage: 'new' | 'beginner' | 'intermediate' | 'advanced' | 'expert'
-  unlockedFeatures: string[]
-  stats: {
-    contactsAdded: number
-    messagesSent: number
-    aiInteractions: number
-  }
-}
-```
-
-### Feature Gating
-- Features unlock based on usage patterns
-- Contextual hints guide users
-- Celebration animations for achievements
-- Empty states educate about next steps
-
-## Current Status
-
-### ✅ Completed
-- Backend services (FastAPI → Node.js migration)
-- Frontend with progressive disclosure
-- JWT auth with demo mode
-- Facebook WhatsApp Cloud API integration
-- Docker containerization
-- CI/CD pipeline (<5 min execution)
-- Visual workflow builder (drag-drop)
-- Comprehensive backend testing infrastructure
-- **Universal Agent Protocol backend APIs** (Jan 2025)
-- **Proactive Login UI with real-time validation** (Jan 2025)
-- **Marketplace component architecture** (Jan 2025)
-
-### 🔄 In Progress
-- **Modern Register Page UI** (Creating to match login design)
-- Agent runtime sandbox
-- Developer API integration
-- Revenue engine implementation
-
-### ⏳ Next Priorities (Jan 2025)
-1. **Complete Modern Register Page** - Match proactive login design
-2. **Integrate Marketplace Frontend with Backend** - Replace all mock data
-3. **Agent Installation Flow** - End-to-end testing
-4. **Partner with 3-5 agent companies** - Begin outreach
-5. **Launch self-service onboarding** - Beta testing phase
-
-## File Structure
-
-### Key Directories
-```
-apps/
-├── frontend/          # Next.js app
-│   ├── components/    # UI components
-│   ├── stores/        # Zustand stores
-│   ├── hooks/         # Custom hooks
-│   └── lib/           # Utilities
-├── backend/
-│   └── services/      # Microservices
-tests/                 # Test suites
-docker/                # Docker configs
-```
-
-### Progressive Components
-- `components/dashboard/ProgressiveDashboard.tsx` - Main wrapper
-- `components/empty-states/*` - Stage-specific empty states
-- `components/animations/*` - Feature reveals & celebrations
-- `stores/userProgress.ts` - Progress tracking
 
 ## Business Model
 
-### Platform Economics
-- **Agent Marketplace**: 30% commission on agent subscriptions
-- **CRM Subscription**: ₹999-4999/month tiers
-- **Premium Integrations**: Enterprise features
-- **Developer Ecosystem**: API access fees
+### Revenue Streams
+- **Agent Marketplace**: 30% commission on subscriptions
+- **CRM Platform**: Tiered subscription model
+- **Enterprise Features**: Custom integrations and support
+- **Developer Tools**: API access and SDK licensing
 
-### Why This Wins
-- Network effects: More agents → more users → more agents
-- Defensible moat: High switching costs
-- Lower CAC: Agents bring users
-- Higher LTV: Multiple revenue streams
+### Competitive Advantage
+- **Network Effects**: More agents attract more users
+- **Platform Lock-in**: High switching costs for established workflows  
+- **Developer Ecosystem**: Third-party innovation drives adoption
+- **Data Network**: Improved AI through aggregated insights
 
-## Development Principles
+## Manual Testing Procedures
 
-1. **Ship fast, iterate faster** - But never compromise UX or security
-2. **Platform first** - Enable agents, don't compete with them
-3. **Progressive enhancement** - Start simple, grow with user
-4. **Mobile first** - Indian SMEs are mobile-heavy
-5. **Test everything** - TDD approach, comprehensive coverage
+### Agent Integration Testing
+1. Deploy test agent using provided SDK
+2. Verify authentication and connection establishment
+3. Test data synchronization in both directions
+4. Validate real-time event delivery
+5. Confirm resource limits and security isolation
 
-## Recent Achievements Timeline
+### Dashboard Feature Testing
+1. Create test user account
+2. Add sample CRM data (contacts, messages)
+3. Verify progressive feature unlocking
+4. Test all dashboard statistics calculations
+5. Confirm responsive design across devices
 
-### January 2025 - Proactive UI Revolution
-- **PR #64**: Proactive Login UI with real-time validation
-  - Dynamic password strength meter with visual feedback
-  - Smart form validation preventing invalid submissions  
-  - Enhanced animations and accessibility improvements
-  - All text visibility issues resolved for light theme
-- **Universal Agent Protocol Backend**: Complete API infrastructure
-  - Agent discovery, installation, and management endpoints
-  - PostgreSQL schema with proper indexing and relationships
-  - Comprehensive error handling and validation
-- **Marketplace Component Architecture**: Modern glassmorphism design
-  - API service layer with proper TypeScript integration
-  - Responsive grid/list views with smooth animations
-  - Real-time search and filtering capabilities
+### Performance Validation
+1. Load test with 100+ concurrent agent connections
+2. Verify response times under 200ms for API calls
+3. Test memory usage during peak sandbox execution
+4. Validate database query performance with large datasets
+5. Monitor real-time WebSocket message delivery latency
 
-### Next Sprint Goals (Est. 3-4 days)
-1. **Modern Register Page** - Match login design philosophy
-2. **End-to-end Marketplace Testing** - Full API integration
-3. **Agent Installation Demo** - Working prototype
-4. **Performance Optimization** - Bundle size and loading speeds
+## Security Considerations
 
-## Secrets
-- Pinecone API Key: pcsk_6jpGA2_6ZDynb5Up9bqCaNdbz7oVVuBTLDQupJCZ3piQBSFkNe9k7C2HnSfqh65fQwcPSN
+### Agent Sandbox Security
+- VM2-based code isolation (development environment)
+- Resource limits: CPU, memory, network access
+- Permission-based API access control
+- Audit logging for all agent activities
 
-## GitHub Project Management
-- Project ID: PVT_kwHOApp2eM4A-WnZ
-- Update task status when creating PRs or making progress
-- Statuses: Backlog, Ready, In progress, In review, Done
-- Priorities: P0 (Critical), P1 (High), P2 (Medium)
+### Data Protection
+- End-to-end encryption for agent communication
+- Database encryption at rest
+- PII anonymization in logs
+- GDPR compliance for user data handling
+
+## Deployment Strategy
+
+### Environment Progression
+- **Development**: Local Docker containers
+- **Staging**: Kubernetes cluster with production data
+- **Production**: Multi-region deployment with auto-scaling
+
+### Monitoring and Observability
+- Application performance monitoring
+- Real-time error tracking and alerting
+- Business metrics dashboard
+- Agent performance analytics
+
+## Current Status
+
+### Completed Features
+- Universal Agent Protocol backend APIs
+- Agent sandbox execution environment  
+- Progressive dashboard with real user stats
+- Comprehensive test infrastructure
+- CI/CD pipeline with quality gates
+
+### Next Priorities
+1. Agent marketplace frontend integration
+2. Production-ready sandbox security (isolated-vm)
+3. Performance optimization and caching
+4. Enterprise authentication integration
+5. Partner agent onboarding program

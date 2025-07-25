@@ -17,19 +17,18 @@ const mockJwt = {
 export async function buildTestApp(): Promise<FastifyInstance> {
   const app = fastify({ 
     logger: false // Disable logging during tests
-  });
-
-  // Register JWT with mock
-  await app.register(async function (fastify) {
-    (fastify as any).decorate('jwt', mockJwt);
-  });
+  }) as any;
 
   // Decorate with test database
-  (app as any).decorate('db', testDb);
-  (app as any).decorate('authenticate', authenticate);
+  app.decorate('db', testDb);
+
+  // Register JWT plugin
+  await app.register(async function (fastify: any) {
+    fastify.decorate('jwt', mockJwt);
+  });
 
   // Mock Socket.io
-  (app as any).decorate('io', {
+  app.decorate('io', {
     emit: jest.fn()
   });
 
@@ -38,6 +37,8 @@ export async function buildTestApp(): Promise<FastifyInstance> {
   await app.register(leadRoutes, { prefix: '/api/leads' });
   await app.register(messageRoutes, { prefix: '/api/messages' });
   await app.register(statsRoutes, { prefix: '/api/stats' });
+
+  await app.ready();
 
   return app;
 }

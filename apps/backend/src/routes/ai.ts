@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { authenticate } from '../middleware/auth';
 import { z } from 'zod';
 import { SuggestionType } from '../types/enums';
 import { AIService } from '../services/ai.service';
@@ -39,7 +40,7 @@ export async function aiRoutes(fastify: FastifyInstance) {
 
   // Get all pending AI suggestions
   fastify.get('/suggestions/pending', {
-    preHandler: [fastify.authenticate]
+    preHandler: [authenticate]
   }, async (request, reply) => {
     try {
       const result = await fastify.db.query(`

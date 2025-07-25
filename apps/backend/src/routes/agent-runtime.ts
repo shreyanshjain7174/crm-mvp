@@ -285,11 +285,11 @@ export async function agentRuntimeRoutes(fastify: FastifyInstance) {
    */
   fastify.get('/sandbox/status', async (request, reply) => {
     try {
-      const sandboxStats = sandboxManager.getResourceUsage();
+      const activeSandboxCount = sandboxManager.getActiveSandboxCount();
 
       return reply.send({
         success: true,
-        data: sandboxStats
+        data: { activeSandboxCount }
       });
 
     } catch (error) {
@@ -341,8 +341,8 @@ export async function agentRuntimeRoutes(fastify: FastifyInstance) {
         resourceLimits: { ...defaultLimits, ...resourceLimits }
       };
 
-      const sandboxId = await sandboxManager.createSandbox(context);
-      const sandbox = sandboxManager.getSandbox(sandboxId);
+      const sandbox = sandboxManager.createSandbox(context);
+      const sandboxId = `${context.agentId}:${context.sessionId}`;
 
       if (!sandbox) {
         throw new Error('Failed to create test sandbox');
@@ -363,7 +363,7 @@ export async function agentRuntimeRoutes(fastify: FastifyInstance) {
 
       } finally {
         // Always cleanup test sandbox
-        await sandboxManager.destroySandbox(sandboxId);
+        sandboxManager.destroySandbox(sandboxId);
       }
 
     } catch (error) {
