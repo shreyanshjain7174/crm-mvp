@@ -70,7 +70,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
     setState(prev => ({ ...prev, connecting: true, error: null }));
 
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000/socket.io';
       
       clientRef.current = new WebSocketClient(
         {
@@ -183,7 +183,7 @@ export function useRealtime(config: RealtimeConfig = {}) {
         setState(prev => ({ ...prev, connecting: true, error: null }));
 
         try {
-          const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+          const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000/socket.io';
           
           clientRef.current = new WebSocketClient(
             {

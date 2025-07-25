@@ -1,6 +1,6 @@
 import { DEMO_MODE, demoAuthService } from './demo-mode';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 // Auth interfaces
 export interface User {

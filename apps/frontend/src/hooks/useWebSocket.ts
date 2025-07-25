@@ -42,7 +42,7 @@ export function useWebSocket({
     try {
       setConnectionState('connecting')
       
-      const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001', {
+      const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || '', {
         path: '/socket.io/',
         transports: ['websocket', 'polling'],
         timeout: 20000,

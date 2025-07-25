@@ -53,41 +53,57 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   // Show beginner stage for users who just started
   if (stage === 'beginner' && stats.contactsAdded < 5) {
     return (
-      <ModernDashboard userStats={stats} showStatsCards={true}>
+      <div className="space-y-6">
+        <DashboardStats />
         <BeginnerStage 
           onSendMessage={() => {/* Navigate to messages */}}
           onViewContacts={() => {/* Navigate to contacts */}}
         />
-      </ModernDashboard>
+      </div>
     );
   }
   
   // Show intermediate stage for users building their network
   if (stage === 'intermediate') {
     return (
-      <ModernDashboard userStats={stats} showStatsCards={true}>
+      <div className="space-y-6">
+        <DashboardStats />
         <IntermediateStage />
-      </ModernDashboard>
+      </div>
     );
   }
   
   // Show advanced stage for AI-powered users with modern elements
   if (stage === 'advanced') {
     return (
-      <ModernDashboard userStats={stats} showStatsCards={true} />
+      <div className="space-y-6">
+        <DashboardStats />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <LeadsPipeline />
+          <AIAgentStatus />
+        </div>
+      </div>
     );
   }
   
   // Show expert stage for CRM masters with modern dashboard
   if (stage === 'expert') {
     return (
-      <ModernDashboard userStats={stats} showStatsCards={true} />
+      <div className="space-y-6">
+        <DashboardStats />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LeadsPipeline />
+          <AIAgentStatus />
+          <SystemMonitoring />
+        </div>
+        <ExpertStage />
+      </div>
     );
   }
   
-  // For users with some progress, show progressive dashboard wrapped in modern design
+  // For users with some progress, show progressive dashboard with real stats
   return (
-    <ModernDashboard userStats={stats} showStatsCards={true}>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Welcome back message for returning users */}
         <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-lg p-6 border border-border backdrop-blur-sm">
@@ -145,7 +161,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
         <SystemMonitoring />
       </FeatureGate>
       </div>
-    </ModernDashboard>
+    </div>
   );
 }
 
