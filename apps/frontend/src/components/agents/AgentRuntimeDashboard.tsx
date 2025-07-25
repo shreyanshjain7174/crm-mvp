@@ -10,7 +10,7 @@ import {
   Activity, 
   Clock, 
   Cpu, 
-  Memory, 
+  HardDrive, 
   Zap,
   AlertTriangle,
   CheckCircle,
@@ -298,7 +298,7 @@ export function AgentRuntimeDashboard() {
                     {Math.round(runtimeStats.memoryUsage.heapUsed / 1024 / 1024)}MB
                   </p>
                 </div>
-                <Memory className="h-8 w-8 text-purple-600" />
+                <HardDrive className="h-8 w-8 text-purple-600" />
               </div>
             </CardContent>
           </Card>
@@ -405,7 +405,7 @@ export function AgentRuntimeDashboard() {
                         <div className="flex items-center gap-2">
                           <Cpu className="h-3 w-3" />
                           <span>{formatDuration(execution.resourceUsage.executionTime)}</span>
-                          <Memory className="h-3 w-3 ml-2" />
+                          <HardDrive className="h-3 w-3 ml-2" />
                           <span>{execution.resourceUsage.memoryUsed.toFixed(1)}MB</span>
                         </div>
                       </div>
