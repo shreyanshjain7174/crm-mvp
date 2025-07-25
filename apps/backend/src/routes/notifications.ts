@@ -41,8 +41,7 @@ export async function notificationRoutes(fastify: FastifyInstance) {
         limit = 20, 
         filter = 'all', 
         category = 'all',
-        search = '',
-        includeRead = 'true'
+        search = ''
       } = request.query as any;
       
       const offset = (page - 1) * limit;

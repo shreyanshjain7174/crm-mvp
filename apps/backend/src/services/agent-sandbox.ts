@@ -87,11 +87,13 @@ export class AgentSandbox extends EventEmitter {
       })
     `);
 
-    await this.context.global.set('console', await consoleObj.run(this.context, [
-      new ivm.Callback((...args: any[]) => logger.info('Agent log:', ...args)),
-      new ivm.Callback((...args: any[]) => logger.error('Agent error:', ...args)),
-      new ivm.Callback((...args: any[]) => logger.warn('Agent warning:', ...args))
-    ]));
+    await this.context.global.set('console', await consoleObj.run(this.context, {
+      arguments: [
+        new ivm.Callback((...args: any[]) => logger.info('Agent log:', ...args)),
+        new ivm.Callback((...args: any[]) => logger.error('Agent error:', ...args)),
+        new ivm.Callback((...args: any[]) => logger.warn('Agent warning:', ...args))
+      ]
+    }));
 
     // Set up API object
     const apiObj = this.isolate.compileScriptSync(`
@@ -102,23 +104,25 @@ export class AgentSandbox extends EventEmitter {
       })
     `);
 
-    await this.context.global.set('api', await apiObj.run(this.context, [
-      new ivm.Callback((endpoint: string, data: string) => {
-        this.apiCallCount++;
-        if (this.apiCallCount > this.agentContext.resourceLimits.maxAPICalls) {
-          throw new Error('API call limit exceeded');
-        }
-        
-        this.emit('api-call', {
-          agentId: this.agentContext.agentId,
-          endpoint,
-          data: JSON.parse(data),
-          timestamp: new Date()
-        });
-        
-        return JSON.stringify({ success: true, endpoint, data });
-      })
-    ]));
+    await this.context.global.set('api', await apiObj.run(this.context, {
+      arguments: [
+        new ivm.Callback((endpoint: string, data: string) => {
+          this.apiCallCount++;
+          if (this.apiCallCount > this.agentContext.resourceLimits.maxAPICalls) {
+            throw new Error('API call limit exceeded');
+          }
+          
+          this.emit('api-call', {
+            agentId: this.agentContext.agentId,
+            endpoint,
+            data: JSON.parse(data),
+            timestamp: new Date()
+          });
+          
+          return JSON.stringify({ success: true, endpoint, data });
+        })
+      ]
+    }));
 
     // Set up setTimeout with limits
     await this.context.global.set('setTimeout', new ivm.Callback((callback: any, delay: number) => {
@@ -144,10 +148,12 @@ export class AgentSandbox extends EventEmitter {
           return $1.applySync(undefined, [str]);
         }
       })
-    `).runSync(this.context, [
-      new ivm.Callback((obj: any) => JSON.stringify(obj)),
-      new ivm.Callback((str: string) => JSON.parse(str))
-    ]));
+    `).runSync(this.context, {
+      arguments: [
+        new ivm.Callback((obj: any) => JSON.stringify(obj)),
+        new ivm.Callback((str: string) => JSON.parse(str))
+      ]
+    }));
   }
 
   async execute(code: string, inputData: any = {}): Promise<SandboxResult> {

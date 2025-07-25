@@ -2,15 +2,15 @@ import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth';
 import { z } from 'zod';
 
-// Achievement schema validation
-const achievementSchema = z.object({
-  achievementId: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  category: z.string(),
-  rarity: z.enum(['common', 'rare', 'epic', 'legendary']),
-  points: z.number().min(0)
-});
+// Achievement schema validation (kept for future use)
+// const achievementSchema = z.object({
+//   achievementId: z.string(),
+//   name: z.string(),
+//   description: z.string().optional(),
+//   category: z.string(),
+//   rarity: z.enum(['common', 'rare', 'epic', 'legendary']),
+//   points: z.number().min(0)
+// });
 
 const statUpdateSchema = z.object({
   statName: z.string(),
@@ -237,14 +237,14 @@ export async function achievementRoutes(fastify: FastifyInstance) {
 
       const totalPoints = parseInt(totalPointsResult.rows[0]?.total_points || '0');
       const totals = definitionsResult.rows[0];
-      const totalUnlocked = Object.values(userCounts).reduce((sum: number, count: number) => sum + count, 0);
+      const totalUnlocked = Object.values(userCounts).reduce((sum: number, count: number) => sum + count, 0) as number;
       const totalAvailable = parseInt(totals?.total_available || '0');
 
       reply.send({
         totalPoints,
         totalUnlocked,
         totalAvailable,
-        completionPercentage: totalAvailable > 0 ? Math.round((totalUnlocked / totalAvailable) * 100) : 0,
+        completionPercentage: totalAvailable > 0 ? Math.round(((totalUnlocked as number) / totalAvailable) * 100) : 0,
         byRarity: {
           common: {
             unlocked: userCounts.common,

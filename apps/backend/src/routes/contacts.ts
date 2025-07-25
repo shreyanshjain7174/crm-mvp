@@ -384,7 +384,7 @@ export async function contactRoutes(fastify: FastifyInstance) {
       }
 
       switch (action) {
-        case 'delete':
+        case 'delete': {
           const deleteResult = await fastify.db.query(`
             DELETE FROM contacts 
             WHERE id = ANY($1) AND user_id = $2
@@ -396,8 +396,9 @@ export async function contactRoutes(fastify: FastifyInstance) {
             deletedCount: deleteResult.rows.length 
           });
           break;
+        }
 
-        case 'update':
+        case 'update': {
           if (!updateData) {
             return reply.status(400).send({ error: 'Update data required' });
           }
@@ -438,6 +439,7 @@ export async function contactRoutes(fastify: FastifyInstance) {
             updatedCount: updateResult.rows.length 
           });
           break;
+        }
 
         default:
           reply.status(400).send({ error: 'Invalid action' });

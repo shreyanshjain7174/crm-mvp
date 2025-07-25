@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createNotificationFromTemplate } from '../routes/notifications';
+// import { createNotificationFromTemplate } from '../routes/notifications';
 
 // Realistic sample data based on research
 const INDIAN_NAMES = [
@@ -116,7 +116,7 @@ export class DataSeeder {
       console.log('🌱 Starting data seeding...');
       
       // Get or create the test user for seeding data
-      let userId = await this.getOrCreateTestUser();
+      const userId = await this.getOrCreateTestUser();
 
       // Clear existing data
       await this.clearExistingData(userId);
