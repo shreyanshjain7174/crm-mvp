@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,15 +54,8 @@ interface RuntimeStats {
   memoryUsage: any;
 }
 
-export function AgentRuntimeDashboard() {
-  const [executions, setExecutions] = useState<AgentExecution[]>([]);
-  const [runtimeStats, setRuntimeStats] = useState<RuntimeStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [executing, setExecuting] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  // Mock API client (replace with actual API calls)
-  const apiClient = {
+// Mock API client (replace with actual API calls)
+const apiClient = {
     async getExecutions() {
       // Mock data for demonstration
       return {
@@ -126,13 +119,14 @@ export function AgentRuntimeDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+export function AgentRuntimeDashboard() {
+  const [executions, setExecutions] = useState<AgentExecution[]>([]);
+  const [runtimeStats, setRuntimeStats] = useState<RuntimeStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [executing, setExecuting] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [executionsResponse, statsResponse] = await Promise.all([
         apiClient.getExecutions(),
@@ -151,7 +145,13 @@ export function AgentRuntimeDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   const handleExecuteAgent = async () => {
     try {
