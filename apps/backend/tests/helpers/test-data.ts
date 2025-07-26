@@ -1,8 +1,11 @@
+let phoneCounter = 0;
+
 export function generateUniquePhone(): string {
-  // Use timestamp + random number to ensure uniqueness across parallel tests
+  // Use timestamp + counter + random number to ensure uniqueness
   const timestamp = Date.now().toString();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `+${timestamp}${random}`.substring(0, 15); // Limit to 15 chars for phone
+  const counter = (++phoneCounter).toString().padStart(3, '0');
+  const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  return `+${timestamp}${counter}${random}`.substring(0, 15); // Limit to 15 chars for phone
 }
 
 export function getNextPhone(): string {

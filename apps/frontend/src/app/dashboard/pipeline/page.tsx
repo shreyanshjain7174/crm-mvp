@@ -6,7 +6,7 @@ import { EmptyPipeline } from '@/components/empty-states/EmptyPipeline';
 import { PipelineView, PipelineStage, PipelineLead } from '@/components/pipeline/PipelineView';
 import { SimpleFeatureReveal } from '@/components/animations/SimpleFeatureReveal';
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
-import { useLeads } from '@/hooks/use-api';
+import { useLeads, useUpdateLead } from '@/hooks/use-api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
@@ -95,6 +95,7 @@ export default function PipelinePage() {
   const canAccessPipeline = useCanAccessFeature()('pipeline:view');
   const { stats, incrementStat, pendingCelebrations, completePendingCelebration } = useUserProgressStore();
   const { data: leads = [], isLoading } = useLeads();
+  const updateLead = useUpdateLead();
   
   const [showFeatureReveal, setShowFeatureReveal] = useState(false);
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
@@ -124,22 +125,46 @@ export default function PipelinePage() {
     console.log('Setting up pipeline...');
   };
 
-  const handleLeadMove = (leadId: string, sourceStageId: string, destStageId: string, newIndex: number) => {
-    // Here you would update the lead status in your backend
-    console.log('Lead moved:', { leadId, sourceStageId, destStageId, newIndex });
+  const handleLeadMove = async (leadId: string, sourceStageId: string, destStageId: string, newIndex: number) => {
+    // Map pipeline stages to lead statuses
+    const stageToStatusMap: Record<string, 'COLD' | 'WARM' | 'HOT' | 'CONVERTED' | 'LOST'> = {
+      'new-leads': 'COLD',
+      'contacted': 'WARM', 
+      'qualified': 'HOT',
+      'proposal': 'HOT', // Both qualified and proposal use HOT status
+      'won': 'CONVERTED'
+    };
+
+    const newStatus = stageToStatusMap[destStageId];
     
-    // Update local state
-    const newStages = [...pipelineStages];
-    const sourceStage = newStages.find(s => s.id === sourceStageId);
-    const destStage = newStages.find(s => s.id === destStageId);
-    
-    if (sourceStage && destStage) {
-      const leadIndex = sourceStage.leads.findIndex(l => l.id === leadId);
-      if (leadIndex !== -1) {
-        const [lead] = sourceStage.leads.splice(leadIndex, 1);
-        destStage.leads.splice(newIndex, 0, lead);
-        setPipelineStages(newStages);
+    if (!newStatus) {
+      console.error('Unknown destination stage:', destStageId);
+      return;
+    }
+
+    try {
+      // Update lead status in backend
+      await updateLead.mutateAsync({
+        id: leadId,
+        data: { status: newStatus }
+      });
+      
+      // Update local state optimistically
+      const newStages = [...pipelineStages];
+      const sourceStage = newStages.find(s => s.id === sourceStageId);
+      const destStage = newStages.find(s => s.id === destStageId);
+      
+      if (sourceStage && destStage) {
+        const leadIndex = sourceStage.leads.findIndex(l => l.id === leadId);
+        if (leadIndex !== -1) {
+          const [lead] = sourceStage.leads.splice(leadIndex, 1);
+          destStage.leads.splice(newIndex, 0, lead);
+          setPipelineStages(newStages);
+        }
       }
+    } catch (error) {
+      console.error('Failed to update lead status:', error);
+      // TODO: Show error toast to user
     }
   };
 
