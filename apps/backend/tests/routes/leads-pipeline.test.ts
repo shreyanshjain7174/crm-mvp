@@ -240,6 +240,9 @@ describe('Leads Pipeline Management', () => {
 
   describe('Pipeline Analytics', () => {
     beforeEach(async () => {
+      // Ensure clean database before each test in this block
+      await cleanDatabase();
+      
       const user = await createAuthenticatedUser(app);
       
       // Create leads in different pipeline stages

@@ -85,8 +85,8 @@ async function buildApp() {
   // Decorate fastify instance
   app.decorate('db', pool);
   
-  // Initialize realistic sample data
-  if (process.env.NODE_ENV !== 'production') {
+  // Initialize realistic sample data (skip in test environment)
+  if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
     try {
       await initializeDataSeeding(app);
     } catch (error) {
