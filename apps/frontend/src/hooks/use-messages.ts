@@ -110,7 +110,7 @@ class MessagesAPI {
     content: string;
     isAiGenerated?: boolean;
   }): Promise<Message> {
-    return this.request<Message>('', {
+    return this.request<Message>('/send', {
       method: 'POST',
       body: JSON.stringify(messageData),
     });
@@ -122,7 +122,7 @@ class MessagesAPI {
 
   async markAsRead(messageId: string): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(`/${messageId}/read`, {
-      method: 'PATCH',
+      method: 'PUT',
     });
   }
 }

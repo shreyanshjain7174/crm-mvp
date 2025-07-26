@@ -21,20 +21,9 @@ import {
   Link2,
   Upload
 } from 'lucide-react';
-import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
+import { useCanAccessFeature } from '@/stores/userProgress';
 import { useIntegrations } from '@/hooks/use-integrations';
 import { useToast } from '@/hooks/use-toast';
-
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  icon: any;
-  category: 'messaging' | 'email' | 'calendar' | 'data' | 'automation';
-  status: 'connected' | 'available' | 'premium';
-  featured: boolean;
-  setupComplexity: 'easy' | 'medium' | 'advanced';
-}
 
 // Icon mapping for integrations
 const iconMap: Record<string, any> = {
@@ -57,6 +46,7 @@ const categoryIcons = {
 export default function IntegrationsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const canAccessIntegrations = useCanAccessFeature()('integrations:view');
   const { toast } = useToast();
   
@@ -119,6 +109,7 @@ export default function IntegrationsPage() {
   // Handle integration disconnection
   const handleDisconnect = async (integrationId: string) => {
     try {
+      setDisconnectingId(integrationId);
       await disconnectIntegrationAPI(integrationId);
       
       toast({
@@ -132,6 +123,8 @@ export default function IntegrationsPage() {
         description: "Failed to disconnect integration",
         variant: "destructive"
       });
+    } finally {
+      setDisconnectingId(null);
     }
   };
 
@@ -378,13 +371,18 @@ Thomas Anderson,+1-555-0205,t.anderson@matrix.com,email campaign,"Responded to n
                     <div className="flex items-center gap-2">
                       <Switch 
                         checked={true} 
-                        onCheckedChange={(checked) => {
-                          if (!checked) {
-                            handleDisconnect(integration.id);
+                        onCheckedChange={async (checked) => {
+                          if (!checked && disconnectingId !== integration.id) {
+                            await handleDisconnect(integration.id);
                           }
                         }}
+                        disabled={disconnectingId === integration.id}
                       />
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        disabled={disconnectingId === integration.id}
+                      >
                         <Settings className="h-4 w-4" />
                       </Button>
                     </div>
@@ -451,6 +449,85 @@ Thomas Anderson,+1-555-0205,t.anderson@matrix.com,email campaign,"Responded to n
                 <Upload className="h-4 w-4 mr-2" />
                 Import Sample
               </Button>
+            </div>
+          </div>
+          
+          {/* External Data Sources */}
+          <div className="mt-6 pt-4 border-t">
+            <h4 className="font-medium mb-3">External CRM Data Sources</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Download larger datasets from these trusted sources for comprehensive testing:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <a 
+                href="https://www.datablist.com/learn/csv/download-sample-csv-files" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Datablist</p>
+                  <p className="text-xs text-muted-foreground">100-2M customer records</p>
+                </div>
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+              </a>
+              
+              <a 
+                href="https://www.kaggle.com/datasets/kyanyoga/sample-sales-data" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Kaggle</p>
+                  <p className="text-xs text-muted-foreground">Sales data (226k+ downloads)</p>
+                </div>
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+              </a>
+              
+              <a 
+                href="https://excelbianalytics.com/wp/downloads-sample-csv-files-data-sets-for-testing-sales/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Excel BI</p>
+                  <p className="text-xs text-muted-foreground">Up to 5M sales records</p>
+                </div>
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+              </a>
+              
+              <a 
+                href="https://support.zendesk.com/hc/en-us/articles/4408828232986-Importing-bulk-CSV-data" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Zendesk</p>
+                  <p className="text-xs text-muted-foreground">CSV templates</p>
+                </div>
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+              </a>
+              
+              <a 
+                href="https://www.briandunning.com/sample-data/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors"
+              >
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Brian Dunning</p>
+                  <p className="text-xs text-muted-foreground">Quality test data</p>
+                </div>
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+              </a>
             </div>
           </div>
         </CardContent>
