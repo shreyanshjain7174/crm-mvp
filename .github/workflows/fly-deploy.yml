@@ -90,33 +90,43 @@ jobs:
           JWT_SECRET: test-secret
           SESSION_SECRET: test-session-secret
 
-  # Deploy to Fly.io (temporarily disabled until FLY_API_TOKEN is added)
+  # Deploy to Fly.io
   deploy:
     name: Deploy to Fly.io
     runs-on: ubuntu-latest
     needs: test
-    # Only deploy on main branch pushes (not PRs) AND when FLY_API_TOKEN exists
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.FLY_API_TOKEN != ''
+    # Only deploy on main branch pushes (not PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Check for FLY_API_TOKEN
+        run: |
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "FLY_API_TOKEN is not set. Skipping deployment."
+            echo "Please add FLY_API_TOKEN to your repository secrets."
+            exit 0
+          fi
+      
       - name: Setup Fly CLI
+        if: ${{ secrets.FLY_API_TOKEN != '' }}
         uses: superfly/flyctl-actions/setup-flyctl@master
       
       - name: Deploy to Fly.io
+        if: ${{ secrets.FLY_API_TOKEN != '' }}
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-  # Optional: Deploy to staging on PRs (temporarily disabled until FLY_API_TOKEN is added)
+  # Optional: Deploy to staging on PRs
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: test
-    # Only deploy staging on PRs AND when FLY_API_TOKEN exists
-    if: github.event_name == 'pull_request' && secrets.FLY_API_TOKEN != ''
+    # Only deploy staging on PRs
+    if: github.event_name == 'pull_request'
     
     steps:
       - name: Checkout code
