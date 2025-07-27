@@ -1,7 +1,7 @@
-# Simplified Production Dockerfile for Fly.io
-# Single-stage build optimized for faster deployment
+# Production Dockerfile for Fly.io
+# Updated to Node 24 for isolated-vm compatibility
 
-FROM node:18-alpine AS production
+FROM node:24-alpine AS production
 
 # Install system dependencies
 RUN apk add --no-cache \
@@ -19,8 +19,8 @@ COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY packages/ ./packages/
 
-# Install all dependencies
-RUN npm ci --include=dev
+# Install all dependencies (use npm install to sync lock file)
+RUN npm install
 
 # Copy all source code
 COPY apps/ ./apps/

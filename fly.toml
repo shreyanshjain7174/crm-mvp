@@ -7,7 +7,7 @@ app = 'crm-mvp'
 primary_region = 'bom'
 
 [build]
-  dockerfile = 'infra/docker/Dockerfile.prod'
+  dockerfile = 'infra/docker/Dockerfile.simple'
 
 [env]
   NODE_ENV = 'production'
