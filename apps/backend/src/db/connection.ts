@@ -2,13 +2,16 @@ import { Pool } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'crm_dev_db',
-  user: process.env.DB_USER || 'crm_dev_user',
-  password: process.env.DB_PASSWORD || 'dev_password',
-});
+// Use DATABASE_URL if available (for CI/production), otherwise use individual env vars
+const pool = process.env.DATABASE_URL 
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME || 'crm_dev_db',
+      user: process.env.DB_USER || 'crm_dev_user',
+      password: process.env.DB_PASSWORD || 'dev_password',
+    });
 
 export { pool };
 
