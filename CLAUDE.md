@@ -3,6 +3,44 @@
 ## Project Overview
 Building the operating system for AI agents in CRM, not the agents themselves. Platform-first approach focused on enabling third-party AI agents through standardized protocols.
 
+## 🏗️ NEW ORGANIZED PROJECT STRUCTURE (2025)
+
+```
+crm-mvp/
+├── apps/                     # Applications
+│   ├── backend/             # Node.js/Fastify backend
+│   └── frontend/            # Next.js frontend
+├── packages/                # Shared libraries (moved from libs/)
+│   ├── agent-sdk/          # AI agent development kit
+│   └── agent-protocol/     # Universal agent protocol
+├── docs/                   # All documentation (organized)
+│   ├── README.md           # Main project overview
+│   ├── DEVELOPMENT.md      # Development setup guide
+│   ├── DEPLOYMENT.md       # Production deployment guide
+│   ├── API.md             # API documentation
+│   ├── ARCHITECTURE.md    # System design
+│   ├── CONFIGURATION.md   # Environment variables
+│   └── features/          # Feature-specific docs
+├── scripts/               # All automation scripts (organized)
+│   ├── dev/              # Development scripts
+│   ├── deploy/           # Deployment scripts
+│   └── ci/               # CI/CD scripts
+├── infra/                # Infrastructure as code
+│   ├── docker/           # Docker configurations
+│   └── nginx/            # Nginx configurations
+├── examples/             # Integration examples (moved from integrations/)
+│   └── cozmox-voice-agent/
+├── logs/                 # All log files (moved from root)
+└── temp/                # Temporary files
+```
+
+### Key Improvements Made:
+1. **Eliminated redundancy**: Removed duplicate proxy setups (proxy-server.js)
+2. **Organized documentation**: Split 451-line README into focused documents
+3. **Cleaner scripts**: Simplified development scripts in `/scripts/dev/`
+4. **Better structure**: Clear separation of apps, packages, docs, and infrastructure
+5. **Professional layout**: Industry-standard project organization
+
 ## AI Assistant Guidelines
 - **Message Efficiency**: Minimize messages due to usage limits. Batch multiple operations in single responses.
 - **Proactive Execution**: Complete tasks fully without asking for confirmation at each step.
@@ -103,8 +141,14 @@ interface AgentAdapter {
 
 ## Development Commands
 
+### NEW Simplified Scripts (2025)
 ```bash
-# Development
+# Development (NEW organized scripts)
+./scripts/dev/start.sh      # Start all services with Docker
+./scripts/dev/stop.sh       # Stop all services
+./scripts/dev/restart.sh    # Restart services
+
+# Legacy commands (still available)
 npm run dev                 # Start all services
 npm run dev:backend         # Backend only
 npm run dev:frontend        # Frontend only
@@ -115,9 +159,24 @@ npm run typecheck          # TypeScript compilation
 npm run test               # Run test suites
 npm run ci-check           # Full CI validation locally
 
-# Production
+# Production (NEW Docker-based)
+docker-compose -f infra/docker/docker-compose.yml up -d  # Production deployment
+docker-compose -f infra/docker/docker-compose.dev.yml up -d  # Development
+
+# Legacy production commands
 npm run build              # Production build
 npm run start              # Start production server
+```
+
+### Deployment Options (2025)
+```bash
+# Free hosting platforms (recommended)
+# 1. Railway: Push to GitHub, auto-deploy
+# 2. Render: Connect repo, select Docker
+# 3. Fly.io: fly launch && fly deploy
+# 4. Back4app: Container deployment, no credit card required
+
+# See docs/DEPLOYMENT.md for detailed guides
 ```
 
 ## Business Model

@@ -323,7 +323,12 @@ export class AgentRuntime extends EventEmitter {
   async stopExecution(executionId: string): Promise<void> {
     const execution = this.executions.get(executionId);
     
-    if (!execution || execution.status !== 'running') {
+    if (!execution) {
+      throw new Error('Execution not found');
+    }
+    
+    // Allow stopping executions that are pending or running
+    if (execution.status !== 'running' && execution.status !== 'pending') {
       throw new Error('Execution not found or not running');
     }
 

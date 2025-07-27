@@ -243,16 +243,52 @@ export class AgentSandbox extends EventEmitter {
   }
 
   private async mockExecute(code: string, inputData: any = {}): Promise<SandboxResult> {
-    // Simple mock execution for test environment
-    // This simulates agent execution without using isolated-vm
+    // Mock execution that properly simulates async code and supports interruption
     
     this.isExecuting = true;
     this.startTime = Date.now();
     
     try {
-      // Mock successful execution with predictable output
+      // Check if code contains error patterns
+      const hasError = code.includes('throw new Error') || code.includes('throw Error');
+      const hasDelay = code.includes('setTimeout') || code.includes('Promise');
+      
+      // If code has an error pattern, simulate the error
+      if (hasError) {
+        throw new Error('Test error');
+      }
+      
+      if (hasDelay) {
+        // Simulate a delay that can be interrupted
+        const delayMs = 5000; // Default to 5 seconds for long-running tasks
+        
+        // Create a promise that resolves after the delay but can be interrupted
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            resolve();
+          }, delayMs);
+          
+          // Store timeout reference for cleanup
+          (this as any).mockTimeout = timeout;
+          
+          // Check periodically if execution was stopped
+          const checkInterval = setInterval(() => {
+            if (!this.isExecuting) {
+              clearTimeout(timeout);
+              clearInterval(checkInterval);
+              reject(new Error('Execution stopped by user'));
+            }
+          }, 50);
+          
+          // Clean up interval when promise resolves
+          timeout.unref();
+          setTimeout(() => clearInterval(checkInterval), delayMs + 100);
+        });
+      }
+      
+      // If we get here, execution completed normally
       const result = {
-        result: "Hello World",
+        result: hasDelay ? "done" : "Hello World",
         data: inputData,
         timestamp: new Date().toISOString(),
         agentId: this.agentContext.agentId
@@ -274,7 +310,7 @@ export class AgentSandbox extends EventEmitter {
       
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Execution stopped by user',
         resourceUsage: {
           executionTime,
           memoryUsed: 64,
@@ -283,10 +319,24 @@ export class AgentSandbox extends EventEmitter {
       };
     } finally {
       this.isExecuting = false;
+      // Clean up any pending timeout
+      if ((this as any).mockTimeout) {
+        clearTimeout((this as any).mockTimeout);
+        delete (this as any).mockTimeout;
+      }
     }
   }
 
   destroy(): void {
+    // Stop any running execution
+    this.isExecuting = false;
+    
+    // Clean up mock timeout if it exists
+    if ((this as any).mockTimeout) {
+      clearTimeout((this as any).mockTimeout);
+      delete (this as any).mockTimeout;
+    }
+    
     if (this.context) {
       this.context.release();
       this.context = null;

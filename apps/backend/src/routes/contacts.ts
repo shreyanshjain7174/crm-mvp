@@ -239,6 +239,12 @@ export async function contactRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return reply.status(404).send({ error: 'Contact not found' });
+      }
+
       const result = await fastify.db.query(`
         SELECT * FROM contacts WHERE id = $1 AND user_id = $2
       `, [id, userId]);
@@ -291,6 +297,12 @@ export async function contactRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
       const updateData = request.body as z.infer<typeof contactUpdateSchema>;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return reply.status(404).send({ error: 'Contact not found' });
+      }
 
       // Build dynamic update query
       const updateFields = [];
@@ -353,6 +365,12 @@ export async function contactRoutes(fastify: FastifyInstance) {
     try {
       const { id } = request.params as { id: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return reply.status(404).send({ error: 'Contact not found' });
+      }
 
       const result = await fastify.db.query(`
         DELETE FROM contacts WHERE id = $1 AND user_id = $2 RETURNING id

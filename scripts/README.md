@@ -1,28 +1,54 @@
-# CRM Development Scripts
+# 📜 CRM MVP Scripts
 
-Automated scripts for managing the CRM development environment.
+Organized automation scripts for development, deployment, and CI/CD.
 
-## Quick Start
+## 📁 Directory Structure
+
+```
+scripts/
+├── dev/                # Development scripts
+│   ├── start.sh       # Start all services
+│   ├── stop.sh        # Stop all services
+│   └── restart.sh     # Restart services
+├── deploy/            # Deployment scripts (future)
+├── ci/                # CI/CD scripts (future)
+├── check-ci.sh        # Run CI checks locally
+└── quick-commit.sh    # Quick git commit helper
+```
+
+## 🚀 Quick Start
 
 ```bash
 # Start complete development environment
-npm run dev:setup
+./scripts/dev/start.sh
 
-# Stop and clean up everything
-npm run dev:teardown
+# Stop all services
+./scripts/dev/stop.sh
+
+# Restart services
+./scripts/dev/restart.sh
 ```
 
-## What dev-start.sh does:
+## 🛠️ Development Scripts (`/dev`)
 
-1. **Environment Check**: Verifies Podman/Docker, Node.js, and npm are installed
-2. **Cleanup**: Removes any existing containers and processes
-3. **Dependencies**: Runs `npm install` for latest packages
-4. **Database**: Starts PostgreSQL container with correct credentials
-5. **Cache**: Starts Redis container
-6. **Configuration**: Creates proper `.env` file for backend
-7. **Test User**: Creates demo user with known credentials
-8. **Services**: Starts backend and frontend in background
-9. **Health Checks**: Waits for all services to be ready
+### start.sh
+Starts all services using Docker Compose:
+- Creates necessary directories (data/postgres, data/redis, logs)
+- Starts PostgreSQL, Redis, Backend, Frontend, and Nginx
+- Shows service URLs and health status
+- Provides helpful command tips
+
+### stop.sh
+Gracefully stops all running services:
+- Shuts down all Docker containers
+- Preserves data volumes for next session
+- Shows cleanup options
+
+### restart.sh
+Quickly restarts all services:
+- Stops all containers
+- Starts them fresh
+- Useful after configuration changes
 
 ## Access Information
 
