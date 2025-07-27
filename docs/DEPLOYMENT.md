@@ -2,17 +2,33 @@
 
 This guide covers various deployment options for the CRM MVP, from local development to production hosting.
 
-## 🆓 Free Hosting Options (Recommended)
+## 🆓 Free Hosting Options (2025 Updated)
 
-### 1. Railway (Best Choice)
-Railway offers the most generous free tier and seamless GitHub integration.
+### 1. Render (Best Overall Choice)
+Render emerges as the top choice in 2025 with robust free tier and managed services.
 
 **Features:**
-- 750 hours/month runtime
-- Automatic Docker builds
-- GitHub integration
-- Free SSL certificates
-- Database hosting
+- ✅ 750 hours/month runtime (no sleep)
+- ✅ Fully managed PostgreSQL database (90-day retention)
+- ✅ Automatic Docker builds from GitHub
+- ✅ Free SSL certificates and CDN
+- ✅ HTTP/2 and WebSocket support
+- ✅ Zero-downtime deployments
+- ✅ Built-in Redis integration
+
+**Deployment Steps:**
+1. Push your code to GitHub
+2. Sign up at [render.com](https://render.com)
+3. Create new Web Service from GitHub repo
+4. Select Docker environment
+5. Add PostgreSQL database service
+6. Configure environment variables
+7. Deploy automatically
+
+**Why Render in 2025:**
+- More reliable than Railway's limited $5 credit system
+- Better database management than Fly.io free tier
+- Simpler setup than self-hosted solutions
 
 **Deployment Steps:**
 1. Push your code to GitHub
@@ -34,14 +50,18 @@ healthcheckPath = "/health"
 restartPolicyType = "ON_FAILURE"
 ```
 
-### 2. Render (Alternative)
-Excellent for full-stack applications with built-in database.
+### 2. Railway (Quick Prototyping)
+Great for rapid prototyping but limited by credit system.
 
 **Features:**
-- Free tier with 750 hours/month
-- Auto-deploy from GitHub
-- Built-in PostgreSQL database
-- Free SSL and CDN
+- ⚠️ $5 one-time credit (apps stop when depleted)
+- ✅ 512MB RAM, 1GB storage initially
+- ✅ Excellent developer experience
+- ✅ Multiple custom domains
+- ✅ 100GB outbound bandwidth
+
+**Best for:** Short-term projects and demos
+**Warning:** Apps will stop running once $5 credit is used
 
 **Deployment Steps:**
 1. Connect GitHub repository at [render.com](https://render.com)
@@ -51,14 +71,19 @@ Excellent for full-stack applications with built-in database.
 5. Set environment variables
 6. Deploy
 
-### 3. Fly.io (Global Distribution)
-Best for applications requiring global distribution.
+### 3. Fly.io (Production-Ready Edge)
+Best for applications requiring global distribution and production features.
 
 **Features:**
-- Docker-native platform
-- Global edge locations
-- Free tier available
-- CLI-based deployment
+- ✅ 3 shared-cpu-1x machines (always-on)
+- ✅ 3GB persistent volume storage
+- ✅ Global edge deployment
+- ✅ Sophisticated Docker support
+- ✅ Built-in load balancing
+- ✅ WebSocket support
+- ✅ Native PostgreSQL integration
+
+**Best for:** Production applications with global users
 
 **Deployment Steps:**
 ```bash
@@ -72,14 +97,30 @@ fly launch
 fly deploy
 ```
 
-### 4. Back4app (No Credit Card)
-Generous free tier without requiring payment details.
+### 4. Deta Space (Unlimited Free)
+Unique platform offering truly unlimited free hosting.
 
 **Features:**
-- 256MB RAM, 100GB transfer
-- No credit card required
-- Docker container support
-- 600 active hours/month
+- ✅ Completely free with no limits
+- ✅ Personal cloud platform
+- ✅ Built-in data storage
+- ✅ No credit card required ever
+- ✅ Supports Node.js applications
+
+**Best for:** Personal projects and experimental applications
+
+### 5. Coolify (Self-Hosted Freedom)
+Open-source alternative for complete control.
+
+**Features:**
+- ✅ Completely free and open-source
+- ✅ Self-hosted on your own VPS
+- ✅ Zero-downtime deployments
+- ✅ Git integration
+- ✅ Multiple database support
+- ✅ No vendor lock-in
+
+**Best for:** Advanced users with VPS access
 
 ## 🐳 Docker Deployment
 
@@ -188,6 +229,119 @@ For enterprise deployments requiring high availability.
    - Auto-scaling capabilities
    - Advanced monitoring
 
+## 🏠 Local Development Setup (Detailed)
+
+### Option 1: Docker-based Setup (Recommended)
+
+**Prerequisites:**
+- Docker Desktop 4.0+ with Docker Compose
+- Git
+- 4GB+ RAM available
+
+```bash
+# Clone and setup
+git clone https://github.com/shreyanshjain7174/crm-mvp.git
+cd crm-mvp
+
+# Copy environment variables
+cp .env.example .env
+
+# Start all services
+./scripts/dev/start.sh
+
+# Wait for services to start (2-3 minutes first time)
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+### Option 2: Native Development Setup
+
+**Prerequisites:**
+- Node.js 18+ with npm
+- PostgreSQL 14+ installed and running
+- Redis 6+ installed and running
+
+```bash
+# Install dependencies
+npm install
+
+# Setup database
+psql -c "CREATE DATABASE crm_development;"
+psql -c "CREATE USER crm_user WITH PASSWORD 'crm_password';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE crm_development TO crm_user;"
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your local database credentials
+
+# Start backend
+cd apps/backend
+npm run dev
+
+# In another terminal, start frontend
+cd apps/frontend
+npm run dev
+```
+
+### Environment Configuration
+
+**Required Environment Variables:**
+```bash
+# Database
+DATABASE_URL=postgresql://crm_user:crm_password@localhost:5432/crm_development
+REDIS_URL=redis://localhost:6379
+
+# JWT Secrets (generate new ones)
+JWT_SECRET=your-super-secret-jwt-key-here
+SESSION_SECRET=your-super-secret-session-key
+
+# API Keys (optional for basic testing)
+WHATSAPP_API_TOKEN=your-whatsapp-token
+ANTHROPIC_API_KEY=your-anthropic-key
+OPENAI_API_KEY=your-openai-key
+
+# Frontend URL
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+```
+
+### Common Local Development Issues
+
+**Issue: Port conflicts**
+```bash
+# Check what's using ports 3000, 3001, 5432
+lsof -i :3000
+lsof -i :3001
+lsof -i :5432
+
+# Kill processes if needed
+kill -9 <PID>
+```
+
+**Issue: Docker containers won't start**
+```bash
+# Clean up Docker
+docker system prune -a
+docker volume prune
+
+# Restart Docker Desktop
+# Try starting again
+./scripts/dev/start.sh
+```
+
+**Issue: Database migration errors**
+```bash
+# Reset database (WARNING: loses all data)
+docker-compose down -v
+docker-compose up -d
+
+# Or manually reset
+psql -c "DROP DATABASE IF EXISTS crm_development;"
+psql -c "CREATE DATABASE crm_development;"
+```
+
 ## 🔧 Local Production Testing
 
 Test your production build locally before deployment:
@@ -200,6 +354,9 @@ docker-compose -f infra/docker/docker-compose.yml build
 docker-compose -f infra/docker/docker-compose.yml up
 
 # Access at http://localhost:8080
+
+# Test with ngrok for webhook testing
+./scripts/deploy/deploy-with-ngrok.sh
 ```
 
 ## 📊 Monitoring & Health Checks

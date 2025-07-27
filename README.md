@@ -13,20 +13,38 @@ An advanced **Agentic CRM** system designed specifically for Indian SMEs with co
 
 ## 🚀 Quick Start
 
+### Local Development Setup
+
 ```bash
-# Clone and install
+# Clone the repository
 git clone https://github.com/shreyanshjain7174/crm-mvp.git
 cd crm-mvp
+
+# Install dependencies
 npm install
 
-# Start development environment
+# Copy environment variables
+cp .env.example .env
+
+# Start development environment (Docker required)
 ./scripts/dev/start.sh
 
-# Access the application
-# Frontend: http://localhost:3000
-# Backend: http://localhost:3001
-# Nginx: http://localhost:8080
+# Alternative: Start without Docker
+npm run dev
 ```
+
+**Access Points:**
+- 🌐 **Frontend**: http://localhost:3000
+- 🔧 **Backend API**: http://localhost:3001  
+- 🚀 **Nginx Proxy**: http://localhost:8080
+- 📊 **Database**: PostgreSQL on localhost:5432
+- 🗄️ **Redis**: localhost:6379
+
+### Prerequisites
+- **Node.js** 18+ and npm
+- **Docker** and Docker Compose (for containerized setup)
+- **PostgreSQL** 14+ (if running without Docker)
+- **Redis** 6+ (if running without Docker)
 
 ## 📚 Documentation
 
@@ -73,31 +91,94 @@ crm-mvp/
 └── logs/                 # Application logs
 ```
 
-## 🌐 Free Deployment Options
+## 🌐 Free Deployment Options (2025 Updated)
 
-### Recommended Platforms
-1. **[Railway](https://railway.app)** - Generous free tier, automatic GitHub deployment
-2. **[Render](https://render.com)** - Excellent for full-stack apps, Docker support
-3. **[Fly.io](https://fly.io)** - Global distribution, Docker-based deployments
-4. **[Back4app](https://back4app.com)** - No credit card required, container support
+### 🏆 Top Recommended Platforms
 
-All platforms support automatic deployment from your GitHub repository. See our **[Deployment Guide](./docs/DEPLOYMENT.md)** for detailed instructions.
+| Platform | Free Tier | Pros | Best For |
+|----------|-----------|------|----------|
+| **[Render](https://render.com)** | 750 hrs/month, PostgreSQL | Fully managed, built-in DB | **Most beginners** |
+| **[Railway](https://railway.app)** | $5 credit, 512MB RAM | Easy setup, great DevEx | **Quick prototypes** |
+| **[Fly.io](https://fly.io)** | 3 shared VMs, 3GB storage | Global edge, Docker-native | **Production apps** |
+| **[Deta Space](https://deta.space)** | Unlimited & free | No usage limits | **Personal projects** |
+| **[Coolify](https://coolify.io)** | Self-hosted, open-source | Full control, no vendor lock-in | **Advanced users** |
 
-## 🔧 Quick Commands
+### 🚀 Quick Deploy Commands
 
 ```bash
-# Development
-./scripts/dev/start.sh     # Start all services
-./scripts/dev/stop.sh      # Stop all services
-./scripts/dev/restart.sh   # Restart services
+# Render: Push to GitHub, connect repo
+# Railway: Push to GitHub, one-click deploy
 
-# Testing
-npm test                   # Run test suite
-npm run test:coverage      # Run with coverage
+# Fly.io deployment
+fly launch
+fly deploy
 
-# Production
-npm run build              # Build for production
-docker-compose -f infra/docker/docker-compose.yml up -d  # Deploy
+# Docker deployment (any VPS)
+docker-compose -f infra/docker/docker-compose.yml up -d
+```
+
+See our **[Deployment Guide](./docs/DEPLOYMENT.md)** for platform-specific instructions and production configuration.
+
+## 🔧 Development Commands
+
+### Docker-based Development (Recommended)
+```bash
+# Start all services with Docker
+./scripts/dev/start.sh
+
+# Stop all services
+./scripts/dev/stop.sh
+
+# Restart services
+./scripts/dev/restart.sh
+
+# View logs
+docker-compose logs -f
+
+# Health check
+./scripts/deploy/health-check.sh
+```
+
+### Native Development
+```bash
+# Start backend only
+npm run dev:backend
+
+# Start frontend only
+npm run dev:frontend
+
+# Start both (requires manual DB setup)
+npm run dev
+```
+
+### Testing & Quality
+```bash
+# Run test suite
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Lint code
+npm run lint
+
+# Type checking
+npm run typecheck
+
+# Full CI check (recommended before commits)
+npm run ci-check
+```
+
+### Production Deployment
+```bash
+# Build for production
+npm run build
+
+# Deploy with Docker
+docker-compose -f infra/docker/docker-compose.yml up -d
+
+# Deploy with ngrok for testing
+./scripts/deploy/deploy-with-ngrok.sh
 ```
 
 ## 📊 Current Status
