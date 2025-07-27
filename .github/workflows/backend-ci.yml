@@ -42,13 +42,14 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '24'
         cache-dependency-path: package-lock.json
 
     - name: Install dependencies
       working-directory: apps/backend
-      run: npm ci
+      run: |
+        npm cache clean --force
+        npm install
 
     - name: Run ESLint
       working-directory: apps/backend

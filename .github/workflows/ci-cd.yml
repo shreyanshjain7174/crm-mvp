@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [24.x]
     
     services:
       postgres:
@@ -56,7 +56,10 @@ jobs:
 
     - name: Install dependencies  
       run: |
-        npm ci --frozen-lockfile --prefer-offline --workspaces
+        # Clear caches for isolated-vm Node 24 compatibility
+        npm cache clean --force
+        rm -rf node_modules package-lock.json
+        npm install --verbose
 
     - name: Setup test database
       run: |
