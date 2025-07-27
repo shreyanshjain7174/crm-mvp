@@ -12,7 +12,7 @@ import { Search, Filter, Star, Download, Zap, Bot, MessageSquare, Phone, BarChar
 import { AgentCard } from './AgentCard'
 import { CategoryFilter } from './CategoryFilter'
 import { SearchBar } from './SearchBar'
-import type { AgentManifest } from '../../../../../libs/agent-protocol/types'
+import type { AgentManifest } from '../../../../../packages/agent-protocol/types'
 
 // Extend AgentManifest with metadata for frontend
 interface AgentManifestWithMetadata extends AgentManifest {

@@ -9,7 +9,7 @@
 
 import React from 'react'
 import { Star, Download, Check, Eye, Zap, Shield, Clock } from 'lucide-react'
-import type { AgentManifest } from '../../../../../libs/agent-protocol/types'
+import type { AgentManifest } from '../../../../../packages/agent-protocol/types'
 
 // Extend AgentManifest with metadata for frontend
 interface AgentManifestWithMetadata extends AgentManifest {
