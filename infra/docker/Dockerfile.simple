@@ -16,8 +16,13 @@ COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 
-# Install dependencies
-RUN npm install
+# Copy packages directory for workspaces
+COPY packages/ ./packages/
+
+# Install dependencies with legacy peer deps and verbose output
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps --verbose || \
+    (cat /root/.npm/_logs/*.log && exit 1)
 
 # Copy all source code
 COPY . .
