@@ -1,8 +1,13 @@
 # Production Dockerfile for Fly.io
-FROM node:24-alpine
+FROM node:22-alpine
 
-# Install only essential system packages
-RUN apk add --no-cache curl
+# Install build dependencies for isolated-vm and other native modules
+RUN apk add --no-cache \
+    curl \
+    make \
+    g++ \
+    python3 \
+    linux-headers
 
 WORKDIR /app
 

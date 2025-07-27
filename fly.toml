@@ -11,7 +11,7 @@ primary_region = 'bom'
 
 [env]
   NODE_ENV = 'production'
-  PORT = '8080'
+  PORT = '3000'
 
 [[mounts]]
   source = 'crm_data'
