@@ -1,7 +1,9 @@
-# Production Dockerfile for Fly.io
+# Simplified optimized Dockerfile for Fly.io
+# Fixing both image size and runtime issues
+
 FROM node:22-alpine
 
-# Install build dependencies for isolated-vm and other native modules
+# Install essential dependencies including build tools
 RUN apk add --no-cache \
     curl \
     make \
@@ -11,32 +13,53 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy everything first
-COPY . .
+# Copy package files for better layer caching
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/ ./packages/
 
-# Clean install with specific flags for production
-RUN npm cache clean --force && \
-    rm -rf node_modules && \
-    npm install --production=false --legacy-peer-deps --verbose
+# Install dependencies with production optimizations
+RUN npm ci --legacy-peer-deps --production=false && \
+    npm cache clean --force
+
+# Copy source code
+COPY . .
 
 # Build backend
 WORKDIR /app/apps/backend
-RUN npm run build || echo "Backend build failed, continuing..."
+RUN npm run build
 
-# Build frontend  
+# Build frontend
 WORKDIR /app/apps/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build || echo "Frontend build failed, continuing..."
+ENV NODE_ENV=production
+RUN npm run build
 
+# Clean up development dependencies and build tools to reduce size
 WORKDIR /app
+RUN npm prune --production && \
+    apk del make g++ python3 linux-headers && \
+    rm -rf /var/cache/apk/* && \
+    rm -rf /tmp/* && \
+    rm -rf ~/.npm
 
-# Create simple start script
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'cd /app/apps/backend && npm start &' >> /app/start.sh && \
-    echo 'cd /app/apps/frontend && npm start &' >> /app/start.sh && \
-    echo 'sleep infinity' >> /app/start.sh && \
+# Create optimized startup script
+RUN echo '#!/bin/sh\n\
+echo "Starting CRM MVP Production Server..."\n\
+echo "Backend starting on port 3001..."\n\
+cd /app/apps/backend && node dist/index.js &\n\
+BACKEND_PID=$!\n\
+echo "Frontend starting on port 3000..."\n\
+cd /app/apps/frontend && npm start &\n\
+FRONTEND_PID=$!\n\
+echo "Both services started. PIDs: Backend=$BACKEND_PID, Frontend=$FRONTEND_PID"\n\
+wait $BACKEND_PID $FRONTEND_PID' > /app/start.sh && \
     chmod +x /app/start.sh
 
 EXPOSE 3000 3001
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/health || curl -f http://localhost:3001/health || exit 1
 
 CMD ["/app/start.sh"]
