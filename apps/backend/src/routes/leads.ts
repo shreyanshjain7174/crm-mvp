@@ -16,7 +16,7 @@ const updateLeadSchema = z.object({
   name: z.string().optional(),
   status: z.nativeEnum(LeadStatus).optional(),
   priority: z.nativeEnum(Priority).optional(),
-  assignedTo: z.string().optional(),
+  assignedTo: z.string().nullable().optional(),
   businessProfile: z.string().optional()
 });
 
@@ -103,6 +103,16 @@ export async function leadRoutes(fastify: FastifyInstance) {
       const { id } = request.params;
       const data = updateLeadSchema.parse(request.body);
       
+      // First, get the current lead to check for status changes
+      let currentLead = null;
+      if (data.status !== undefined) {
+        const currentResult = await fastify.db.query('SELECT status FROM leads WHERE id = $1', [id]);
+        if (currentResult.rows.length === 0) {
+          return reply.status(404).send({ error: 'Lead not found' });
+        }
+        currentLead = currentResult.rows[0];
+      }
+      
       const updateFields = [];
       const values = [];
       let paramIndex = 1;
@@ -136,10 +146,15 @@ export async function leadRoutes(fastify: FastifyInstance) {
         WHERE id = $${paramIndex}
         RETURNING *
       `, values);
+      
+      if (result.rows.length === 0) {
+        return reply.status(404).send({ error: 'Lead not found' });
+      }
+      
       const lead = { ...result.rows[0], messages: [], interactions: [], ai_suggestions: [] };
       
-      // Create interaction for status change
-      if (data.status) {
+      // Create interaction for status change only if status actually changed
+      if (data.status !== undefined && currentLead && currentLead.status !== data.status) {
         await fastify.db.query(`
           INSERT INTO interactions (lead_id, type, description, completed_at)
           VALUES ($1, $2, $3, NOW())

@@ -20,7 +20,7 @@ describe('Lead Search, Filtering, and Pagination', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
   });
 
   describe('Text Search', () => {

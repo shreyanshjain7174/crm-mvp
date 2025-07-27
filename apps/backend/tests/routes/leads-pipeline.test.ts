@@ -20,7 +20,7 @@ describe('Leads Pipeline Management', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
   });
 
   describe('Status Progression', () => {
@@ -241,7 +241,7 @@ describe('Leads Pipeline Management', () => {
   describe('Pipeline Analytics', () => {
     beforeEach(async () => {
       // Ensure clean database before each test in this block
-      await cleanDatabase();
+      await cleanDatabase(app);
       
       const user = await createAuthenticatedUser(app);
       

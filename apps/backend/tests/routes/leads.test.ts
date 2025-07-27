@@ -21,7 +21,7 @@ describe('Leads Routes', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
     resetAllCounters();
   });
 

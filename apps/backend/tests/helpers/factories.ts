@@ -66,6 +66,10 @@ export const factories = {
     is_read: false,
     ...overrides,
   }),
+
+  generateBatch: <T>(factory: (overrides?: any) => T, count: number, overrides?: any): T[] => {
+    return Array.from({ length: count }, () => factory(overrides));
+  },
 };
 
 export function generateBatch<T>(factory: (overrides?: any) => T, count: number, overrides?: any): T[] {

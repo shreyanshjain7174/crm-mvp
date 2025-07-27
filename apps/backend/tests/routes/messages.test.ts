@@ -20,7 +20,7 @@ describe('Messages Routes', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
   });
 
   describe('GET /api/messages', () => {

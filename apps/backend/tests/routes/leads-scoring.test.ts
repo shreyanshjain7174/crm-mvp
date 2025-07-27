@@ -20,7 +20,7 @@ describe('Lead Scoring and Business Logic', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
   });
 
   describe('Lead Scoring Algorithm', () => {

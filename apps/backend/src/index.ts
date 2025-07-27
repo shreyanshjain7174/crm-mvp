@@ -40,6 +40,7 @@ declare module 'fastify' {
     db: typeof pool;
     io: Server;
     authenticate: typeof authenticate;
+    agentRuntime?: any; // AgentRuntime type would be circular import
   }
 }
 

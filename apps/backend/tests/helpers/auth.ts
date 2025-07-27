@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface TestUser {
   id: string;
@@ -20,7 +21,7 @@ export function generateTestToken(user: Partial<TestUser>): string {
 
 export async function createAuthenticatedUser(app: FastifyInstance): Promise<TestUser> {
   const user: TestUser = {
-    id: 'test-user-' + Date.now(),
+    id: uuidv4(),
     email: `test${Date.now()}@example.com`,
     name: 'Test User',
     company: 'Test Company',

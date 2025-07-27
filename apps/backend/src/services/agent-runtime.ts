@@ -136,7 +136,9 @@ export class AgentRuntime extends EventEmitter {
       }
 
       const agentData = agentResult.rows[0];
-      const manifest: AgentManifest = JSON.parse(agentData.manifest);
+      const manifest: AgentManifest = typeof agentData.manifest === 'string' 
+        ? JSON.parse(agentData.manifest) 
+        : agentData.manifest;
 
       // Create execution record
       const execution: AgentExecution = {
@@ -462,4 +464,6 @@ export let agentRuntime: AgentRuntime;
 
 export function initializeAgentRuntime(fastify: FastifyInstance): void {
   agentRuntime = new AgentRuntime(fastify);
+  // Also decorate the fastify instance for easier access in tests
+  fastify.decorate('agentRuntime', agentRuntime);
 }

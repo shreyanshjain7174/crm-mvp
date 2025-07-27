@@ -1,11 +1,11 @@
 let phoneCounter = 0;
 
 export function generateUniquePhone(): string {
-  // Use timestamp + counter + random number to ensure uniqueness
-  const timestamp = Date.now().toString();
-  const counter = (++phoneCounter).toString().padStart(3, '0');
+  // Use a more compact but still unique approach
+  const timestamp = Date.now().toString().slice(-8); // Last 8 digits of timestamp
+  const counter = (++phoneCounter).toString().padStart(4, '0');
   const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-  return `+${timestamp}${counter}${random}`.substring(0, 15); // Limit to 15 chars for phone
+  return `+1${timestamp}${counter}${random}`.substring(0, 15); // Ensure it fits in 15 chars
 }
 
 export function getNextPhone(): string {

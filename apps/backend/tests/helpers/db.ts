@@ -16,9 +16,19 @@ export async function getTestPool(): Promise<Pool> {
   return testPool;
 }
 
-export async function cleanDatabase(): Promise<void> {
-  const pool = await getTestPool();
-  const client = await pool.connect();
+export async function cleanDatabase(app?: FastifyInstance): Promise<void> {
+  // Use app's database connection if provided, otherwise use test pool
+  let client;
+  let shouldRelease = false;
+  
+  if (app?.db) {
+    client = await app.db.connect();
+    shouldRelease = true;
+  } else {
+    const pool = await getTestPool();
+    client = await pool.connect();
+    shouldRelease = true;
+  }
   
   try {
     // Disable foreign key checks
@@ -40,7 +50,9 @@ export async function cleanDatabase(): Promise<void> {
     // Re-enable foreign key checks
     await client.query('SET session_replication_role = DEFAULT;');
   } finally {
-    client.release();
+    if (shouldRelease) {
+      client.release();
+    }
   }
 }
 

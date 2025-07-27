@@ -19,7 +19,7 @@ describe('Auth Routes', () => {
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    await cleanDatabase(app);
   });
 
   describe('POST /api/auth/register', () => {
@@ -131,7 +131,7 @@ describe('Auth Routes', () => {
       const response = await api.get('/api/auth/me');
 
       expect(response.statusCode).toBe(401);
-      expect(response.json.error).toBe('Unauthorized');
+      expect(response.json.error).toBe('No token provided');
     });
   });
 

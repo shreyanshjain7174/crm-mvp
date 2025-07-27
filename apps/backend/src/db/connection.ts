@@ -253,6 +253,86 @@ async function runAgentMigrations(client: any) {
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Agents table for runtime service (stores agent manifests per user)
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agents (
+      id VARCHAR(255) NOT NULL,
+      user_id VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      version VARCHAR(50) NOT NULL,
+      description TEXT,
+      author VARCHAR(255),
+      manifest JSONB NOT NULL,
+      permissions JSONB NOT NULL,
+      resource_limits JSONB NOT NULL,
+      status VARCHAR(20) DEFAULT 'installed' CHECK (status IN ('installed', 'active', 'paused', 'error')),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      PRIMARY KEY (id, user_id)
+    )
+  `);
+
+  // Create indexes for agents table
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_agents_user_id ON agents(user_id);
+    CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status);
+    CREATE INDEX IF NOT EXISTS idx_agents_user_status ON agents(user_id, status);
+  `);
+
+  // Agent executions table for runtime tracking
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_executions (
+      id VARCHAR(255) PRIMARY KEY,
+      agent_id VARCHAR(255) NOT NULL,
+      user_id VARCHAR(255) NOT NULL,
+      session_id VARCHAR(255) NOT NULL,
+      status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'timeout')),
+      start_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      end_time TIMESTAMP WITH TIME ZONE,
+      input JSONB,
+      output JSONB,
+      error TEXT,
+      resource_usage JSONB,
+      trigger_type VARCHAR(50) DEFAULT 'manual',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+
+  // Add missing columns to agent_executions if they don't exist
+  await client.query(`
+    ALTER TABLE agent_executions 
+    ADD COLUMN IF NOT EXISTS trigger_type VARCHAR(50) DEFAULT 'manual';
+  `);
+
+  // Create indexes for agent_executions table
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_agent_executions_user_id ON agent_executions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_executions_agent_id ON agent_executions(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_executions_status ON agent_executions(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_executions_start_time ON agent_executions(start_time);
+  `);
+
+  // Agent error logs table for execution debugging  
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS agent_error_logs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      execution_id VARCHAR(255) NOT NULL,
+      severity VARCHAR(20) NOT NULL CHECK (severity IN ('info', 'warn', 'error', 'debug')),
+      message TEXT NOT NULL,
+      details JSONB,
+      timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+
+  // Create indexes for agent_error_logs table
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_agent_error_logs_execution_id ON agent_error_logs(execution_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_error_logs_severity ON agent_error_logs(severity);
+    CREATE INDEX IF NOT EXISTS idx_agent_error_logs_timestamp ON agent_error_logs(timestamp);
+  `);
 }
 
 // Billing system migrations
@@ -346,19 +426,23 @@ async function runMonitoringMigrations(client: any) {
     )
   `);
 
-  // Agent performance metrics table
+  // Agent performance metrics table (updated to support runtime queries)
+  // Drop and recreate if schema doesn't match
+  try {
+    await client.query(`
+      DROP TABLE IF EXISTS agent_performance_metrics CASCADE;
+    `);
+  } catch (e) {
+    // Ignore errors if table doesn't exist
+  }
+  
   await client.query(`
-    CREATE TABLE IF NOT EXISTS agent_performance_metrics (
+    CREATE TABLE agent_performance_metrics (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      agent_id VARCHAR(100) NOT NULL,
-      business_id VARCHAR(100) NOT NULL,
-      success_rate DECIMAL(5,2) DEFAULT 0,
-      avg_response_time INTEGER DEFAULT 0, -- in milliseconds
-      tasks_completed INTEGER DEFAULT 0,
-      tasks_per_minute DECIMAL(8,2) DEFAULT 0,
-      error_rate DECIMAL(5,2) DEFAULT 0,
-      uptime DECIMAL(5,2) DEFAULT 0, -- percentage
-      resource_usage JSONB DEFAULT '{}', -- CPU, memory, etc.
+      execution_id VARCHAR(255) NOT NULL,
+      metric_name VARCHAR(100) NOT NULL,
+      metric_value DECIMAL(12,4) NOT NULL,
+      recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )
@@ -406,8 +490,9 @@ async function runMonitoringMigrations(client: any) {
     CREATE INDEX IF NOT EXISTS idx_agent_health_checks_agent_id ON agent_health_checks(agent_id);
     CREATE INDEX IF NOT EXISTS idx_agent_health_checks_created_at ON agent_health_checks(created_at DESC);
     
-    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_agent_id ON agent_performance_metrics(agent_id, business_id);
-    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_created_at ON agent_performance_metrics(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_execution_id ON agent_performance_metrics(execution_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_metric_name ON agent_performance_metrics(metric_name);
+    CREATE INDEX IF NOT EXISTS idx_agent_performance_metrics_recorded_at ON agent_performance_metrics(recorded_at DESC);
     
     CREATE INDEX IF NOT EXISTS idx_agent_task_executions_agent_id ON agent_task_executions(agent_id, business_id);
     CREATE INDEX IF NOT EXISTS idx_agent_task_executions_status ON agent_task_executions(status);
