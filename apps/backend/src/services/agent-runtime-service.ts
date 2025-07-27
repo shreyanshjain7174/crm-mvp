@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Redis } from 'ioredis';
+// Redis temporarily disabled - import { Redis } from 'ioredis';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -71,16 +71,19 @@ export interface AgentEvent {
 
 export class AgentRuntimeService extends EventEmitter {
   private db: Pool;
-  private redis: Redis;
+  private redis?: any; // Redis temporarily disabled
   private runningAgents: Map<string, UniversalAgentAdapter> = new Map();
   private activeSessions: Map<string, RuntimeSession> = new Map();
   private eventQueue: string = 'agent-events';
+  private inMemoryEventQueue: any[] = [];
 
-  constructor(db: Pool, redis: Redis) {
+  constructor(db: Pool, redis?: any) {
     super();
     this.db = db;
     this.redis = redis;
-    this.initializeEventProcessing();
+    if (this.redis) {
+      this.initializeEventProcessing();
+    }
   }
 
   // Agent Installation Methods
@@ -378,20 +381,34 @@ export class AgentRuntimeService extends EventEmitter {
       JSON.stringify(eventData), correlationId, 'pending'
     ]);
 
-    // Add to processing queue
-    await this.redis.lpush(this.eventQueue, JSON.stringify({
+    // Add to processing queue (Redis or in-memory fallback)
+    const eventData2 = {
       eventId,
       installedAgentId,
       sessionToken: session.sessionToken,
       eventType,
       eventData,
       correlationId
-    }));
+    };
+    
+    if (this.redis) {
+      await this.redis.lpush(this.eventQueue, JSON.stringify(eventData2));
+    } else {
+      // In-memory fallback when Redis is disabled
+      this.inMemoryEventQueue.push(eventData2);
+      // Process immediately for simplicity
+      setTimeout(() => this.processEvent(eventData2), 0);
+    }
 
     return eventId;
   }
 
   private async initializeEventProcessing(): Promise<void> {
+    if (!this.redis) {
+      console.log('Redis disabled - using in-memory event processing');
+      return;
+    }
+    
     // Process events from Redis queue
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -464,7 +481,12 @@ export class AgentRuntimeService extends EventEmitter {
         // Re-queue for retry with exponential backoff
         const delay = Math.pow(2, eventRecord.rows[0].retry_count) * 1000;
         setTimeout(() => {
-          this.redis.lpush(this.eventQueue, JSON.stringify(event));
+          if (this.redis) {
+            this.redis.lpush(this.eventQueue, JSON.stringify(event));
+          } else {
+            this.inMemoryEventQueue.push(event);
+            setTimeout(() => this.processEvent(event), delay);
+          }
         }, delay);
       }
     }
