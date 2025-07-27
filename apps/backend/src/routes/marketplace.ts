@@ -6,7 +6,7 @@
  * third-party agents to be discovered and installed by users.
  */
 
-import '../types/fastify-extended.d'
+// Type definitions are now included via global declaration
 import { FastifyPluginAsync } from 'fastify'
 import { authenticate } from '../middleware/auth'
 import { db } from '../db'

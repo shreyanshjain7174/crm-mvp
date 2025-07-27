@@ -5,7 +5,7 @@
  * configuration, monitoring, and lifecycle operations.
  */
 
-import '../types/fastify-extended.d'
+// Type definitions are now included via global declaration
 import { FastifyPluginAsync } from 'fastify'
 import { 
   AgentInstallRequest,

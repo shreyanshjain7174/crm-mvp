@@ -4,7 +4,7 @@
  * Provides REST endpoints for agent billing, usage tracking, and cost management.
  */
 
-import '../types/fastify-extended.d'
+// Type definitions are now included via global declaration
 import { FastifyPluginAsync } from 'fastify'
 import { billingService } from '../services/billing-service'
 import { authenticate } from '../middleware/auth'
