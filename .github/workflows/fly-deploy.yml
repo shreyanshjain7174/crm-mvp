@@ -53,12 +53,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24.4.0'
-          cache: 'npm'
+          check-latest: true
+          # Disable cache to force fresh install
       
-      - name: Install dependencies
+      - name: Verify Node version
         run: |
-          # Use npm install instead of ci due to isolated-vm node version requirements
-          npm install
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+      
+      - name: Clear caches and install dependencies
+        run: |
+          # Clear all caches
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          
+          # Fresh install with Node 24 for isolated-vm compatibility
+          npm install --verbose --no-fund --no-audit
       
       - name: Run linting
         run: npm run lint
