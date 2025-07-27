@@ -343,7 +343,7 @@ export function useIntegrationLogs(integrationId: string, options: {
     } finally {
       setLoading(false);
     }
-  }, [integrationId, options.limit, options.offset]);
+  }, [integrationId, options]);
 
   useEffect(() => {
     fetchLogs();

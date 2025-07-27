@@ -153,7 +153,7 @@ export function useMessages(options: UseMessagesOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [options.page, options.limit, options.search, options.direction, options.status, options.leadId]);
+  }, [options]);
 
   useEffect(() => {
     fetchMessages();

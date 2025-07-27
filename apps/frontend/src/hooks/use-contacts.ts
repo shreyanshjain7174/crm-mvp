@@ -177,7 +177,7 @@ export function useContacts(options: UseContactsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [options.page, options.limit, options.search, options.status, options.source, options.sortBy, options.sortOrder]);
+  }, [options]);
 
   useEffect(() => {
     fetchContacts();

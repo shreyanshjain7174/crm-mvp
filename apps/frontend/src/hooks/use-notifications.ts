@@ -181,7 +181,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [options.page, options.limit, options.filter, options.category, options.search]);
+  }, [options]);
 
   useEffect(() => {
     fetchNotifications();
