@@ -59,7 +59,7 @@ jobs:
         # Clear caches for isolated-vm Node 24 compatibility
         npm cache clean --force
         rm -rf node_modules package-lock.json
-        npm install --verbose
+        npm install --verbose --legacy-peer-deps
 
     - name: Setup test database
       run: |

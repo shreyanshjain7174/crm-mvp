@@ -68,7 +68,7 @@ jobs:
           rm -rf node_modules package-lock.json
           
           # Fresh install with Node 24 for isolated-vm compatibility
-          npm install --verbose --no-fund --no-audit
+          npm install --verbose --no-fund --no-audit --legacy-peer-deps
       
       - name: Run linting
         run: npm run lint
