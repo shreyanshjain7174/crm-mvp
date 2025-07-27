@@ -1,0 +1,64 @@
+# Simplified Production Dockerfile for Fly.io
+# Single-stage build optimized for faster deployment
+
+FROM node:18-alpine AS production
+
+# Install system dependencies
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    postgresql-client \
+    redis \
+    curl
+
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/ ./packages/
+
+# Install all dependencies
+RUN npm ci --include=dev
+
+# Copy all source code
+COPY apps/ ./apps/
+COPY packages/ ./packages/
+
+# Build backend
+WORKDIR /app/apps/backend
+RUN npm run build
+
+# Build frontend
+WORKDIR /app/apps/frontend
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+RUN npm run build
+
+# Go back to app root
+WORKDIR /app
+
+# Copy configuration files
+COPY infra/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY infra/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY infra/docker/start-production.sh /app/start.sh
+
+# Make start script executable
+RUN chmod +x /app/start.sh
+
+# Create necessary directories
+RUN mkdir -p /var/log/supervisor /var/log/nginx /app/logs /var/run
+
+# Remove default nginx config and use our custom one
+RUN rm -f /etc/nginx/conf.d/default.conf.bak
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Start application
+CMD ["/app/start.sh"]
