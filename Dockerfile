@@ -1,27 +1,22 @@
-# Simplified optimized Dockerfile for Fly.io
-# Fixing both image size and runtime issues
+# Highly optimized multi-stage Dockerfile for Fly.io
+# Target: <500MB final image size
 
-FROM node:22-alpine
+# Build stage
+FROM node:22-alpine AS builder
 
-# Install essential dependencies including build tools
-RUN apk add --no-cache \
-    curl \
-    make \
-    g++ \
-    python3 \
-    linux-headers
+# Install build dependencies
+RUN apk add --no-cache make g++ python3 linux-headers
 
 WORKDIR /app
 
-# Copy package files for better layer caching
+# Copy package files first for better caching
 COPY package*.json ./
 COPY apps/backend/package*.json ./apps/backend/
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY packages/ ./packages/
 
-# Install dependencies with production optimizations
-RUN npm ci --legacy-peer-deps --production=false && \
-    npm cache clean --force
+# Install all dependencies (including dev)
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -30,36 +25,62 @@ COPY . .
 WORKDIR /app/apps/backend
 RUN npm run build
 
-# Build frontend
+# Build frontend  
 WORKDIR /app/apps/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN npm run build
 
-# Clean up development dependencies and build tools to reduce size
-WORKDIR /app
-RUN npm prune --production && \
-    apk del make g++ python3 linux-headers && \
-    rm -rf /var/cache/apk/* && \
-    rm -rf /tmp/* && \
-    rm -rf ~/.npm
+# Production stage
+FROM node:22-alpine AS runtime
 
-# Create optimized startup script
+# Install only runtime dependencies
+RUN apk add --no-cache curl dumb-init
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/ ./packages/
+
+# Install production dependencies only
+RUN npm ci --only=production --legacy-peer-deps && \
+    npm cache clean --force && \
+    rm -rf /tmp/*
+
+# Copy built applications from builder stage
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/apps/frontend/.next ./apps/frontend/.next
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+COPY --from=builder /app/apps/frontend/next.config.js ./apps/frontend/
+COPY --from=builder /app/apps/backend/src/db/migrations ./apps/backend/src/db/migrations
+
+# Create lightweight startup script
 RUN echo '#!/bin/sh\n\
-echo "Starting CRM MVP Production Server..."\n\
-echo "Backend starting on port 3001..."\n\
+echo "Starting CRM MVP..."\n\
 cd /app/apps/backend && node dist/index.js &\n\
 BACKEND_PID=$!\n\
-echo "Frontend starting on port 3000..."\n\
 cd /app/apps/frontend && npm start &\n\
 FRONTEND_PID=$!\n\
-echo "Both services started. PIDs: Backend=$BACKEND_PID, Frontend=$FRONTEND_PID"\n\
-wait $BACKEND_PID $FRONTEND_PID' > /app/start.sh && \
-    chmod +x /app/start.sh
+echo "Services started: Backend=$BACKEND_PID Frontend=$FRONTEND_PID"\n\
+wait $BACKEND_PID $FRONTEND_PID' > /app/start.sh && chmod +x /app/start.sh
+
+# Remove unnecessary files to reduce image size
+RUN rm -rf \
+    /usr/local/share/.cache \
+    /usr/local/share/man \
+    /usr/local/share/doc \
+    /var/cache/apk/* \
+    /tmp/* \
+    ~/.npm
 
 EXPOSE 3000 3001
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3000/health || curl -f http://localhost:3001/health || exit 1
+    CMD curl -f http://localhost:3000 || curl -f http://localhost:3001/health || exit 1
 
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["/app/start.sh"]
