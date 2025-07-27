@@ -17,7 +17,7 @@ COPY packages/ ./packages/
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Copy source code
+# Copy source code  
 COPY . .
 
 # Build backend
@@ -33,7 +33,10 @@ RUN npm run build
 # Back to root
 WORKDIR /app
 
-# Remove dev dependencies and clean up
+# Copy TypeScript definitions that are needed at runtime
+COPY apps/backend/types ./apps/backend/types
+
+# Remove dev dependencies and clean up  
 RUN npm prune --production && \
     apk del make g++ python3 linux-headers && \
     rm -rf /var/cache/apk/* /tmp/* ~/.npm
