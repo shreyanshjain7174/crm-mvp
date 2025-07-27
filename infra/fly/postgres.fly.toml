@@ -1,0 +1,27 @@
+# Fly.io configuration for PostgreSQL
+app = 'crm-mvp-postgres'
+primary_region = 'bom'
+
+[build]
+  image = 'postgres:15-alpine'
+
+[env]
+  POSTGRES_DB = 'crm_production'
+  POSTGRES_USER = 'crm_user'
+
+[[mounts]]
+  source = 'postgres_data'
+  destination = '/var/lib/postgresql/data'
+
+[[services]]
+  internal_port = 5432
+  protocol = 'tcp'
+  
+  [[services.ports]]
+    port = 5432
+    handlers = ['pg_tls']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
