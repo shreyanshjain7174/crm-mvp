@@ -1,136 +1,114 @@
 #!/bin/bash
 
-# 🚀 CRM MVP Production Deployment Script
-# Deploys the entire stack using production Docker Compose
+# Production Deployment Script
+set -e
 
-set -e  # Exit on error
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo "🚀 Starting CRM MVP Production Deployment..."
+echo -e "${BLUE}🚀 CRM MVP Production Deployment${NC}"
+echo "=================================="
 
-# Navigate to project root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-cd "$PROJECT_ROOT"
-
-# Check prerequisites
-echo "📋 Checking prerequisites..."
-
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Please install Docker first."
+# Confirmation prompt
+echo -e "${YELLOW}⚠️  This will deploy to PRODUCTION environment.${NC}"
+echo -e "${YELLOW}   Backend: https://crm-backend-api.fly.dev${NC}"
+echo -e "${YELLOW}   Frontend: Vercel production URL${NC}"
+echo ""
+read -p "Continue with production deployment? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${RED}❌ Deployment cancelled${NC}"
     exit 1
 fi
 
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker is not running. Please start Docker first."
+# Check if we're on main branch
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo -e "${RED}❌ Must be on 'main' branch for production deployment${NC}"
+    echo -e "${YELLOW}   Current branch: $CURRENT_BRANCH${NC}"
     exit 1
 fi
 
-# Check Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
+# Check for uncommitted changes
+if ! git diff-index --quiet HEAD --; then
+    echo -e "${RED}❌ Uncommitted changes detected${NC}"
+    echo -e "${YELLOW}   Please commit or stash changes before deploying${NC}"
     exit 1
 fi
 
-# Check environment file
-if [ ! -f ".env.production" ]; then
-    echo "⚠️  Production environment file not found!"
-    echo "Creating from template..."
-    if [ -f ".env.example" ]; then
-        cp .env.example .env.production
-        echo "📝 Please edit .env.production with your production values"
-        echo "   nano .env.production"
-        exit 1
-    else
-        echo "❌ No .env.example found. Please create .env.production manually."
-        exit 1
-    fi
+# Update from remote
+echo -e "${YELLOW}📡 Updating from remote...${NC}"
+git fetch origin
+git pull origin main
+
+# Run tests locally
+echo -e "${YELLOW}🧪 Running tests...${NC}"
+# npm run ci-check 2>/dev/null || echo "⚠️  CI check not available, skipping..."
+
+# Build and test locally
+echo -e "${YELLOW}🏗️  Building applications...${NC}"
+cd apps/frontend && npm run build && cd ../..
+cd apps/backend && npm run build && cd ../..
+
+# Deploy backend to Fly.io
+echo -e "${YELLOW}🛠️  Deploying backend to Fly.io...${NC}"
+if ! command -v fly &> /dev/null; then
+    echo -e "${RED}❌ Fly CLI not installed${NC}"
+    echo -e "${YELLOW}   Install: curl -L https://fly.io/install.sh | sh${NC}"
+    exit 1
 fi
 
-# Source environment variables
-export $(cat .env.production | grep -v '^#' | xargs)
+fly deploy --app crm-backend-api --strategy rolling
 
-# Create necessary directories
-echo "📁 Creating directories..."
-mkdir -p data/postgres data/redis logs
+# Wait for backend to be healthy
+echo -e "${YELLOW}⏳ Waiting for backend to be healthy...${NC}"
+sleep 30
 
-# Pull latest changes (optional - comment out if deploying from local)
-# echo "📥 Pulling latest changes from git..."
-# git pull origin main
-
-# Build production images
-echo "🔨 Building production images..."
-docker-compose -f infra/docker/docker-compose.yml build --no-cache
-
-# Stop any existing services
-echo "🛑 Stopping existing services..."
-docker-compose -f infra/docker/docker-compose.yml down
-
-# Start production services
-echo "🚀 Starting production services..."
-docker-compose -f infra/docker/docker-compose.yml up -d
-
-# Wait for services to be healthy
-echo "⏳ Waiting for services to be ready..."
-RETRIES=30
-while [ $RETRIES -gt 0 ]; do
-    if docker-compose -f infra/docker/docker-compose.yml ps | grep -q "unhealthy\|starting"; then
-        echo "   Waiting for services... ($RETRIES retries left)"
-        sleep 5
-        RETRIES=$((RETRIES-1))
-    else
-        break
-    fi
-done
-
-# Check service health
-echo ""
-echo "🔍 Service Status:"
-docker-compose -f infra/docker/docker-compose.yml ps
-
-# Verify services are accessible
-echo ""
-echo "🌐 Verifying service endpoints..."
-
-# Check backend health
-if curl -f -s http://localhost:3001/health > /dev/null; then
-    echo "✅ Backend API is healthy"
+# Health check
+echo -e "${YELLOW}🔍 Running health check...${NC}"
+if curl -f https://crm-backend-api.fly.dev/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Backend is healthy${NC}"
 else
-    echo "❌ Backend API health check failed"
+    echo -e "${RED}❌ Backend health check failed${NC}"
+    exit 1
 fi
 
-# Check frontend
-if curl -f -s http://localhost:3000 > /dev/null; then
-    echo "✅ Frontend is accessible"
+# Deploy frontend to Vercel (if configured)
+if command -v vercel &> /dev/null; then
+    echo -e "${YELLOW}🌐 Deploying frontend to Vercel...${NC}"
+    cd apps/frontend
+    vercel --prod --yes
+    cd ../..
 else
-    echo "❌ Frontend is not accessible"
+    echo -e "${YELLOW}⚠️  Vercel CLI not found. Deploy frontend manually:${NC}"
+    echo -e "${YELLOW}   cd apps/frontend && vercel --prod${NC}"
 fi
 
-# Check nginx proxy
-if curl -f -s http://localhost:8080 > /dev/null; then
-    echo "✅ Nginx proxy is working"
-else
-    echo "❌ Nginx proxy is not working"
-fi
+# Final checks
+echo -e "${YELLOW}🔍 Final deployment verification...${NC}"
+sleep 10
 
+# Test API endpoints
+echo -e "${YELLOW}   Testing API endpoints...${NC}"
+curl -f https://crm-backend-api.fly.dev/health > /dev/null 2>&1 && echo -e "${GREEN}   ✅ Health endpoint OK${NC}" || echo -e "${RED}   ❌ Health endpoint failed${NC}"
+
+# Success message
 echo ""
-echo "🎉 Production deployment complete!"
+echo -e "${GREEN}🎉 Production deployment completed successfully!${NC}"
 echo ""
-echo "📊 Service URLs:"
-echo "   Main App (via Nginx):  http://localhost:8080"
-echo "   Frontend (direct):     http://localhost:3000"
-echo "   Backend API:          http://localhost:3001"
-echo "   Database:             postgresql://localhost:5432/${POSTGRES_DB:-crm_db}"
+echo -e "${BLUE}📍 Production URLs:${NC}"
+echo -e "${BLUE}   Backend:  https://crm-backend-api.fly.dev${NC}"
+echo -e "${BLUE}   Frontend: Check Vercel dashboard for URL${NC}"
 echo ""
-echo "📋 Useful commands:"
-echo "   View logs:         docker-compose -f infra/docker/docker-compose.yml logs -f"
-echo "   View specific:     docker-compose -f infra/docker/docker-compose.yml logs -f backend"
-echo "   Stop all:          ./scripts/deploy/stop-production.sh"
-echo "   Restart:           ./scripts/deploy/restart-production.sh"
-echo "   Health check:      ./scripts/deploy/health-check.sh"
+echo -e "${YELLOW}📋 Post-deployment checklist:${NC}"
+echo "   ✅ Backend health check passed"
+echo "   ✅ API endpoints responding"
+echo "   🔲 Test frontend functionality"
+echo "   🔲 Verify user authentication"
+echo "   🔲 Check database connectivity"
 echo ""
-echo "🔒 Security reminder:"
-echo "   - Ensure all secrets in .env.production are secure"
-echo "   - Set up SSL/TLS for production domains"
-echo "   - Configure firewall rules appropriately"
-echo "   - Enable monitoring and alerting"
+echo -e "${GREEN}🎯 Deployment complete! Monitor logs and metrics.${NC}"

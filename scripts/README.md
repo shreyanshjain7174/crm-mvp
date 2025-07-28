@@ -6,20 +6,28 @@ Organized automation scripts for development, deployment, and CI/CD.
 
 ```
 scripts/
-├── dev/                # Development scripts
-│   ├── start.sh       # Start all services
-│   ├── stop.sh        # Stop all services
-│   └── restart.sh     # Restart services
-├── deploy/            # Deployment scripts (future)
-├── ci/                # CI/CD scripts (future)
-├── check-ci.sh        # Run CI checks locally
-└── quick-commit.sh    # Quick git commit helper
+├── dev/                     # Development scripts
+│   ├── setup-local.sh      # Setup local development environment
+│   ├── start.sh            # Start all development services
+│   ├── stop.sh             # Stop all services
+│   ├── restart.sh          # Restart services
+│   └── reset-local.sh      # Reset local database and data
+├── deploy/                  # Production deployment scripts
+│   ├── deploy-production.sh # Complete production deployment
+│   ├── manage-production.sh # Production management (start/stop/scale)
+│   └── health-check.sh      # Production health checks
+├── check-ci.sh             # Run CI checks locally
+└── README.md               # This documentation
 ```
 
 ## 🚀 Quick Start
 
+### Local Development
 ```bash
-# Start complete development environment
+# First time setup
+./scripts/dev/setup-local.sh
+
+# Start development environment
 ./scripts/dev/start.sh
 
 # Stop all services
@@ -29,34 +37,85 @@ scripts/
 ./scripts/dev/restart.sh
 ```
 
+### Production Management
+```bash
+# Deploy to production
+./scripts/deploy/manage-production.sh deploy
+
+# Start/stop production backend
+./scripts/deploy/manage-production.sh start
+./scripts/deploy/manage-production.sh stop
+
+# Check production status
+./scripts/deploy/manage-production.sh status
+```
+
 ## 🛠️ Development Scripts (`/dev`)
 
+### setup-local.sh
+Initial setup for local development:
+- Creates `.env.local` configuration file
+- Installs all dependencies (frontend/backend)
+- Sets up PostgreSQL database and Redis
+- Creates initial test data
+- Verifies all services are working
+
 ### start.sh
-Starts all services using Docker Compose:
-- Creates necessary directories (data/postgres, data/redis, logs)
-- Starts PostgreSQL, Redis, Backend, Frontend, and Nginx
-- Shows service URLs and health status
-- Provides helpful command tips
+Starts development environment:
+- Starts PostgreSQL and Redis via Docker
+- Starts backend development server
+- Starts frontend with hot reload
+- Shows service URLs and status
 
 ### stop.sh
-Gracefully stops all running services:
-- Shuts down all Docker containers
-- Preserves data volumes for next session
-- Shows cleanup options
+Stops all development services:
+- Shuts down Docker containers
+- Kills Node.js processes
+- Preserves data for next session
 
 ### restart.sh
-Quickly restarts all services:
-- Stops all containers
+Restarts services:
+- Stops all services
 - Starts them fresh
 - Useful after configuration changes
 
-## Access Information
+### reset-local.sh
+Resets local development environment:
+- Drops and recreates database
+- Clears Redis cache
+- Regenerates test data
 
-After running `npm run dev:setup`:
+## 🚀 Production Scripts (`/deploy`)
+
+### deploy-production.sh
+Complete production deployment:
+- Checks git status and branch
+- Builds applications
+- Deploys backend to Fly.io
+- Deploys frontend to Vercel
+- Runs health checks
+
+### manage-production.sh  
+Production management commands:
+- `deploy` - Deploy to production
+- `start/stop` - Control backend scaling
+- `status` - Check service status
+- `logs` - View production logs
+- `scale` - Scale backend instances
+
+### health-check.sh
+Production health monitoring:
+- Tests API endpoints
+- Checks database connectivity
+- Validates service responses
+
+## 🌐 Access Information
+
+After running `./scripts/dev/setup-local.sh`:
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **Database**: localhost:5432
+- **Backend API**: http://localhost:3001  
+- **Database**: postgresql://localhost:5432/crm_dev
 - **Redis**: localhost:6379
 
 ### Test Login Credentials
@@ -64,84 +123,100 @@ After running `npm run dev:setup`:
 - **Email**: `demo@crm.dev`
 - **Password**: `password`
 
-### Database Access (pgAdmin)
+### Database Access
 
+- **Connection String**: `postgresql://crm_user:crm_password@localhost:5432/crm_dev`
 - **Host**: `localhost`
 - **Port**: `5432`
-- **Database**: `crm_dev_db`
-- **Username**: `crm_dev_user`
-- **Password**: `dev_password`
+- **Database**: `crm_dev`
+- **Username**: `crm_user`
+- **Password**: `crm_password`
 
-## Troubleshooting
+### Production URLs
 
-### Check Logs
+- **Frontend**: [Vercel URL from dashboard]
+- **Backend**: https://crm-backend-api.fly.dev
+
+## 🔧 Troubleshooting
+
+### Development Issues
+
 ```bash
-# Backend logs
-tail -f logs/backend.log
+# Check Docker containers
+docker ps -a
+docker-compose -f docker-compose.dev.yml logs
 
-# Frontend logs  
-tail -f logs/frontend.log
+# Check what's using ports
+lsof -i :3000  # Frontend
+lsof -i :3001  # Backend  
+lsof -i :5432  # PostgreSQL
+lsof -i :6379  # Redis
+
+# Reset everything
+./scripts/dev/stop.sh
+./scripts/dev/reset-local.sh
+./scripts/dev/start.sh
 ```
 
-### Manual Service Start
+### Production Issues
+
 ```bash
-# If scripts fail, you can start services manually:
-cd apps/backend && npm run dev
-cd apps/frontend && npm run dev
+# Check production status
+./scripts/deploy/manage-production.sh status
+
+# View production logs
+./scripts/deploy/manage-production.sh logs
+
+# Run health checks
+./scripts/deploy/health-check.sh
+
+# Restart production
+./scripts/deploy/manage-production.sh restart
 ```
 
-### Port Conflicts
-```bash
-# Check what's using the ports
-lsof -i :3000
-lsof -i :3001
-lsof -i :5432
-lsof -i :6379
+## 🎯 Testing & Workflow
 
-# Kill conflicting processes
-npm run dev:teardown
+### Local Development Testing
+
+1. **Setup**: Run `./scripts/dev/setup-local.sh`
+2. **Start**: Run `./scripts/dev/start.sh`
+3. **Login**: Visit http://localhost:3000 with `demo@crm.dev` / `password`
+4. **Test**: Experience progressive feature unlocking
+
+### Progressive Feature System
+
+The dashboard unlocks features based on user activity:
+- **Stage 1**: First contact → unlock contact management
+- **Stage 2**: First message → unlock messaging features  
+- **Stage 3**: 10+ contacts → unlock pipeline view
+- **Stage 4**: 5+ messages → unlock AI assistant
+- **Stage 5**: 25+ interactions → unlock advanced features
+
+### CI/CD Workflow
+
+```bash
+# Run CI checks locally
+./scripts/check-ci.sh
+
+# Manual production deployment
+# 1. Push to main branch
+# 2. Go to GitHub Actions
+# 3. Run "Deploy to Production" workflow manually
+# 4. Monitor deployment progress
+
+# Alternative: Direct deployment
+./scripts/deploy/manage-production.sh deploy
 ```
 
-### Container Issues
-```bash
-# Check container status
-podman ps -a
-
-# View container logs
-podman logs crm-dev-db
-podman logs redis-dev
-```
-
-## Progressive Disclosure Testing
-
-Once the environment is running:
-
-1. **Login** at http://localhost:3000 with `demo@crm.dev` / `password`
-2. **Observe** the blank dashboard with single CTA
-3. **Add your first contact** to see features unlock
-4. **Experience** the progressive feature revelation system
-
-The system will guide you through:
-- Stage 1: First contact → unlock contact management
-- Stage 2: First message → unlock WhatsApp features  
-- Stage 3: 10+ contacts → unlock pipeline view
-- Stage 4: 5+ messages → unlock AI assistant
-- Stage 5: 25+ AI interactions → unlock advanced features
-
-## Development Workflow
+### Development Workflow
 
 ```bash
-# Start fresh development session
-npm run dev:teardown && npm run dev:setup
+# Daily development
+./scripts/dev/start.sh      # Start everything
+# ... develop ...
+./scripts/dev/stop.sh       # Stop when done
 
-# Quick restart (keeps containers)
-pkill -f "npm run dev"
-cd apps/backend && npm run dev &
-cd apps/frontend && npm run dev &
-
-# Full reset with clean install
-npm run dev:teardown
-rm -rf node_modules apps/*/node_modules
-npm install
-npm run dev:setup
+# Reset for testing
+./scripts/dev/reset-local.sh  # Fresh database/data
+./scripts/dev/restart.sh     # Restart services
 ```

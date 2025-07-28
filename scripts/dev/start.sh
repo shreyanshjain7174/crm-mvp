@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# CRM MVP Development Start Script
-echo "🚀 Starting CRM MVP Development Environment..."
+# Start Development Environment
+set -e
+
+echo "🚀 Starting CRM MVP development environment..."
+
+# Check if setup has been run
+if [ ! -f ".env.local" ]; then
+    echo "⚠️  Local environment not set up. Running setup first..."
+    ./scripts/dev/setup-local.sh
+    exit $?
+fi
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -12,30 +21,33 @@ fi
 # Navigate to project root
 cd "$(dirname "$0")/../.."
 
-# Create data directories if they don't exist
-mkdir -p data/postgres data/redis logs
+# Start backend with Docker Compose
+echo "🏗️  Starting backend services..."
+docker-compose -f docker-compose.dev.yml up -d
 
-# Start all services
-echo "📦 Starting all services with Docker Compose..."
-docker-compose -f infra/docker/docker-compose.dev.yml up -d
-
-# Wait for services to be healthy
+# Wait for services to be ready
 echo "⏳ Waiting for services to be ready..."
-sleep 10
+sleep 5
 
-# Check service health
-echo "🔍 Checking service status..."
-docker-compose -f infra/docker/docker-compose.dev.yml ps
+# Start frontend in development mode
+echo "🌐 Starting frontend development server..."
+cd apps/frontend && npm run dev &
+FRONTEND_PID=$!
 
-echo "✅ Development environment is ready!"
+echo "✅ Development environment started!"
 echo ""
 echo "📊 Service URLs:"
 echo "   Frontend:  http://localhost:3000"
 echo "   Backend:   http://localhost:3001"
-echo "   Nginx:     http://localhost:8080"
-echo "   Database:  postgresql://localhost:5432/crm_dev_db"
+echo "   Database:  postgresql://localhost:5432/crm_dev"
 echo ""
 echo "📋 Useful commands:"
-echo "   View logs:    docker-compose -f infra/docker/docker-compose.dev.yml logs -f"
-echo "   Stop all:     ./scripts/dev/stop.sh"
-echo "   Restart:      ./scripts/dev/restart.sh"
+echo "   View backend logs: docker-compose -f docker-compose.dev.yml logs -f"
+echo "   Stop all:         ./scripts/dev/stop.sh"
+echo "   Reset database:   ./scripts/dev/reset-local.sh"
+echo ""
+echo "Press Ctrl+C to stop all services"
+
+# Wait for Ctrl+C
+trap 'echo "\n🛑 Stopping services..."; kill $FRONTEND_PID 2>/dev/null; docker-compose -f docker-compose.dev.yml down; exit 0' INT
+wait
