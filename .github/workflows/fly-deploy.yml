@@ -114,7 +114,17 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
       
       - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
+        run: |
+          # Check if app exists before deploying
+          if ! flyctl apps list | grep -q "crm-backend-api"; then
+            echo "App crm-backend-api does not exist. Skipping deployment."
+            echo "To enable deployment: Create the app with 'flyctl apps create crm-backend-api'"
+            echo "Note: Fly.io charges per machine - app was likely deleted to avoid costs"
+            exit 0
+          fi
+          
+          # Deploy to existing app
+          flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
