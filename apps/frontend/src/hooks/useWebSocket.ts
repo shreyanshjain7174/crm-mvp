@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
+import { WS_BASE_URL } from '@/lib/config'
 
 export interface UseWebSocketOptions {
   enabled?: boolean
@@ -42,7 +43,7 @@ export function useWebSocket({
     try {
       setConnectionState('connecting')
       
-      const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || '', {
+      const socket = io(WS_BASE_URL, {
         path: '/socket.io/',
         transports: ['websocket', 'polling'],
         timeout: 20000,

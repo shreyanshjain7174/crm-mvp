@@ -54,14 +54,17 @@ async function buildApp() {
   await app.register(cors, {
     origin: (origin, callback) => {
       // Allow localhost, ngrok domains, and configured FRONTEND_URL
+      const frontendUrls = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [];
       const allowedOrigins = [
         'http://localhost:3000',
-        'http://localhost:3001', 
-        process.env.FRONTEND_URL
+        'http://localhost:3001',
+        ...frontendUrls
       ].filter(Boolean);
       
-      // Allow ngrok domains
-      if (!origin || allowedOrigins.includes(origin) || /\.ngrok(?:-free)?\.app$/.test(origin)) {
+      // Allow ngrok domains and vercel domains
+      if (!origin || allowedOrigins.includes(origin) || 
+          /\.ngrok(?:-free)?\.app$/.test(origin) ||
+          /\.vercel\.app$/.test(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'), false);

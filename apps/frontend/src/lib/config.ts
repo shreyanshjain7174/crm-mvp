@@ -5,11 +5,11 @@
  * and other application settings.
  */
 
-// API Configuration - Use relative URLs to go through proxy
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '/api';
+// API Configuration - Use full backend URL for production
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://crm-backend-api.fly.dev';
 
-// WebSocket Configuration - Use relative URLs to go through proxy
-export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+// WebSocket Configuration - Use backend WebSocket URL
+export const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://crm-backend-api.fly.dev';
 
 // App Configuration
 export const APP_CONFIG = {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE_URL } from '@/lib/config';
 
 export interface Message {
   id: string;
@@ -43,7 +44,7 @@ interface MessageResponse {
 }
 
 class MessagesAPI {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  private baseUrl = API_BASE_URL;
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     let token = localStorage.getItem('token');

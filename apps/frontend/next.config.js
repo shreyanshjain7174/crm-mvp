@@ -31,13 +31,13 @@ const nextConfig = {
     },
     basePath: '/crm-mvp',
     assetPrefix: '/crm-mvp',
-  } : {
+  } : process.env.DOCKER_BUILD === 'true' ? {
     // Docker/Production configuration
     output: 'standalone',
     experimental: {
       outputFileTracingRoot: require('path').join(__dirname, '../../'),
     },
-  }),
+  } : {}),
 }
 
 module.exports = nextConfig

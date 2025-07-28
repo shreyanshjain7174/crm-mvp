@@ -53,24 +53,12 @@ export function AgentMarketplace({ businessId, onInstallAgent }: AgentMarketplac
         id: 'whatsapp-ai-responder',
         name: 'WhatsApp AI Responder',
         version: '2.1.0',
-        provider: 'Local AI Co.',
+        provider: { name: 'Local AI Co.' },
         description: 'Automatically respond to WhatsApp messages with intelligent replies',
-        capabilities: [
-          { id: 'auto-reply', name: 'Auto Reply', description: 'Automatic message responses', inputTypes: ['message'], outputTypes: ['message'], requiresApproval: false },
-          { id: 'sentiment', name: 'Sentiment Analysis', description: 'Analyze customer emotions', inputTypes: ['message'], outputTypes: ['analytics'], requiresApproval: false }
-        ],
-        permissions: [
-          { resource: 'message', actions: ['read', 'create'], constraints: { businessScope: true } }
-        ],
-        pricing: {
-          model: 'subscription',
-          subscription: {
-            monthlyPrice: 99900,
-            limits: { messages: 5000, apiCalls: 10000 }
-          }
-        } as any,
-        ui: {},
-        supportedDataTypes: ['message', 'contact', 'conversation'],
+        capabilities: ['Auto Reply', 'Sentiment Analysis', 'Smart Routing'],
+        permissions: ['messages:read', 'messages:write'],
+        pricing: { model: 'fixed', price: 99900, period: 'monthly' },
+        category: 'communication' as const,
         metadata: {
           rating: 4.8,
           reviews: 2341,
@@ -105,7 +93,7 @@ export function AgentMarketplace({ businessId, onInstallAgent }: AgentMarketplac
       filtered = filtered.filter(agent =>
         agent.name.toLowerCase().includes(query) ||
         agent.description.toLowerCase().includes(query) ||
-        agent.provider.toLowerCase().includes(query)
+        agent.provider.name.toLowerCase().includes(query)
       )
     }
 
