@@ -582,6 +582,229 @@ const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
       })
     }
   })
+
+  /**
+   * Install an agent (authenticated route)
+   * POST /api/marketplace/agents/:agentId/install
+   */
+  fastify.post<{
+    Params: { agentId: string }
+    Body: {
+      config?: Record<string, any>
+      version?: string
+    }
+    Reply: {
+      success: boolean
+      data?: {
+        installationId: string
+        message: string
+        installedAt: string
+      }
+      error?: string
+    }
+  }>('/agents/:agentId/install', {
+    preHandler: authenticate
+  }, async (request, reply) => {
+    const { agentId } = request.params
+    const { config = {}, version } = request.body
+    const userId = (request.user as any)?.id || (request.user as any)?.userId
+
+    try {
+      // Check if agent exists and get details
+      const agentQuery = `
+        SELECT id, name, version, pricing_model, min_plan_level, required_features
+        FROM agent_registry
+        WHERE agent_id = $1 AND status = 'active'
+      `
+      const agentResult = await db.query(agentQuery, [agentId])
+
+      if (agentResult.rows.length === 0) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Agent not found'
+        })
+      }
+
+      const agent = agentResult.rows[0]
+
+      // Check if already installed
+      const installedQuery = `
+        SELECT id FROM installed_agents
+        WHERE agent_id = $1 AND business_id = $2
+      `
+      const installedResult = await db.query(installedQuery, [agentId, userId])
+
+      if (installedResult.rows.length > 0) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Agent already installed'
+        })
+      }
+
+      // Begin transaction
+      await db.query('BEGIN')
+
+      try {
+        // Install the agent
+        const installQuery = `
+          INSERT INTO installed_agents (
+            agent_id, business_id, user_id, version, config, status, installed_at
+          ) VALUES ($1, $2, $3, $4, $5, 'active', CURRENT_TIMESTAMP)
+          RETURNING id, installed_at
+        `
+        const installResult = await db.query(installQuery, [
+          agentId,
+          userId,
+          userId,
+          version || agent.version,
+          JSON.stringify(config)
+        ])
+
+        const installation = installResult.rows[0]
+
+        // Record installation history
+        const historyQuery = `
+          INSERT INTO agent_install_history (
+            agent_id, business_id, user_id, action, version
+          ) VALUES ($1, $2, $3, 'install', $4)
+        `
+        await db.query(historyQuery, [
+          agentId,
+          userId,
+          userId,
+          version || agent.version
+        ])
+
+        // Commit transaction
+        await db.query('COMMIT')
+
+        request.log.info({ 
+          agentId, 
+          userId, 
+          installationId: installation.id 
+        }, 'Agent installed successfully')
+
+        return reply.status(201).send({
+          success: true,
+          data: {
+            installationId: installation.id,
+            message: `${agent.name} has been installed successfully`,
+            installedAt: installation.installed_at
+          }
+        })
+
+      } catch (installError) {
+        // Rollback on error
+        await db.query('ROLLBACK')
+        throw installError
+      }
+
+    } catch (error) {
+      request.log.error({ error, agentId, userId }, 'Failed to install agent')
+      return reply.status(500).send({
+        success: false,
+        error: 'Failed to install agent'
+      })
+    }
+  })
+
+  /**
+   * Uninstall an agent (authenticated route)
+   * DELETE /api/marketplace/agents/:agentId/install
+   */
+  fastify.delete<{
+    Params: { agentId: string }
+    Body: {
+      reason?: string
+    }
+    Reply: {
+      success: boolean
+      data?: {
+        message: string
+        uninstalledAt: string
+      }
+      error?: string
+    }
+  }>('/agents/:agentId/install', {
+    preHandler: authenticate
+  }, async (request, reply) => {
+    const { agentId } = request.params
+    const { reason } = request.body || {}
+    const userId = (request.user as any)?.id || (request.user as any)?.userId
+
+    try {
+      // Check if agent is installed
+      const installedQuery = `
+        SELECT id, version FROM installed_agents
+        WHERE agent_id = $1 AND business_id = $2
+      `
+      const installedResult = await db.query(installedQuery, [agentId, userId])
+
+      if (installedResult.rows.length === 0) {
+        return reply.status(404).send({
+          success: false,
+          error: 'Agent not installed'
+        })
+      }
+
+      const installation = installedResult.rows[0]
+
+      // Begin transaction
+      await db.query('BEGIN')
+
+      try {
+        // Remove the installation
+        const uninstallQuery = `
+          DELETE FROM installed_agents
+          WHERE agent_id = $1 AND business_id = $2
+        `
+        await db.query(uninstallQuery, [agentId, userId])
+
+        // Record uninstallation history
+        const historyQuery = `
+          INSERT INTO agent_install_history (
+            agent_id, business_id, user_id, action, version, reason
+          ) VALUES ($1, $2, $3, 'uninstall', $4, $5)
+        `
+        await db.query(historyQuery, [
+          agentId,
+          userId,
+          userId,
+          installation.version,
+          reason || 'User requested uninstall'
+        ])
+
+        // Commit transaction
+        await db.query('COMMIT')
+
+        request.log.info({ 
+          agentId, 
+          userId,
+          reason
+        }, 'Agent uninstalled successfully')
+
+        return reply.send({
+          success: true,
+          data: {
+            message: 'Agent has been uninstalled successfully',
+            uninstalledAt: new Date().toISOString()
+          }
+        })
+
+      } catch (uninstallError) {
+        // Rollback on error
+        await db.query('ROLLBACK')
+        throw uninstallError
+      }
+
+    } catch (error) {
+      request.log.error({ error, agentId, userId }, 'Failed to uninstall agent')
+      return reply.status(500).send({
+        success: false,
+        error: 'Failed to uninstall agent'
+      })
+    }
+  })
 }
 
 export default marketplaceRoutes
