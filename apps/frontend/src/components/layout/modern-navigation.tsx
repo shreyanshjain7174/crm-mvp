@@ -25,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useUserProgressStore } from '@/stores/userProgress';
+import { LockAnimation } from '@/components/ui/lock-animation';
+import { useFeatureRequirements } from '@/hooks/useFeatureRequirements';
 
 interface NavigationItem {
   id: string;
@@ -146,6 +148,7 @@ export function ModernNavigation({
   const canAccessFeature = useUserProgressStore(state => state.canAccessFeature);
   const stage = useUserProgressStore(state => state.stage);
   const stats = useUserProgressStore(state => state.stats);
+  const { getRequirementText } = useFeatureRequirements();
 
   // Function to get real badge count for navigation items
   const getBadgeCount = (itemId: string): string | undefined => {
@@ -176,17 +179,19 @@ export function ModernNavigation({
     setIsMobileOpen(false);
   };
 
-  const filteredItems = navigationItems.filter(item => {
-    if (!item.requiredFeature) return true;
-    return canAccessFeature(item.requiredFeature as any);
-  });
+  // Show all items but with lock state instead of filtering
+  const itemsWithLockState = navigationItems.map(item => ({
+    ...item,
+    isLocked: item.requiredFeature ? !canAccessFeature(item.requiredFeature as any) : false,
+    requirementText: item.requiredFeature ? getRequirementText(item.requiredFeature) : undefined
+  }));
 
   const NavigationItem = ({ 
     item, 
     level = 0,
     isSubItem = false 
   }: { 
-    item: NavigationItem; 
+    item: NavigationItem & { isLocked?: boolean; requirementText?: string }; 
     level?: number;
     isSubItem?: boolean;
   }) => {
@@ -200,20 +205,31 @@ export function ModernNavigation({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: level * 0.1 }}
       >
-        <motion.div
-          className={cn(
-            "group relative flex items-center w-full transition-all duration-300",
-            "hover:bg-accent/50 rounded-xl",
-            isActive && "bg-primary/10 text-primary",
-            isSubItem && "ml-4 pl-4 border-l border-border/30",
-            !isCollapsed ? "px-3 py-2.5" : "px-2 py-2 justify-center"
-          )}
-          whileHover={{ x: 2 }}
-          whileTap={{ scale: 0.98 }}
+        <LockAnimation
+          isLocked={item.isLocked || false}
+          requirementText={item.requirementText}
+          className="w-full"
+          size={isCollapsed ? 'sm' : 'md'}
         >
+          <motion.div
+            className={cn(
+              "group relative flex items-center w-full transition-all duration-300",
+              "hover:bg-accent/50 rounded-xl",
+              isActive && "bg-primary/10 text-primary",
+              isSubItem && "ml-4 pl-4 border-l border-border/30",
+              !isCollapsed ? "px-3 py-2.5" : "px-2 py-2 justify-center",
+              item.isLocked && "cursor-not-allowed"
+            )}
+            whileHover={!item.isLocked ? { x: 2 } : {}}
+            whileTap={!item.isLocked ? { scale: 0.98 } : {}}
+          >
           <Button
             variant="ghost"
             onClick={() => {
+              if (item.isLocked) {
+                // Do nothing for locked items - LockAnimation handles the shake
+                return;
+              }
               if (hasSubItems && !isCollapsed) {
                 toggleExpanded(item.id);
               } else {
@@ -223,7 +239,8 @@ export function ModernNavigation({
             className={cn(
               "w-full justify-start h-auto p-0 bg-transparent hover:bg-transparent",
               "text-muted-foreground hover:text-foreground",
-              isActive && "text-primary font-medium"
+              isActive && "text-primary font-medium",
+              item.isLocked && "cursor-not-allowed opacity-70"
             )}
           >
             <div className="flex items-center w-full">
@@ -318,6 +335,7 @@ export function ModernNavigation({
             />
           )}
         </motion.div>
+        </LockAnimation>
 
         {/* Sub-items */}
         <AnimatePresence>
@@ -330,14 +348,21 @@ export function ModernNavigation({
               className="overflow-hidden"
             >
               <div className="mt-1 space-y-1">
-                {item.subItems?.map((subItem) => (
-                  <NavigationItem 
-                    key={subItem.id} 
-                    item={subItem} 
-                    level={level + 1}
-                    isSubItem={true}
-                  />
-                ))}
+                {item.subItems?.map((subItem) => {
+                  const subItemWithLock = {
+                    ...subItem,
+                    isLocked: subItem.requiredFeature ? !canAccessFeature(subItem.requiredFeature as any) : false,
+                    requirementText: subItem.requiredFeature ? getRequirementText(subItem.requiredFeature) : undefined
+                  };
+                  return (
+                    <NavigationItem 
+                      key={subItem.id} 
+                      item={subItemWithLock} 
+                      level={level + 1}
+                      isSubItem={true}
+                    />
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -415,7 +440,7 @@ export function ModernNavigation({
 
         {/* Navigation Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-          {filteredItems.map((item, index) => (
+          {itemsWithLockState.map((item, index) => (
             <NavigationItem key={item.id} item={item} level={index} />
           ))}
         </div>
@@ -504,7 +529,7 @@ export function ModernNavigation({
 
                 {/* Mobile navigation items */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                  {filteredItems.map((item, index) => (
+                  {itemsWithLockState.map((item, index) => (
                     <NavigationItem key={item.id} item={item} level={index} />
                   ))}
                 </div>

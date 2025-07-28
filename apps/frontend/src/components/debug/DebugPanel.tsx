@@ -48,9 +48,9 @@ export function DebugPanel() {
       {/* Debug Panel */}
       {isOpen && (
         <div className="fixed bottom-20 right-4 z-50 w-96 max-h-[600px] overflow-y-auto">
-          <Card className="shadow-xl border-purple-500 border-2">
-            <CardHeader className="bg-purple-50">
-              <CardTitle className="flex items-center gap-2">
+          <Card className="shadow-xl border-purple-500 border-2 bg-white dark:bg-gray-800">
+            <CardHeader className="bg-purple-50 dark:bg-purple-900/50">
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
                 <Bug className="h-5 w-5" />
                 Debug Panel
               </CardTitle>
@@ -58,8 +58,8 @@ export function DebugPanel() {
             <CardContent className="space-y-4 p-4">
               {/* Current State */}
               <div className="space-y-2">
-                <h3 className="font-semibold">Current State</h3>
-                <div className="text-sm space-y-1 bg-gray-50 p-3 rounded">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Current State</h3>
+                <div className="text-sm space-y-1 bg-gray-50 dark:bg-gray-700 p-3 rounded text-gray-900 dark:text-gray-100">
                   <p><strong>Stage:</strong> {stage}</p>
                   <p><strong>Features Unlocked:</strong> {unlockedFeatures.length}</p>
                   <p><strong>Contacts:</strong> {stats.contactsAdded}</p>
@@ -70,7 +70,7 @@ export function DebugPanel() {
 
               {/* Quick Actions */}
               <div className="space-y-2">
-                <h3 className="font-semibold">Quick Actions</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     size="sm"
@@ -119,7 +119,7 @@ export function DebugPanel() {
 
               {/* Stage Selector */}
               <div className="space-y-2">
-                <h3 className="font-semibold">Set Stage</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Set Stage</h3>
                 <div className="space-y-1">
                   {stages.map((s) => (
                     <Button
@@ -138,8 +138,8 @@ export function DebugPanel() {
 
               {/* Console Commands */}
               <div className="space-y-2">
-                <h3 className="font-semibold">Console Commands</h3>
-                <div className="text-xs bg-gray-100 p-3 rounded font-mono">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Console Commands</h3>
+                <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded font-mono text-gray-900 dark:text-gray-100">
                   <p>unlockAllFeatures()</p>
                   <p>setUserStage(&quot;expert&quot;)</p>
                   <p>addTestData()</p>
@@ -149,9 +149,9 @@ export function DebugPanel() {
               </div>
 
               {/* Enable Debug Mode */}
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
                 <p>To enable debug panel permanently:</p>
-                <code className="bg-gray-100 px-1 rounded">
+                <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-gray-900 dark:text-gray-100">
                   localStorage.setItem(&apos;debug&apos;, &apos;true&apos;)
                 </code>
               </div>

@@ -7,6 +7,7 @@ import { Eye, EyeOff, UserPlus, Loader2, Bot, Sparkles, CheckCircle, User, Build
 import Link from 'next/link';
 import { DEMO_MODE } from '@/lib/demo-mode';
 import { validateRegister } from '@/lib/validation';
+import { themeText, statusColors, cn } from '@/utils/theme-colors';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -65,13 +66,13 @@ export function ModernRegisterForm({ onSuccess }: RegisterFormProps) {
     // Set feedback based on score
     if (score <= 2) {
       text = 'Weak password';
-      color = 'text-red-600';
+      color = statusColors.error.text;
     } else if (score <= 4) {
       text = 'Good password';
-      color = 'text-yellow-600';
+      color = statusColors.warning.text;
     } else {
       text = 'Strong password';
-      color = 'text-green-600';
+      color = statusColors.success.text;
     }
 
     setPasswordStrength({ score, text, color });

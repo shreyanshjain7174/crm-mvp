@@ -20,10 +20,10 @@ export function GlassCard({
   glow = false
 }: GlassCardProps) {
   const variants = {
-    default: 'bg-white/20 dark:bg-black/30 border-white/20 dark:border-white/10',
-    intense: 'bg-white/30 dark:bg-black/40 border-white/30 dark:border-white/20',
-    subtle: 'bg-white/10 dark:bg-black/20 border-white/10 dark:border-white/5',
-    dark: 'bg-black/20 dark:bg-white/10 border-white/10 dark:border-black/20'
+    default: 'bg-white/80 dark:bg-gray-800/90 border-white/30 dark:border-gray-700/50',
+    intense: 'bg-white/90 dark:bg-gray-800/95 border-white/40 dark:border-gray-600/60',
+    subtle: 'bg-white/60 dark:bg-gray-900/80 border-white/20 dark:border-gray-700/40',
+    dark: 'bg-gray-900/80 dark:bg-gray-800/90 border-gray-700/30 dark:border-gray-600/50'
   };
 
   return (
@@ -69,10 +69,10 @@ export function NeomorphCard({
   return (
     <motion.div
       className={cn(
-        'bg-gray-100 rounded-2xl transition-all duration-300',
+        'bg-gray-100 dark:bg-gray-800 rounded-2xl transition-all duration-300',
         isPressed 
-          ? 'shadow-inner shadow-gray-400/50' 
-          : 'shadow-lg shadow-gray-300/50',
+          ? 'shadow-inner shadow-gray-400/50 dark:shadow-gray-700/50' 
+          : 'shadow-lg shadow-gray-300/50 dark:shadow-gray-900/50',
         interactive && 'cursor-pointer',
         className
       )}

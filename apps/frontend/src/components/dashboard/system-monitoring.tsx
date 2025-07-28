@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { themeText, statusColors, cn } from '@/utils/theme-colors';
 import { 
   Monitor, 
   Server,
@@ -35,17 +36,17 @@ export function SystemMonitoring() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-100 text-green-800 border-green-200';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'healthy': return statusColors.success.bg + ' ' + statusColors.success.text + ' ' + statusColors.success.border;
+      case 'warning': return statusColors.warning.bg + ' ' + statusColors.warning.text + ' ' + statusColors.warning.border;
+      case 'critical': return statusColors.error.bg + ' ' + statusColors.error.text + ' ' + statusColors.error.border;
+      default: return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
     }
   };
 
   const getPerformanceColor = (value: number, thresholds = { warning: 70, critical: 90 }) => {
-    if (value < thresholds.warning) return 'text-green-600';
-    if (value < thresholds.critical) return 'text-yellow-600';
-    return 'text-red-600';
+    if (value < thresholds.warning) return 'text-green-600 dark:text-green-400';
+    if (value < thresholds.critical) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getAgentHealth = () => {
@@ -71,7 +72,7 @@ export function SystemMonitoring() {
       {/* System Status Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className={cn("flex items-center", themeText.primary)}>
             <Monitor className="mr-2 h-5 w-5" />
             System Status Overview
             <div className={`ml-2 h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
@@ -81,57 +82,57 @@ export function SystemMonitoring() {
         <CardContent>
           <div className="grid grid-cols-4 gap-6">
             {/* Overall System Health */}
-            <div className="text-center p-4 border rounded-lg">
+            <div className="text-center p-4 border dark:border-gray-700 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 {getStatusIcon(systemHealth.overallStatus)}
               </div>
               <Badge variant="outline" className={`mb-2 ${getStatusColor(systemHealth.overallStatus)}`}>
                 {systemHealth.overallStatus.charAt(0).toUpperCase() + systemHealth.overallStatus.slice(1)}
               </Badge>
-              <div className="text-sm text-gray-600">System Health</div>
-              <div className="text-lg font-bold text-gray-900 mt-1">{systemHealth.uptime}%</div>
-              <div className="text-xs text-gray-500">Uptime</div>
+              <div className={cn("text-sm", themeText.secondary)}>System Health</div>
+              <div className={cn("text-lg font-bold mt-1", themeText.primary)}>{systemHealth.uptime}%</div>
+              <div className={cn("text-xs", themeText.muted)}>Uptime</div>
             </div>
 
             {/* Agent Health */}
-            <div className="text-center p-4 border rounded-lg">
+            <div className="text-center p-4 border dark:border-gray-700 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 {getStatusIcon(agentHealthStatus)}
               </div>
               <Badge variant="outline" className={`mb-2 ${getStatusColor(agentHealthStatus)}`}>
                 {agentHealthStatus.charAt(0).toUpperCase() + agentHealthStatus.slice(1)}
               </Badge>
-              <div className="text-sm text-gray-600">Agent Health</div>
-              <div className="text-lg font-bold text-gray-900 mt-1">{agentStats.activeAgents}/{agentStats.totalAgents}</div>
-              <div className="text-xs text-gray-500">Active Agents</div>
+              <div className={cn("text-sm", themeText.secondary)}>Agent Health</div>
+              <div className={cn("text-lg font-bold mt-1", themeText.primary)}>{agentStats.activeAgents}/{agentStats.totalAgents}</div>
+              <div className={cn("text-xs", themeText.muted)}>Active Agents</div>
             </div>
 
             {/* Performance */}
-            <div className="text-center p-4 border rounded-lg">
+            <div className="text-center p-4 border dark:border-gray-700 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <Zap className="h-5 w-5 text-blue-600" />
               </div>
-              <div className="text-sm text-gray-600 mb-2">Performance</div>
+              <div className={cn("text-sm mb-2", themeText.secondary)}>Performance</div>
               <div className={`text-lg font-bold ${getPerformanceColor(systemHealth.averageResponseTime, { warning: 1500, critical: 2500 })}`}>
                 {systemHealth.averageResponseTime}ms
               </div>
-              <div className="text-xs text-gray-500">Avg Response</div>
-              <div className="text-lg font-bold text-gray-900 mt-1">{systemHealth.throughput}</div>
-              <div className="text-xs text-gray-500">Tasks/Hour</div>
+              <div className={cn("text-xs", themeText.muted)}>Avg Response</div>
+              <div className={cn("text-lg font-bold mt-1", themeText.primary)}>{systemHealth.throughput}</div>
+              <div className={cn("text-xs", themeText.muted)}>Tasks/Hour</div>
             </div>
 
             {/* Queue Status */}
-            <div className="text-center p-4 border rounded-lg">
+            <div className="text-center p-4 border dark:border-gray-700 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <Activity className="h-5 w-5 text-purple-600" />
               </div>
-              <div className="text-sm text-gray-600 mb-2">Queue Status</div>
-              <div className="text-lg font-bold text-gray-900">{systemHealth.queueSize}</div>
-              <div className="text-xs text-gray-500">Pending Tasks</div>
+              <div className={cn("text-sm mb-2", themeText.secondary)}>Queue Status</div>
+              <div className={cn("text-lg font-bold", themeText.primary)}>{systemHealth.queueSize}</div>
+              <div className={cn("text-xs", themeText.muted)}>Pending Tasks</div>
               <div className={`text-lg font-bold mt-1 ${getPerformanceColor(systemHealth.errorRate, { warning: 5, critical: 10 })}`}>
                 {systemHealth.errorRate}%
               </div>
-              <div className="text-xs text-gray-500">Error Rate</div>
+              <div className={cn("text-xs", themeText.muted)}>Error Rate</div>
             </div>
           </div>
         </CardContent>

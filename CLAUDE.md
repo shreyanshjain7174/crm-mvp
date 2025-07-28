@@ -312,9 +312,17 @@ npm run start              # Start production server
 ### Cost Optimization Notes
 - **IMPORTANT**: Fly.io charges per machine - avoid multiple simultaneous deployments
 - **Single service deployment**: Current Dockerfile optimized for backend-only
-- **Resource settings**: fly.toml configured for 1GB RAM, shared CPU
-- **Auto-scaling**: Configured to stop machines when idle to reduce costs
+- **Resource settings**: fly.toml configured for 512MB RAM, shared CPU
+- **Extended uptime**: Configured with min_machines_running = 1 to prevent auto-sleep
+- **Keep-alive monitoring**: Automated health checks every 15 minutes to maintain activity
 - **Health checks**: Proper /health endpoint for cost-effective monitoring
+
+### Backend Uptime Management
+- **Extended runtime**: Backend configured to run continuously without auto-stop
+- **Keep-alive script**: `./scripts/keep-backend-alive.sh` for automated health monitoring
+- **Usage**: Run `./scripts/keep-backend-alive.sh continuous` to prevent idle shutdown
+- **Monitoring interval**: Health checks every 15 minutes to maintain machine activity
+- **Manual check**: Use `./scripts/keep-backend-alive.sh single` for one-time health test
 
 ### Future Deployment Strategy
 - Use single backend-only deployment for cost efficiency

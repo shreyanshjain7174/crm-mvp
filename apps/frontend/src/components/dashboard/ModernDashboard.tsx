@@ -21,6 +21,7 @@ import { AnimatedCard, GlowingButton, PulseIndicator, GradientText, TypewriterTe
 import { useUserProgressStore } from '@/stores/userProgress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { themeText, statusColors, cn } from '@/utils/theme-colors';
 
 interface StatCardProps {
   title: string;
@@ -40,15 +41,15 @@ function StatCard({ title, value, change, icon, color, delay }: StatCardProps) {
           <div className={`p-3 rounded-xl bg-gradient-to-br from-${color}-100 to-${color}-200`}>
             {icon}
           </div>
-          <Badge className="bg-green-100 text-green-800 border-0">
+          <Badge className={cn(statusColors.success.bg, statusColors.success.text, "border-0")}>
             {change}
           </Badge>
         </div>
         
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+          <h3 className={cn("text-sm font-medium", themeText.secondary)}>{title}</h3>
           <motion.p 
-            className="text-3xl font-bold text-gray-900"
+            className={cn("text-3xl font-bold", themeText.primary)}
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: delay + 0.3, duration: 0.5 }}
@@ -97,8 +98,8 @@ function AIAgentCard({ name, status, tasks, efficiency, delay }: AIAgentCardProp
             />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{name}</h3>
-            <p className="text-sm text-gray-600">{statusLabels[status]}</p>
+            <h3 className={cn("font-semibold", themeText.primary)}>{name}</h3>
+            <p className={cn("text-sm", themeText.secondary)}>{statusLabels[status]}</p>
           </div>
         </div>
         
@@ -110,16 +111,16 @@ function AIAgentCard({ name, status, tasks, efficiency, delay }: AIAgentCardProp
       
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Tasks Completed</span>
-          <span className="font-semibold">{tasks}</span>
+          <span className={cn("text-sm", themeText.secondary)}>Tasks Completed</span>
+          <span className={cn("font-semibold", themeText.primary)}>{tasks}</span>
         </div>
         
         <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Efficiency</span>
-          <span className="font-semibold text-green-600">{efficiency}%</span>
+          <span className={cn("text-sm", themeText.secondary)}>Efficiency</span>
+          <span className="font-semibold text-green-600 dark:text-green-400">{efficiency}%</span>
         </div>
         
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-muted rounded-full h-2">
           <motion.div 
             className="bg-gradient-to-r from-green-400 to-green-500 h-2 rounded-full"
             initial={{ width: 0 }}
@@ -175,7 +176,7 @@ export function ModernDashboard() {
           </h1>
           <TypewriterText 
             text="Your AI-powered CRM is working hard to grow your business"
-            className="text-lg text-gray-600 dark:text-gray-300"
+            className={cn("text-lg", themeText.secondary)}
             speed={30}
           />
         </motion.div>
@@ -225,7 +226,7 @@ export function ModernDashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
             >
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <h2 className={cn("text-2xl font-bold mb-6 flex items-center gap-3", themeText.primary)}>
                 <Sparkles className="w-7 h-7 text-purple-500" />
                 AI Workforce
               </h2>
@@ -270,7 +271,7 @@ export function ModernDashboard() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
             >
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <h2 className={cn("text-2xl font-bold mb-6 flex items-center gap-3", themeText.primary)}>
                 <Zap className="w-7 h-7 text-yellow-500" />
                 Quick Actions
               </h2>
@@ -282,8 +283,8 @@ export function ModernDashboard() {
                       <Target className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Create Workflow</h3>
-                      <p className="text-sm text-gray-600">Automate your processes</p>
+                      <h3 className={cn("font-semibold", themeText.primary)}>Create Workflow</h3>
+                      <p className={cn("text-sm", themeText.secondary)}>Automate your processes</p>
                     </div>
                   </div>
                   <FluidButton variant="gradient" className="w-full">
@@ -297,8 +298,8 @@ export function ModernDashboard() {
                       <Activity className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Analytics</h3>
-                      <p className="text-sm text-gray-600">View detailed insights</p>
+                      <h3 className={cn("font-semibold", themeText.primary)}>Analytics</h3>
+                      <p className={cn("text-sm", themeText.secondary)}>View detailed insights</p>
                     </div>
                   </div>
                   <FluidButton variant="primary" className="w-full">
@@ -312,8 +313,8 @@ export function ModernDashboard() {
                       <Star className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">AI Training</h3>
-                      <p className="text-sm text-gray-600">Improve AI accuracy</p>
+                      <h3 className={cn("font-semibold", themeText.primary)}>AI Training</h3>
+                      <p className={cn("text-sm", themeText.secondary)}>Improve AI accuracy</p>
                     </div>
                   </div>
                   <FluidButton variant="secondary" className="w-full">
@@ -332,8 +333,8 @@ export function ModernDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1, duration: 0.6 }}
         >
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            <Clock className="w-7 h-7 text-gray-600" />
+          <h2 className={cn("text-2xl font-bold mb-6 flex items-center gap-3", themeText.primary)}>
+            <Clock className={cn("w-7 h-7", themeText.secondary)} />
             Recent Activity
           </h2>
           
@@ -347,15 +348,15 @@ export function ModernDashboard() {
               ].map((activity, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-white/50 transition-colors"
+                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-white/50 dark:hover:bg-white/10 transition-colors"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 1.1 + (index * 0.1) }}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    activity.type === 'contact' ? 'bg-blue-100' :
-                    activity.type === 'ai' ? 'bg-purple-100' :
-                    activity.type === 'pipeline' ? 'bg-green-100' : 'bg-orange-100'
+                    activity.type === 'contact' ? 'bg-blue-100 dark:bg-blue-900/50' :
+                    activity.type === 'ai' ? 'bg-purple-100 dark:bg-purple-900/50' :
+                    activity.type === 'pipeline' ? 'bg-green-100 dark:bg-green-900/50' : 'bg-orange-100 dark:bg-orange-900/50'
                   }`}>
                     {activity.type === 'contact' && <Users className="w-5 h-5 text-blue-600" />}
                     {activity.type === 'ai' && <Bot className="w-5 h-5 text-purple-600" />}
@@ -364,11 +365,11 @@ export function ModernDashboard() {
                   </div>
                   
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.contact}</p>
+                    <p className={cn("font-medium", themeText.primary)}>{activity.action}</p>
+                    <p className={cn("text-sm", themeText.secondary)}>{activity.contact}</p>
                   </div>
                   
-                  <span className="text-sm text-gray-500">{activity.time}</span>
+                  <span className={cn("text-sm", themeText.muted)}>{activity.time}</span>
                 </motion.div>
               ))}
             </div>

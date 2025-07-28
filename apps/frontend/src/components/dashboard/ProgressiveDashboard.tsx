@@ -16,7 +16,6 @@ import { ModernDashboard } from '@/components/ui/modern-dashboard';
 import { DashboardStats } from './dashboard-stats';
 import { LeadsPipeline } from './leads-pipeline';
 import { AIAgentStatus } from './ai-agent-status';
-import { SystemMonitoring } from './system-monitoring';
 
 interface ProgressiveDashboardProps {
   onAddContact?: () => void;
@@ -94,8 +93,7 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <LeadsPipeline />
           <AIAgentStatus />
-          <SystemMonitoring />
-        </div>
+          </div>
         <ExpertStage />
       </div>
     );
@@ -158,7 +156,6 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
           />
         }
       >
-        <SystemMonitoring />
       </FeatureGate>
       </div>
     </div>

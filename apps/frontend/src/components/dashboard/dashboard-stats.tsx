@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, MessageSquare, TrendingUp, Target, Loader2 } from 'lucide-react';
+import { themeText, statusColors, cn } from '@/utils/theme-colors';
 
 interface DashboardData {
   totalLeads: number;
@@ -68,14 +69,14 @@ export function DashboardStats() {
         {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+              <CardTitle className={cn("text-sm font-medium", themeText.secondary)}>
+                <div className="h-4 bg-muted rounded animate-pulse w-20"></div>
               </CardTitle>
-              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-4 bg-muted rounded animate-pulse"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-gray-200 rounded animate-pulse w-16 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-24"></div>
+              <div className="h-8 bg-muted rounded animate-pulse w-16 mb-2"></div>
+              <div className="h-3 bg-muted rounded animate-pulse w-24"></div>
             </CardContent>
           </Card>
         ))}
@@ -89,8 +90,8 @@ export function DashboardStats() {
         <Card className="col-span-full">
           <CardContent className="flex items-center justify-center p-6">
             <div className="text-center">
-              <p className="text-red-600 mb-2">Failed to load dashboard statistics</p>
-              <p className="text-sm text-gray-500">{error}</p>
+              <p className={cn("mb-2", statusColors.error.text)}>Failed to load dashboard statistics</p>
+              <p className={cn("text-sm", themeText.muted)}>{error}</p>
             </div>
           </CardContent>
         </Card>
@@ -145,15 +146,15 @@ export function DashboardStats() {
         return (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className={cn("text-sm font-medium", themeText.secondary)}>
                 {stat.title}
               </CardTitle>
-              <Icon className="h-4 w-4 text-gray-400" />
+              <Icon className={cn("h-4 w-4", themeText.muted)} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-gray-600 mt-1">
-                <span className={stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}>
+              <div className={cn("text-2xl font-bold", themeText.primary)}>{stat.value}</div>
+              <p className={cn("text-xs mt-1", themeText.secondary)}>
+                <span className={stat.changeType === 'positive' ? statusColors.success.text : statusColors.error.text}>
                   {stat.change}
                 </span>
                 {' '}from last month

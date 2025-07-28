@@ -8,6 +8,7 @@ import { Eye, EyeOff, LogIn, Loader2, Bot, Sparkles, CheckCircle } from 'lucide-
 import Link from 'next/link';
 import { DEMO_MODE } from '@/lib/demo-mode';
 import { validateLogin } from '@/lib/validation';
+import { themeText, statusColors, cn } from '@/utils/theme-colors';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -64,13 +65,13 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
     // Set feedback based on score
     if (score <= 2) {
       text = 'Weak password';
-      color = 'text-red-600';
+      color = statusColors.error.text;
     } else if (score <= 4) {
       text = 'Good password';
-      color = 'text-yellow-600';
+      color = statusColors.warning.text;
     } else {
       text = 'Strong password';
-      color = 'text-green-600';
+      color = statusColors.success.text;
     }
 
     setPasswordStrength({ score, text, color });
@@ -155,7 +156,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-3xl font-bold text-gray-900 mb-2"
+            className={cn("text-3xl font-bold mb-2", themeText.primary)}
           >
             Sign in to your account
           </motion.h1>
@@ -164,7 +165,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-gray-800 font-medium"
+            className={cn("font-medium", themeText.primary)}
           >
             Access your <span className="text-indigo-600 font-semibold">proactive AI</span> platform
           </motion.p>
@@ -184,7 +185,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             {/* Form Header */}
             <div className="flex items-center justify-center space-x-2 mb-6">
               <LogIn className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Login</h2>
+              <h2 className={cn("text-xl font-semibold", themeText.primary)}>Login</h2>
             </div>
 
             {/* Success/Error Messages */}
@@ -198,7 +199,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 >
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <p className="text-sm text-green-800">{successMessage}</p>
+                    <p className={cn("text-sm", statusColors.success.text)}>{successMessage}</p>
                   </div>
                 </motion.div>
               )}
@@ -210,7 +211,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   className="mb-4 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200/50 rounded-2xl"
                 >
-                  <p className="text-sm text-red-800">{error}</p>
+                  <p className={cn("text-sm", statusColors.error.text)}>{error}</p>
                 </motion.div>
               )}
 
@@ -222,7 +223,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 >
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4 text-blue-600" />
-                    <p className="text-sm text-blue-800">
+                    <p className={cn("text-sm", statusColors.info.text)}>
                       <strong>Demo Mode:</strong> Use any credentials to explore the full CRM system.
                     </p>
                   </div>
@@ -234,7 +235,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-900">Email Address</label>
+                <label className={cn("text-sm font-bold", themeText.primary)}>Email Address</label>
                 <div className="relative">
                   <input
                     type="email"
@@ -248,10 +249,10 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
                       transition-all duration-300 pr-10
                       ${formErrors.email 
-                        ? 'border-red-300 bg-red-50/50' 
+                        ? 'border-red-300 bg-red-50/50 dark:border-red-500 dark:bg-red-900/20' 
                         : formData.email && isValidEmail
-                        ? 'border-green-300 bg-green-50/50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-green-300 bg-green-50/50 dark:border-green-500 dark:bg-green-900/20'
+                        : 'border-border hover:border-border/80'
                       }
                     `}
                   />
@@ -266,9 +267,9 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                         className="absolute right-3 top-1/2 transform -translate-y-1/2"
                       >
                         {isValidEmail ? (
-                          <CheckCircle className="w-5 h-5 text-green-500" />
+                          <CheckCircle className={cn("w-5 h-5", statusColors.success.text)} />
                         ) : (
-                          <div className="w-5 h-5 border-2 border-orange-300 rounded-full" />
+                          <div className={cn("w-5 h-5 border-2 rounded-full", statusColors.warning.border)} />
                         )}
                       </motion.div>
                     )}
@@ -281,7 +282,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="text-xs text-green-600 flex items-center space-x-1"
+                      className={cn("text-xs flex items-center space-x-1", statusColors.success.text)}
                     >
                       <CheckCircle className="w-3 h-3" />
                       <span>Valid email address</span>
@@ -293,7 +294,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="text-xs text-red-600"
+                      className={cn("text-xs", statusColors.error.text)}
                     >
                       {formErrors.email}
                     </motion.p>
@@ -303,7 +304,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
 
               {/* Password Field */}
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-900">Password</label>
+                <label className={cn("text-sm font-bold", themeText.primary)}>Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -315,12 +316,12 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     className={`
                       w-full px-4 py-3 bg-white/80 backdrop-blur-sm border rounded-xl
                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent
-                      transition-all duration-300 pr-12 text-gray-900 placeholder-gray-600
+                      transition-all duration-300 pr-12 text-foreground placeholder-muted-foreground
                       ${formErrors.password 
-                        ? 'border-red-300 bg-red-50/50' 
+                        ? 'border-red-300 bg-red-50/50 dark:border-red-500 dark:bg-red-900/20' 
                         : formData.password 
-                        ? 'border-green-300 bg-green-50/30 hover:border-green-400'
-                        : 'border-gray-200 hover:border-gray-300 focus:border-indigo-400'
+                        ? 'border-green-300 bg-green-50/30 hover:border-green-400 dark:border-green-500 dark:bg-green-900/20'
+                        : 'border-border hover:border-border/80 focus:border-primary'
                       }
                     `}
                   />
@@ -330,7 +331,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                     whileTap={{ scale: 0.95 }}
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-indigo-600 transition-colors duration-200 rounded-md hover:bg-indigo-50"
+                    className={cn("absolute right-3 top-1/2 transform -translate-y-1/2 p-1 transition-colors duration-200 rounded-md", themeText.muted, "hover:text-primary hover:bg-muted/50")}
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5" />
@@ -356,11 +357,11 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                             className={`h-1 w-3 rounded-full transition-all duration-300 ${
                               i < passwordStrength.score
                                 ? passwordStrength.score <= 2
-                                  ? 'bg-red-400'
+                                  ? 'bg-red-400 dark:bg-red-500'
                                   : passwordStrength.score <= 4
-                                  ? 'bg-yellow-400'
-                                  : 'bg-green-400'
-                                : 'bg-gray-200'
+                                  ? 'bg-yellow-400 dark:bg-yellow-500'
+                                  : 'bg-green-400 dark:bg-green-500'
+                                : 'bg-muted'
                             }`}
                           />
                         ))}
@@ -378,7 +379,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="text-xs text-red-600"
+                      className={cn("text-xs", statusColors.error.text)}
                     >
                       {formErrors.password}
                     </motion.p>
@@ -395,7 +396,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
                 className={`w-full py-3 rounded-xl font-medium shadow-lg transition-all duration-300
                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50
                           ${loading || (!DEMO_MODE && (!isValidEmail || !formData.password))
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-gray-400/25' 
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed shadow-muted/25' 
                             : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-indigo-500/25'
                           }`}
               >
@@ -419,10 +420,10 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
             <div className="my-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200/50" />
+                  <div className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white/90 backdrop-blur-sm text-gray-800 font-semibold rounded-full border border-gray-200/50 shadow-md">
+                  <span className={cn("px-4 bg-background/90 backdrop-blur-sm font-semibold rounded-full border border-border/50 shadow-md", themeText.primary)}>                  
                     Don&apos;t have an account?
                   </span>
                 </div>
@@ -434,17 +435,14 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 bg-white/90 backdrop-blur-sm border border-gray-200/50 text-gray-800 font-semibold
-                          hover:bg-white hover:border-indigo-300/60 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-500/15
-                          focus:outline-none focus:ring-2 focus:ring-indigo-500/50 
-                          transition-all duration-300 rounded-xl group shadow-md"
+                className={cn("w-full py-3 bg-background/90 backdrop-blur-sm border border-border/50 font-semibold", themeText.primary, "hover:bg-background hover:border-primary/60 hover:text-primary hover:shadow-lg hover:shadow-primary/15 focus:outline-none focus:ring-2 focus:ring-ring transition-all duration-300 rounded-xl group shadow-md")}
               >
                 <div className="flex items-center justify-center space-x-2">
                   <span>Create New Account</span>
                   <motion.div
                     initial={{ x: 0 }}
                     whileHover={{ x: 2 }}
-                    className="group-hover:text-indigo-600 transition-colors"
+                    className="group-hover:text-primary transition-colors"
                   >
                     →
                   </motion.div>
@@ -461,7 +459,7 @@ export function ModernLoginForm({ onSuccess }: LoginFormProps) {
           transition={{ delay: 0.8 }}
           className="text-center mt-6"
         >
-          <p className="text-sm text-gray-800 font-medium bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
+          <p className={cn("text-sm font-medium bg-background/60 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30 shadow-sm", themeText.primary)}>
             Demo: admin@demo.com / password123
           </p>
         </motion.div>

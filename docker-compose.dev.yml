@@ -1,0 +1,61 @@
+version: '3.8'
+services:
+  # PostgreSQL Database for local development
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm-postgres-dev
+    environment:
+      POSTGRES_DB: crm_dev
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./apps/backend/src/db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_user -d crm_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching (optional for local dev)
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+
+  # Backend service for local development
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crm-backend-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://crm_user:crm_password@postgres:5432/crm_dev
+      REDIS_URL: redis://redis:6379
+      PORT: 3001
+      JWT_SECRET: dev-jwt-secret-key-123
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/backend:/app/backend
+      - /app/backend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: npm run dev
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

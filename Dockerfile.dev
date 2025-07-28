@@ -1,0 +1,24 @@
+# Development Dockerfile for local development with hot reload
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache libc6-compat make g++ python3
+
+# Copy package files
+COPY package*.json ./
+COPY apps/backend/package*.json ./backend/
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+RUN cd backend && npm install --legacy-peer-deps
+
+# Copy source code
+COPY apps/backend ./backend
+
+# Expose port
+EXPOSE 3001
+
+# Use tsx for development with hot reload
+CMD ["npm", "run", "dev"]
