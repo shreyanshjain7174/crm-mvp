@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '@/contexts/socket-context';
-import { WorkflowFactory, CRMWorkflowState } from '@/lib/workflows/langgraph-workflows';
-import { HumanMessage } from '@langchain/core/messages';
+// Placeholder imports for removed LangGraph dependencies
 
 export interface WorkflowStep {
   id: string;
@@ -112,11 +111,11 @@ export function useWorkflows() {
   const [selectedExecution, setSelectedExecution] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Map LangGraph state to UI format
-  const mapLangGraphStateToExecution = useCallback((
+  // Map workflow state to UI format (placeholder)
+  const mapWorkflowStateToExecution = useCallback((
     executionId: string, 
     workflowId: string, 
-    state: CRMWorkflowState,
+    state: any,
     startTime: string
   ): WorkflowExecution => {
     const template = templates.find(t => t.id === workflowId);
@@ -195,77 +194,26 @@ export function useWorkflows() {
     };
   }, [templates]);
 
-  // Execute LangGraph workflow
+  // Execute workflow (placeholder implementation)
   const executeWorkflow = useCallback(async (workflowId: string, context: any) => {
     const executionId = `exec_${Date.now()}`;
     const startTime = new Date().toISOString();
     
     try {
-      let workflow;
-      
-      // Create the appropriate LangGraph workflow
-      switch (workflowId) {
-        case 'lead-qualification-flow':
-          workflow = WorkflowFactory.createLeadQualificationWorkflow();
-          break;
-        case 'follow-up-sequence':
-          workflow = WorkflowFactory.createFollowUpWorkflow();
-          break;
-        default:
-          throw new Error(`Unknown workflow: ${workflowId}`);
-      }
-
-      // Initial state
-      const initialState: CRMWorkflowState = {
-        messages: context.message ? [new HumanMessage(context.message)] : [],
+      // Simple placeholder workflow execution
+      const initialState = {
+        currentStep: 'starting',
+        stepResults: {},
         leadId: context.leadId,
         messageId: context.messageId,
         userId: context.userId || 'user-1',
         businessId: context.businessId || 'business-1',
-        context: {
-          customerName: context.customerName,
-          product: context.product,
-          ...context.variables,
-        },
-        currentStep: undefined,
-        stepResults: {},
-        requiresApproval: false,
-        approvalStatus: undefined,
-        error: undefined,
-        retryCount: 0,
       };
 
       // Add initial execution to state
-      const initialExecution = mapLangGraphStateToExecution(executionId, workflowId, initialState, startTime);
+      const initialExecution = mapWorkflowStateToExecution(executionId, workflowId, initialState, startTime);
       setExecutions(prev => [initialExecution, ...prev]);
       
-      // Store the workflow instance for potential control operations
-      setActiveWorkflows(prev => new Map(prev.set(executionId, workflow)));
-
-      // Execute the workflow step by step
-      let currentState = initialState;
-      
-      // Use workflow.stream() for step-by-step execution with real-time updates
-      const stream = await workflow.stream(currentState);
-      
-      for await (const step of stream) {
-        currentState = { ...currentState, ...step };
-        
-        // Update execution in real-time
-        const updatedExecution = mapLangGraphStateToExecution(executionId, workflowId, currentState, startTime);
-        setExecutions(prev => prev.map(exec => 
-          exec.id === executionId ? updatedExecution : exec
-        ));
-
-        // If waiting for approval, break the loop
-        if (currentState.currentStep === 'waitingApproval') {
-          break;
-        }
-
-        // Small delay for visual feedback
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
       console.log('Workflow execution completed:', executionId);
       
     } catch (error) {
@@ -278,7 +226,7 @@ export function useWorkflows() {
           : exec
       ));
     }
-  }, [setExecutions, setActiveWorkflows, mapLangGraphStateToExecution]);
+  }, [mapWorkflowStateToExecution]);
 
   // Listen for real-time workflow updates
   useEffect(() => {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmptyPipeline } from '@/components/empty-states/EmptyPipeline';
-import { PipelineView, PipelineStage, PipelineLead } from '@/components/pipeline/PipelineView';
+import { SimplePipelineView, PipelineStage, PipelineLead } from '@/components/pipeline/SimplePipelineView';
 import { SimpleFeatureReveal } from '@/components/animations/SimpleFeatureReveal';
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useLeads, useUpdateLead } from '@/hooks/use-api';
@@ -125,7 +125,7 @@ export default function PipelinePage() {
     console.log('Setting up pipeline...');
   };
 
-  const handleLeadMove = async (leadId: string, sourceStageId: string, destStageId: string, newIndex: number) => {
+  const handleMoveToNext = async (leadId: string, currentStageId: string) => {
     // Map pipeline stages to lead statuses
     const stageToStatusMap: Record<string, 'COLD' | 'WARM' | 'HOT' | 'CONVERTED' | 'LOST'> = {
       'new-leads': 'COLD',
@@ -135,10 +135,17 @@ export default function PipelinePage() {
       'won': 'CONVERTED'
     };
 
-    const newStatus = stageToStatusMap[destStageId];
+    // Find next stage
+    const currentIndex = pipelineStages.findIndex(stage => stage.id === currentStageId);
+    if (currentIndex === -1 || currentIndex === pipelineStages.length - 1) {
+      return; // Already at last stage or stage not found
+    }
+
+    const nextStage = pipelineStages[currentIndex + 1];
+    const newStatus = stageToStatusMap[nextStage.id];
     
     if (!newStatus) {
-      console.error('Unknown destination stage:', destStageId);
+      console.error('Unknown destination stage:', nextStage.id);
       return;
     }
 
@@ -151,16 +158,14 @@ export default function PipelinePage() {
       
       // Update local state optimistically
       const newStages = [...pipelineStages];
-      const sourceStage = newStages.find(s => s.id === sourceStageId);
-      const destStage = newStages.find(s => s.id === destStageId);
+      const sourceStage = newStages[currentIndex];
+      const destStage = newStages[currentIndex + 1];
       
-      if (sourceStage && destStage) {
-        const leadIndex = sourceStage.leads.findIndex(l => l.id === leadId);
-        if (leadIndex !== -1) {
-          const [lead] = sourceStage.leads.splice(leadIndex, 1);
-          destStage.leads.splice(newIndex, 0, lead);
-          setPipelineStages(newStages);
-        }
+      const leadIndex = sourceStage.leads.findIndex(l => l.id === leadId);
+      if (leadIndex !== -1) {
+        const [lead] = sourceStage.leads.splice(leadIndex, 1);
+        destStage.leads.unshift(lead); // Add to beginning of next stage
+        setPipelineStages(newStages);
       }
     } catch (error) {
       console.error('Failed to update lead status:', error);
@@ -234,12 +239,12 @@ export default function PipelinePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Sales Pipeline</h1>
-        <p className="text-gray-600">Drag and drop leads to move them through your sales process</p>
+        <p className="text-gray-600">Move leads through your sales process with simple progression controls</p>
       </div>
       
-      <PipelineView
+      <SimplePipelineView
         stages={pipelineStages}
-        onLeadMove={handleLeadMove}
+        onMoveToNext={handleMoveToNext}
         onLeadClick={handleLeadClick}
         onAddLead={handleAddLead}
       />

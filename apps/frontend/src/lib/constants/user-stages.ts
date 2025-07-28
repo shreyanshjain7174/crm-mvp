@@ -165,7 +165,12 @@ export const FEATURE_GATES = {
   // Integrations
   'integrations:view': 'intermediate',
   'integrations:connect': 'advanced',
-  'integrations:manage': 'expert'
+  'integrations:manage': 'expert',
+  
+  // Additional Features
+  'ai_features': 'advanced',
+  'calendar:view': 'intermediate',
+  'messaging:whatsapp': 'beginner'
 } as const;
 
 export type FeatureKey = keyof typeof FEATURE_GATES;

@@ -30,10 +30,18 @@ import {
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { WorkflowCanvas } from '@/components/workflow/WorkflowCanvas';
-import { NodePalette } from '@/components/workflow/NodePalette';
-import { useWorkflowStore } from '@/stores/workflowBuilder';
-import { WorkflowNodeType } from '@/types/workflow-types';
+// Simple workflow builder components (placeholder for future implementation)
+interface WorkflowNodeType {
+  id: string;
+  type: string;
+}
+
+// Mock workflow store
+const useWorkflowStore = () => ({
+  clearWorkflow: () => {},
+  validateWorkflow: () => ({ isValid: true, errors: [] }),
+  addNode: (type: WorkflowNodeType, position: { x: number; y: number }, workflowId: string) => {}
+});
 
 interface WorkflowTemplate {
   id: string;
@@ -484,16 +492,24 @@ function WorkflowBuilderInterface() {
         <div className="flex h-full">
           {/* Node Palette */}
           <div className="w-80 border-r bg-gray-50 overflow-y-auto">
-            <NodePalette onNodeDrop={handleNodeDrop} />
+            <div className="p-4">
+              <h4 className="font-medium mb-3">Workflow Nodes</h4>
+              <div className="space-y-2">
+                <div className="p-3 bg-white rounded border text-sm">🎯 Trigger: New Lead</div>
+                <div className="p-3 bg-white rounded border text-sm">📨 Action: Send Message</div>
+                <div className="p-3 bg-white rounded border text-sm">❓ Condition: If/Then</div>
+                <div className="p-3 bg-white rounded border text-sm">⏱️ Delay: Wait</div>
+              </div>
+            </div>
           </div>
 
           {/* Workflow Canvas */}
-          <div className="flex-1">
-            <WorkflowCanvas
-              workflowId={selectedWorkflow}
-              onSave={handleSaveWorkflow}
-              onTest={handleTestWorkflow}
-            />
+          <div className="flex-1 bg-gray-100 flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <Workflow className="h-16 w-16 mx-auto mb-4" />
+              <p>Visual workflow builder coming soon...</p>
+              <p className="text-sm mt-2">Drag nodes from the left to create workflows</p>
+            </div>
           </div>
         </div>
       </div>

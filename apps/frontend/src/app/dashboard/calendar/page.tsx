@@ -125,7 +125,7 @@ export default function CalendarPage() {
               Calendar Feature Locked
             </h3>
             <p className="text-muted-foreground text-center mb-4 max-w-md">
-              Schedule meetings and track appointments. This feature unlocks after you've engaged with leads and started building your pipeline.
+              Schedule meetings and track appointments. This feature unlocks after you&apos;ve engaged with leads and started building your pipeline.
             </p>
             <Button onClick={() => window.location.href = '/dashboard/pipeline'}>
               View Your Pipeline
@@ -310,7 +310,7 @@ export default function CalendarPage() {
           {/* Today's Events */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Today's Schedule</CardTitle>
+              <CardTitle className="text-lg">Today&apos;s Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               {todayEvents.length > 0 ? (
