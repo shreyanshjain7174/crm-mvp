@@ -135,10 +135,16 @@ jobs:
       
       - name: Deploy to staging
         run: |
-          # Create staging app if it doesn't exist
-          flyctl apps list | grep -q "crm-mvp-staging" || flyctl apps create crm-mvp-staging
+          # Skip staging deployment if no FLY_API_TOKEN or use existing app
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "FLY_API_TOKEN is not set. Skipping staging deployment."
+            exit 0
+          fi
           
-          # Deploy to staging
-          flyctl deploy --app crm-mvp-staging --remote-only
+          # Deploy to existing backend app for staging (same as production for now)
+          # TODO: Create separate staging app when FLY_API_TOKEN has proper permissions
+          echo "Staging deployment temporarily disabled - using production app only"
+          echo "To enable staging: 1) Create crm-backend-api-staging app 2) Update this workflow"
+          exit 0
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

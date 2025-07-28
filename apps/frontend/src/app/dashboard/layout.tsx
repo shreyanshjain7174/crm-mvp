@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ModernNavigation } from '@/components/layout/modern-navigation';
 import { Header } from '@/components/layout/header';
 import { ProtectedRoute } from '@/contexts/auth-context';
+import { DebugPanel } from '@/components/debug/DebugPanel';
 
 export default function DashboardLayout({
   children,
@@ -26,6 +27,8 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      {/* Debug Panel - only visible in development or with debug flag */}
+      <DebugPanel />
     </ProtectedRoute>
   );
 }

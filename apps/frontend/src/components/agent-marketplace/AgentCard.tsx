@@ -9,7 +9,7 @@
 
 import React from 'react'
 import { Star, Download, Check, Eye, Zap, Shield, Clock } from 'lucide-react'
-import type { AgentManifest } from '../../../../../packages/agent-protocol/types'
+import type { AgentManifest } from '../../types/agent-types'
 
 // Extend AgentManifest with metadata for frontend
 interface AgentManifestWithMetadata extends AgentManifest {
@@ -34,28 +34,15 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
     switch (pricing.model) {
       case 'free':
         return 'Free'
-      case 'subscription':
-        if (pricing.subscription) {
-          const monthly = pricing.subscription.monthlyPrice / 100
-          return `₹${monthly}/month`
-        }
-        return 'Subscription'
-      case 'usage':
-        if (pricing.usage?.perCall) {
-          return `₹${pricing.usage.perCall / 100} per call`
-        }
-        if (pricing.usage?.perMessage) {
-          return `₹${pricing.usage.perMessage / 100} per message`
-        }
-        if (pricing.usage?.perMinute) {
-          return `₹${pricing.usage.perMinute / 100} per minute`
-        }
-        return 'Usage-based'
-      case 'one-time':
-        if (pricing.oneTime) {
-          return `₹${pricing.oneTime.price / 100} one-time`
-        }
-        return 'One-time purchase'
+      case 'fixed':
+        const price = pricing.price / 100
+        return `₹${price}/${pricing.period}`
+      case 'usage-based':
+        return `₹${pricing.rate} per ${pricing.unit}`
+      case 'tiered':
+        return 'Tiered pricing'
+      case 'freemium':
+        return `Free up to ${pricing.freeLimit}, then ₹${pricing.paidRate}`
       default:
         return 'Contact for pricing'
     }
@@ -110,7 +97,7 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">{agent.name}</h3>
-            <p className="text-sm text-gray-600 truncate">{agent.provider}</p>
+            <p className="text-sm text-gray-600 truncate">{agent.provider.name}</p>
             {agent.metadata?.category && (
               <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full mt-1 ${getCategoryColor(agent.metadata.category)}`}>
                 {agent.metadata.category.charAt(0).toUpperCase() + agent.metadata.category.slice(1)}
@@ -152,8 +139,7 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
                 key={index} 
                 className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
               >
-                {capability.requiresApproval && <Shield className="w-3 h-3 mr-1" />}
-                {capability.name}
+                {capability}
               </span>
             ))}
             {agent.capabilities.length > 3 && (
@@ -169,7 +155,7 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
           <div className="text-lg font-semibold text-gray-900">
             {formatPrice(agent.pricing)}
           </div>
-          {(agent.pricing as any).model === 'free' && (
+          {agent.pricing.model === 'free' && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
               Free
             </span>
@@ -203,21 +189,12 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
         </div>
 
         {/* Quick Stats */}
-        {((agent.pricing as any).model === 'usage' || (agent.pricing as any).subscription) && (
-          <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
-            {(agent.pricing as any).subscription?.limits && (
-              <div className="flex items-center">
-                <Zap className="w-3 h-3 mr-1" />
-                {(agent.pricing as any).subscription.limits.messages && `${(agent.pricing as any).subscription.limits.messages} msgs/mo`}
-                {(agent.pricing as any).subscription.limits.apiCalls && ` • ${(agent.pricing as any).subscription.limits.apiCalls} calls/mo`}
-              </div>
-            )}
-            <div className="flex items-center">
-              <Clock className="w-3 h-3 mr-1" />
-              v{agent.version}
-            </div>
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+          <div className="flex items-center">
+            <Clock className="w-3 h-3 mr-1" />
+            v{agent.version}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

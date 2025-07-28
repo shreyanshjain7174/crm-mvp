@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "outputDirectory": "apps/frontend/.next",
+  "buildCommand": "cd apps/frontend && npm install && npm run build",
+  "installCommand": "npm install",
+  "devCommand": "cd apps/frontend && npm run dev",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet .",
+  "github": {
+    "silent": true
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
+import { API_BASE_URL } from '@/lib/config';
 
 export interface User {
   id: string;
@@ -30,7 +31,7 @@ export function useAuth() {
 }
 
 class AuthAPI {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+  private baseUrl = API_BASE_URL;
 
   async login(email: string, password: string) {
     const response = await fetch(`${this.baseUrl}/api/auth/login`, {

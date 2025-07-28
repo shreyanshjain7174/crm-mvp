@@ -1,97 +1,52 @@
-# Optimized single-stage Dockerfile for Fly.io
-# Target: Stable deployment with reasonable size
+# Multi-stage optimized Dockerfile for backend-only production
+# Stage 1: Dependencies installer (production only)
+FROM node:22-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app/backend
 
-FROM node:22-alpine
+# Copy backend package.json and install production dependencies directly
+COPY apps/backend/package*.json ./
+RUN npm install --omit=dev --legacy-peer-deps
 
-# Install essential dependencies
-RUN apk add --no-cache curl make g++ python3 linux-headers
+# Stage 2: Builder
+FROM node:22-alpine AS builder  
+RUN apk add --no-cache libc6-compat make g++ python3
+WORKDIR /app/backend
+
+# Copy backend package.json and install all dependencies 
+COPY apps/backend/package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy backend source and build
+COPY apps/backend/ ./
+RUN npm run build
+
+# Stage 3: Runtime
+FROM node:22-alpine AS runtime
+RUN apk add --no-cache curl dumb-init && \
+    rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Copy package files for better caching
-COPY package*.json ./
-COPY apps/backend/package*.json ./apps/backend/
-COPY apps/frontend/package*.json ./apps/frontend/
-COPY packages/ ./packages/
-
-# Install dependencies
-RUN npm ci --legacy-peer-deps
-
-# Copy source code  
-COPY . .
-
-# Build backend
-WORKDIR /app/apps/backend
-RUN npm run build
-
-# Build frontend
-WORKDIR /app/apps/frontend
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN npm run build
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
-# Back to root
-WORKDIR /app
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-# Copy TypeScript definitions that are needed at runtime
-COPY apps/backend/types ./apps/backend/types
+# Copy production dependencies and built app
+COPY --from=deps --chown=nodejs:nodejs /app/backend/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/backend/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/backend/types ./types
+COPY --from=builder --chown=nodejs:nodejs /app/backend/package.json ./package.json
 
-# Remove dev dependencies and clean up  
-RUN npm prune --production && \
-    apk del make g++ python3 linux-headers && \
-    rm -rf /var/cache/apk/* /tmp/* ~/.npm
+USER nodejs
 
-# Create robust startup script with crash handling
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'set -e' >> /app/start.sh && \
-    echo 'echo "Starting CRM MVP..."' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Function to cleanup and exit' >> /app/start.sh && \
-    echo 'cleanup() {' >> /app/start.sh && \
-    echo '  echo "Received signal, shutting down..."' >> /app/start.sh && \
-    echo '  if [ ! -z "$BACKEND_PID" ]; then' >> /app/start.sh && \
-    echo '    echo "Stopping backend (PID: $BACKEND_PID)..."' >> /app/start.sh && \
-    echo '    kill $BACKEND_PID 2>/dev/null || true' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo '  if [ ! -z "$FRONTEND_PID" ]; then' >> /app/start.sh && \
-    echo '    echo "Stopping frontend (PID: $FRONTEND_PID)..."' >> /app/start.sh && \
-    echo '    kill $FRONTEND_PID 2>/dev/null || true' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo '  exit 1' >> /app/start.sh && \
-    echo '}' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Set up signal handlers' >> /app/start.sh && \
-    echo 'trap cleanup TERM INT QUIT' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Start backend' >> /app/start.sh && \
-    echo 'echo "Starting backend on port 3001..."' >> /app/start.sh && \
-    echo 'cd /app/apps/backend && node dist/index.js &' >> /app/start.sh && \
-    echo 'BACKEND_PID=$!' >> /app/start.sh && \
-    echo 'echo "Backend started with PID: $BACKEND_PID"' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Start frontend' >> /app/start.sh && \
-    echo 'echo "Starting frontend on port 3000..."' >> /app/start.sh && \
-    echo 'cd /app/apps/frontend && npm start &' >> /app/start.sh && \
-    echo 'FRONTEND_PID=$!' >> /app/start.sh && \
-    echo 'echo "Frontend started with PID: $FRONTEND_PID"' >> /app/start.sh && \
-    echo '' >> /app/start.sh && \
-    echo '# Monitor processes and exit if either crashes' >> /app/start.sh && \
-    echo 'while true; do' >> /app/start.sh && \
-    echo '  sleep 5' >> /app/start.sh && \
-    echo '  if ! kill -0 $BACKEND_PID 2>/dev/null; then' >> /app/start.sh && \
-    echo '    echo "Backend crashed! Shutting down all services..."' >> /app/start.sh && \
-    echo '    cleanup' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo '  if ! kill -0 $FRONTEND_PID 2>/dev/null; then' >> /app/start.sh && \
-    echo '    echo "Frontend crashed! Shutting down all services..."' >> /app/start.sh && \
-    echo '    cleanup' >> /app/start.sh && \
-    echo '  fi' >> /app/start.sh && \
-    echo 'done' >> /app/start.sh && \
-    chmod +x /app/start.sh
+EXPOSE 3000
 
-EXPOSE 3000 3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3000 || curl -f http://localhost:3001/health || exit 1
-
-CMD ["/app/start.sh"]
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/index.js"]
