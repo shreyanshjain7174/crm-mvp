@@ -32,6 +32,7 @@ import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
 import { initializeAgentRuntime } from './services/agent-runtime';
 import { initializeDataSeeding } from './services/data-seeder';
+import { KeepAliveService } from './services/keep-alive-service';
 
 dotenv.config();
 
@@ -243,6 +244,18 @@ async function start() {
     await app.listen({ port, host: '0.0.0.0' });
     
     logger.info(`Backend server with Socket.io listening on port ${port}`);
+    
+    // Start keep-alive service to prevent idle shutdown
+    const keepAlive = new KeepAliveService({
+      intervalMinutes: 15, // Check every 15 minutes
+      logActivity: process.env.NODE_ENV !== 'production' // Log in dev only
+    });
+    
+    keepAlive.start();
+    logger.info('Keep-alive service started - backend will stay active');
+    
+    // Store reference for graceful shutdown
+    (app as any).keepAlive = keepAlive;
   } catch (err) {
     logger.error('Error starting server:', err);
     process.exit(1);
@@ -252,11 +265,19 @@ async function start() {
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  // Stop keep-alive service
+  if ((global as any).app?.keepAlive) {
+    (global as any).app.keepAlive.stop();
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  // Stop keep-alive service
+  if ((global as any).app?.keepAlive) {
+    (global as any).app.keepAlive.stop();
+  }
   process.exit(0);
 });
 
