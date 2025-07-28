@@ -80,8 +80,14 @@ async function buildApp() {
 
   // Temporarily removing fastify-zod registration
 
-  // Initialize database
-  await initializeDatabase();
+  // Initialize database with error handling
+  try {
+    await initializeDatabase();
+    logger.info('Database initialization completed');
+  } catch (error) {
+    logger.error('Database initialization failed:', error);
+    throw error; // Critical error - don't start server
+  }
   
   // Decorate fastify instance
   app.decorate('db', pool);
@@ -90,6 +96,7 @@ async function buildApp() {
   if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
     try {
       await initializeDataSeeding(app);
+      logger.info('Data seeding completed');
     } catch (error) {
       logger.warn('Data seeding failed (this is normal in production):', error);
     }
@@ -157,9 +164,13 @@ async function buildApp() {
     logger.info('Socket.io server and agent runtime initialized');
   });
 
-  // Health check
+  // Health check - available immediately
   app.get('/health', async (_request, _reply) => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return { 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      service: 'crm-backend'
+    };
   });
 
   // Register routes
@@ -185,22 +196,36 @@ async function buildApp() {
 
   // Serve static files from frontend build in production
   if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
-    // Register static file serving
-    await app.register(staticPlugin, {
-      root: path.join(__dirname, '../../../frontend/out'),
-      prefix: '/',
-    });
-
-    // Fallback for SPA routing - serve index.html for non-API routes
-    app.setNotFoundHandler(async (request, reply) => {
-      if (request.url.startsWith('/api/') || request.url.startsWith('/socket.io/')) {
-        reply.code(404).send({ error: 'Not Found' });
-        return;
-      }
+    const frontendPath = path.join(__dirname, '../../../apps/frontend/out');
+    
+    // Check if frontend build exists before registering static plugin
+    try {
+      await import('fs').then(fs => fs.promises.access(frontendPath));
       
-      reply.type('text/html');
-      return reply.sendFile('index.html');
-    });
+      // Register static file serving
+      await app.register(staticPlugin, {
+        root: frontendPath,
+        prefix: '/',
+      });
+
+      // Fallback for SPA routing - serve index.html for non-API routes
+      app.setNotFoundHandler(async (request, reply) => {
+        if (request.url.startsWith('/api/') || request.url.startsWith('/socket.io/')) {
+          reply.code(404).send({ error: 'Not Found' });
+          return;
+        }
+        
+        reply.type('text/html');
+        return reply.sendFile('index.html');
+      });
+      
+      logger.info('Static frontend serving enabled');
+    } catch (error) {
+      logger.warn('Frontend build not found, running backend-only mode', { 
+        frontendPath,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   return app;
@@ -210,7 +235,7 @@ async function start() {
   try {
     const app = await buildApp();
     
-    const port = parseInt(process.env.PORT || '3001');
+    const port = parseInt(process.env.PORT || '3000');
     
     await app.listen({ port, host: '0.0.0.0' });
     
