@@ -3,6 +3,16 @@ const nextConfig = {
   env: {
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
   },
+  // Performance optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+  // Enable compression and optimization
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: true,
   // Proxy API requests to backend in development
   async rewrites() {
     return [

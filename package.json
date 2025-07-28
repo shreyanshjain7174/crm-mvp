@@ -37,7 +37,17 @@
     "quick-commit": "./scripts/quick-commit.sh",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "docker:down": "docker-compose down",
+    "dev:tools": "scripts/dev/dev-tools-setup.sh",
+    "dev:analyze": "scripts/dev/analyze-bundle.sh", 
+    "dev:perf": "scripts/dev/check-performance.sh",
+    "dev:clean": "rm -rf apps/frontend/.next apps/backend/dist node_modules/*/node_modules",
+    "dev:reset": "npm run dev:clean && npm install",
+    "code:format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
+    "code:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
+    "deps:check": "npm outdated",
+    "deps:update": "npm update",
+    "security:audit": "npm audit --audit-level moderate"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
