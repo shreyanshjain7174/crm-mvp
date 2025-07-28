@@ -110,7 +110,7 @@ export function AgentCard({ agent, onInstall, onViewDetails }: AgentCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">{agent.name}</h3>
-            <p className="text-sm text-gray-600 truncate">{agent.provider}</p>
+            <p className="text-sm text-gray-600 truncate">{agent.provider.name}</p>
             {agent.metadata?.category && (
               <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full mt-1 ${getCategoryColor(agent.metadata.category)}`}>
                 {agent.metadata.category.charAt(0).toUpperCase() + agent.metadata.category.slice(1)}
