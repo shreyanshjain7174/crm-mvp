@@ -21,7 +21,6 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
   
   const { hints } = useContextualHints();
   const stage = useUserProgressStore(state => state.stage);
@@ -69,87 +68,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Debug info toggle (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed top-20 right-4 z-50">
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="bg-gray-800 text-white px-2 py-1 rounded text-xs"
-          >
-            Debug
-          </button>
-          {showDebug && (
-            <div className="mt-2 bg-black text-white p-4 rounded text-xs max-w-sm">
-              {/* Current State */}
-              <div className="mb-3">
-                <div className="text-yellow-300 font-bold mb-1">Current State:</div>
-                <div><strong>Stage:</strong> {stage}</div>
-                <div><strong>Contacts:</strong> {stats.contactsAdded}</div>
-                <div><strong>Messages:</strong> {stats.messagesSent}</div>
-                <div><strong>AI:</strong> {stats.aiInteractions}</div>
-                <div><strong>Features:</strong> {unlockedFeatures.length}</div>
-                <div className="mt-1 text-yellow-300">
-                  NewUserStage: {stats.contactsAdded === 0 || stage === 'new' ? 'YES' : 'NO'}
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="border-t border-gray-600 pt-3">
-                <div className="text-yellow-300 font-bold mb-2">Quick Actions:</div>
-                <div className="space-y-1">
-                  <button 
-                    onClick={unlockAllFeatures}
-                    className="block w-full bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-white text-xs"
-                  >
-                    🚀 Unlock All Features
-                  </button>
-                  <button 
-                    onClick={addTestData}
-                    className="block w-full bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-white text-xs"
-                  >
-                    📊 Add Test Data
-                  </button>
-                  <button 
-                    onClick={resetProgress}
-                    className="block w-full bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-white text-xs"
-                  >
-                    🔄 Reset Progress
-                  </button>
-                  <button 
-                    onClick={() => {
-                      (window as any).__BYPASS_FEATURE_GATES = true;
-                      window.location.reload();
-                    }}
-                    className="block w-full bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded text-white text-xs"
-                  >
-                    🔓 Bypass All Gates
-                  </button>
-                </div>
-              </div>
-
-              {/* Stage Selector */}
-              <div className="border-t border-gray-600 pt-3 mt-3">
-                <div className="text-yellow-300 font-bold mb-2">Jump to Stage:</div>
-                <div className="grid grid-cols-2 gap-1">
-                  {(['new', 'beginner', 'intermediate', 'advanced', 'expert'] as const).map(stageOption => (
-                    <button
-                      key={stageOption}
-                      onClick={() => setStage(stageOption)}
-                      className={`px-2 py-1 rounded text-xs ${
-                        stage === stageOption 
-                          ? 'bg-yellow-600 text-black' 
-                          : 'bg-gray-600 hover:bg-gray-500 text-white'
-                      }`}
-                    >
-                      {stageOption}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Main progressive dashboard */}
       <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">
@@ -176,7 +94,7 @@ export default function DashboardPage() {
       
       {/* Connection status for advanced users */}
       {(stage === 'advanced' || stage === 'expert') && (
-        <div className="fixed bottom-4 right-4 space-y-2">
+        <div className="fixed bottom-4 right-24 space-y-2">
           <Suspense fallback={null}>
             <ConnectionStatus showDetails={false} />
           </Suspense>

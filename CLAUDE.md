@@ -47,6 +47,31 @@ crm-mvp/
 - **Comprehensive Actions**: When given a task, execute all necessary steps to completion.
 - **Single Response**: Combine analysis, implementation, testing, and verification in one response when possible.
 
+### MCP Tool Usage Strategy
+- **Security First**: Always run Semgrep security scans on new code before deployment
+- **Research Integration**: Use Exa/Ref/DeepWiki for understanding technologies, APIs, and best practices
+- **Database Safety**: Use Neon branching for safe schema changes and migrations
+- **Deployment Automation**: Leverage Fly.io MCP for production deployments and monitoring
+- **Quality Assurance**: Use Playwright for automated E2E testing of critical user flows
+- **Documentation Discovery**: Search for implementation patterns and solutions using MCP research tools
+
+### Proactive MCP Integration Examples
+```typescript
+// When implementing new features:
+1. Research similar implementations using DeepWiki
+2. Check security implications with Semgrep  
+3. Test database changes on Neon branch
+4. Validate UI changes with Playwright
+5. Deploy safely to Fly.io with monitoring
+
+// When debugging issues:
+1. Search for solutions using Ref documentation
+2. Analyze similar codebases with DeepWiki
+3. Check for security vulnerabilities with Semgrep
+4. Test fixes with browser automation
+5. Deploy fixes with confidence
+```
+
 ## Development Standards
 
 ### Code Quality
@@ -103,6 +128,64 @@ crm-mvp/
 - **Quality**: ESLint, Prettier, TypeScript compiler
 - **CI/CD**: GitHub Actions with comprehensive validation
 - **Monitoring**: Winston logging, error tracking
+- **MCP Tools**: Advanced development capabilities via Model Context Protocol
+
+## Available MCP Tools & Services
+
+### Code Analysis & Security
+- **Semgrep**: Static code analysis, security vulnerability detection, custom rule creation
+  - Use for: Security scanning, code quality checks, custom vulnerability patterns
+  - Commands: `semgrep_scan`, `security_check`, `semgrep_findings`
+
+### Cloud Infrastructure & Deployment  
+- **Fly.io**: Production deployment, machine management, scaling
+  - Use for: App deployment, machine monitoring, SSL certificates, IP management
+  - Commands: `fly-apps-create`, `fly-machine-list`, `fly-certs-add`, `fly-logs`
+
+- **Neon**: PostgreSQL database management, branching, migrations
+  - Use for: Database operations, schema changes, query optimization, auth setup
+  - Commands: `run_sql`, `prepare_database_migration`, `provision_neon_auth`
+
+### Web Research & Documentation
+- **Exa AI**: Advanced web search, research, content extraction
+  - Use for: Market research, competitor analysis, technical documentation
+  - Commands: `web_search_exa`, `company_research_exa`, `github_search_exa`
+
+- **Ref**: Documentation search, API references, technical guides
+  - Use for: Finding documentation, API specs, integration guides
+  - Commands: `ref_search_documentation`, `ref_read_url`
+
+- **DeepWiki**: GitHub repository analysis, codebase understanding
+  - Use for: Understanding open source projects, code patterns, architecture analysis
+  - Commands: `read_wiki_structure`, `ask_question`, `read_wiki_contents`
+
+### Browser Automation & Testing
+- **Playwright**: Browser automation, E2E testing, web scraping
+  - Use for: Automated testing, UI validation, web app interaction
+  - Commands: `browser_navigate`, `browser_click`, `browser_screenshot`
+
+### Development Workflow Integration
+```bash
+# Security Analysis Workflow
+1. Run semgrep security scan on new code
+2. Address vulnerabilities before deployment
+3. Create custom rules for project-specific patterns
+
+# Database Management Workflow  
+1. Use Neon for schema migrations and branching
+2. Test changes in temporary branches
+3. Apply migrations to production safely
+
+# Research & Documentation Workflow
+1. Use Exa for market/competitor research
+2. Use Ref for technical documentation
+3. Use DeepWiki for understanding codebases
+
+# Deployment & Monitoring Workflow
+1. Deploy to Fly.io with automated CI/CD
+2. Monitor performance and logs
+3. Scale based on usage patterns
+```
 
 ## Universal Agent Protocol
 

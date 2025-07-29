@@ -33,9 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const currentToken = apiClient.getToken();
       if (currentToken) {
-        const response = await apiClient.getCurrentUser();
-        setUser(response.user);
-        setToken(currentToken);
+        if (DEMO_MODE) {
+          // Use demo service for authentication check
+          const response = await demoAuthService.getCurrentUser();
+          setUser(response.user);
+          setToken(currentToken);
+        } else {
+          // Use real API for authentication check
+          const response = await apiClient.getCurrentUser();
+          setUser(response.user);
+          setToken(currentToken);
+        }
       }
     } catch (error) {
       // Token invalid or expired
@@ -54,12 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       setToken(response.token);
       
-      // Sync user progress with backend after successful login
-      try {
-        const { useUserProgressStore } = await import('@/stores/userProgress');
-        await useUserProgressStore.getState().syncWithBackend();
-      } catch (syncError) {
-        console.warn('Failed to sync user progress after login:', syncError);
+      // Sync user progress with backend after successful login (skip in demo mode)
+      if (!DEMO_MODE) {
+        try {
+          const { useUserProgressStore } = await import('@/stores/userProgress');
+          await useUserProgressStore.getState().syncWithBackend();
+        } catch (syncError) {
+          console.warn('Failed to sync user progress after login:', syncError);
+        }
       }
       
       router.push('/dashboard');

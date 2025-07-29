@@ -9,15 +9,15 @@ const isGitHubPages = typeof window !== 'undefined' && (
 
 export const DEMO_MODE = isExplicitlyEnabled || isGitHubPages;
 
-// Debug logging
-console.log('Demo Mode Detection:', {
-  NODE_ENV: process.env.NODE_ENV,
-  NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
-  isExplicitlyEnabled,
-  isGitHubPages,
-  hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined',
-  DEMO_MODE
-});
+// Debug logging - commented out for production
+// console.log('Demo Mode Detection:', {
+//   NODE_ENV: process.env.NODE_ENV,
+//   NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
+//   isExplicitlyEnabled,
+//   isGitHubPages,
+//   hostname: typeof window !== 'undefined' ? window.location.hostname : 'undefined',
+//   DEMO_MODE
+// });
 
 // Demo user data
 const DEMO_USER: User = {
