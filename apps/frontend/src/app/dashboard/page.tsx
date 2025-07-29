@@ -12,6 +12,7 @@ const ContextualGuide = lazy(() => import('@/components/help/ContextualGuide').t
 const DiscoveryPrompt = lazy(() => import('@/components/help/DiscoveryPrompt').then(module => ({ default: module.DiscoveryPrompt })));
 const ConnectionStatus = lazy(() => import('@/components/ui/connection-status').then(module => ({ default: module.ConnectionStatus })));
 const AddContactModal = lazy(() => import('@/components/contacts/AddContactModal').then(module => ({ default: module.AddContactModal })));
+const RealtimeStatus = lazy(() => import('@/components/realtime/RealtimeStatus').then(module => ({ default: module.RealtimeStatus })));
 
 // Import hooks directly since they're lightweight
 import { useContextualHints } from '@/components/help/ContextualGuide';
@@ -175,9 +176,12 @@ export default function DashboardPage() {
       
       {/* Connection status for advanced users */}
       {(stage === 'advanced' || stage === 'expert') && (
-        <div className="fixed bottom-4 right-4">
+        <div className="fixed bottom-4 right-4 space-y-2">
           <Suspense fallback={null}>
             <ConnectionStatus showDetails={false} />
+          </Suspense>
+          <Suspense fallback={null}>
+            <RealtimeStatus compact={true} />
           </Suspense>
         </div>
       )}

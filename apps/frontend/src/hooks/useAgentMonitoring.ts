@@ -78,10 +78,7 @@ export function useAgentMonitoring({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
   // WebSocket connection for real-time updates
-  const { isConnected, sendMessage } = useWebSocket({
-    enabled: realTimeUpdates,
-    onMessage: handleRealtimeUpdate
-  })
+  const { isConnected, sendMessage } = useWebSocket()
 
   // Handle real-time WebSocket updates
   function handleRealtimeUpdate(data: any) {
@@ -237,16 +234,10 @@ export function useAgentMonitoring({
   // Subscribe to real-time updates on WebSocket connection
   useEffect(() => {
     if (isConnected && realTimeUpdates) {
-      sendMessage({
-        type: 'subscribe_monitoring',
-        businessId
-      })
+      sendMessage('subscribe_monitoring', { businessId })
 
       return () => {
-        sendMessage({
-          type: 'unsubscribe_monitoring',
-          businessId
-        })
+        sendMessage('unsubscribe_monitoring', { businessId })
       }
     }
   }, [isConnected, realTimeUpdates, businessId, sendMessage])

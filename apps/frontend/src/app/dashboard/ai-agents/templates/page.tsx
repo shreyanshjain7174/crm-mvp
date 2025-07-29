@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Star, Play, Copy, Eye, MoreHorizontal, FileText, MessageSquare, Zap, Bot, Workflow, Settings } from 'lucide-react';
+import { Search, Filter, Download, Star, Play, Copy, Eye, MoreHorizontal, FileText, MessageSquare, Zap, Bot, Workflow, Settings, Plus, Upload, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserProgressStore } from '@/stores/userProgress';
+import { TemplateBuilder } from '@/components/templates/TemplateBuilder';
 
 interface AgentTemplate {
   id: string;
@@ -144,6 +145,7 @@ export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
+  const [showBuilder, setShowBuilder] = useState(false);
 
   const canAccessFeature = useUserProgressStore(state => state.canAccessFeature);
   const hasAIAccess = canAccessFeature('ai_features');
@@ -212,6 +214,19 @@ export default function TemplatesPage() {
     alert(`Preview: ${template.name}\n\n${template.preview}\n\nActions:\n${template.actions.map(action => `• ${action}`).join('\n')}`);
   };
 
+  if (showBuilder) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => setShowBuilder(false)}>
+            ← Back to Templates
+          </Button>
+        </div>
+        <TemplateBuilder />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -220,10 +235,16 @@ export default function TemplatesPage() {
           <h1 className="text-2xl font-bold text-foreground">AI Agent Templates</h1>
           <p className="text-muted-foreground">Ready-to-use templates to jumpstart your AI automation</p>
         </div>
-        <Button>
-          <FileText className="w-4 h-4 mr-2" />
-          Create Custom Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Import Template
+          </Button>
+          <Button onClick={() => setShowBuilder(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Template
+          </Button>
+        </div>
       </div>
 
       {/* Featured Templates */}

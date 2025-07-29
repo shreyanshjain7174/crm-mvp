@@ -6,6 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
 import { SocketProvider } from '@/contexts/socket-context';
+import GlobalErrorBoundary from '@/components/error-boundaries/GlobalErrorBoundary';
+import RealtimeNotifications from '@/components/realtime/RealtimeNotifications';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,15 +20,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SocketProvider>
-            {children}
-            <Toaster />
-          </SocketProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <GlobalErrorBoundary level="global">
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <SocketProvider>
+              {children}
+              <Toaster />
+              <RealtimeNotifications />
+            </SocketProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </GlobalErrorBoundary>
   );
 }
