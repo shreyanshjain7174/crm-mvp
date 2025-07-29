@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache, cacheKeyGenerators } from '../middleware/cache-middleware';
 import { z } from 'zod';
 
 // Contact schema validation
@@ -21,7 +22,15 @@ export async function contactRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', authenticate);
 
   // Get contacts with search, filtering, and pagination
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 120, // 2 minutes cache for contacts list
+        keyGenerator: cacheKeyGenerators.userWithQuery
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       const { 
@@ -119,7 +128,15 @@ export async function contactRoutes(fastify: FastifyInstance) {
   });
 
   // Get contact statistics
-  fastify.get('/stats', async (request, reply) => {
+  fastify.get('/stats', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 300, // 5 minutes cache for stats
+        keyGenerator: cacheKeyGenerators.userSpecific
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
 
@@ -170,6 +187,10 @@ export async function contactRoutes(fastify: FastifyInstance) {
 
   // Create new contact
   fastify.post('/', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*contact*'])
+    ],
     schema: {
       body: {
         type: 'object',
@@ -234,7 +255,15 @@ export async function contactRoutes(fastify: FastifyInstance) {
   });
 
   // Get single contact
-  fastify.get('/:id', async (request, reply) => {
+  fastify.get('/:id', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 600, // 10 minutes cache for individual contacts
+        keyGenerator: cacheKeyGenerators.resourceById('contact')
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
@@ -276,6 +305,10 @@ export async function contactRoutes(fastify: FastifyInstance) {
 
   // Update contact
   fastify.put('/:id', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*contact*'])
+    ],
     schema: {
       body: {
         type: 'object',
@@ -361,7 +394,12 @@ export async function contactRoutes(fastify: FastifyInstance) {
   });
 
   // Delete contact
-  fastify.delete('/:id', async (request, reply) => {
+  fastify.delete('/:id', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*contact*'])
+    ]
+  }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
       const userId = (request as any).user?.userId || (request as any).user?.id;
@@ -388,7 +426,12 @@ export async function contactRoutes(fastify: FastifyInstance) {
   });
 
   // Bulk operations
-  fastify.post('/bulk', async (request, reply) => {
+  fastify.post('/bulk', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*contact*'])
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       const { action, contactIds, updateData } = request.body as {

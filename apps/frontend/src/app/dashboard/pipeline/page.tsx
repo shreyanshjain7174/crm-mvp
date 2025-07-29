@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { EmptyPipeline } from '@/components/empty-states/EmptyPipeline';
 import { SimplePipelineView, PipelineStage, PipelineLead } from '@/components/pipeline/SimplePipelineView';
+import { EnhancedPipelineView } from '@/components/pipeline/EnhancedPipelineView';
 import { SimpleFeatureReveal } from '@/components/animations/SimpleFeatureReveal';
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useLeads, useUpdateLead } from '@/hooks/use-api';
@@ -99,6 +100,7 @@ export default function PipelinePage() {
   
   const [showFeatureReveal, setShowFeatureReveal] = useState(false);
   const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
+  const [useEnhancedView, setUseEnhancedView] = useState(true);
 
   // Check if this is the first time accessing the pipeline
   useEffect(() => {
@@ -242,12 +244,75 @@ export default function PipelinePage() {
         <p className="text-gray-600">Move leads through your sales process with simple progression controls</p>
       </div>
       
-      <SimplePipelineView
-        stages={pipelineStages}
-        onMoveToNext={handleMoveToNext}
-        onLeadClick={handleLeadClick}
-        onAddLead={handleAddLead}
-      />
+      {useEnhancedView ? (
+        <EnhancedPipelineView
+          stages={pipelineStages.map(stage => ({
+            ...stage,
+            isVisible: true,
+            automationRules: {
+              autoAdvance: false,
+              timeLimit: 7,
+              conditions: ['Time limit reached']
+            }
+          }))}
+          onMoveToNext={handleMoveToNext}
+          onLeadClick={handleLeadClick}
+          onAddLead={handleAddLead}
+          onMoveLead={async (leadId: string, targetStageId: string) => {
+            // Map target stage to lead status
+            const stageToStatusMap: Record<string, 'COLD' | 'WARM' | 'HOT' | 'CONVERTED' | 'LOST'> = {
+              'new-leads': 'COLD',
+              'contacted': 'WARM', 
+              'qualified': 'HOT',
+              'proposal': 'HOT',
+              'won': 'CONVERTED'
+            };
+            
+            const newStatus = stageToStatusMap[targetStageId];
+            if (newStatus) {
+              try {
+                await updateLead.mutateAsync({
+                  id: leadId,
+                  data: { status: newStatus }
+                });
+                
+                // Update local state
+                const newStages = [...pipelineStages];
+                const sourceStageIndex = newStages.findIndex(stage => 
+                  stage.leads.some(lead => lead.id === leadId)
+                );
+                const targetStageIndex = newStages.findIndex(stage => stage.id === targetStageId);
+                
+                if (sourceStageIndex !== -1 && targetStageIndex !== -1) {
+                  const leadIndex = newStages[sourceStageIndex].leads.findIndex(l => l.id === leadId);
+                  if (leadIndex !== -1) {
+                    const [lead] = newStages[sourceStageIndex].leads.splice(leadIndex, 1);
+                    newStages[targetStageIndex].leads.unshift(lead);
+                    setPipelineStages(newStages);
+                  }
+                }
+              } catch (error) {
+                console.error('Failed to move lead:', error);
+              }
+            }
+          }}
+          onStageUpdate={(stageId: string, updates: any) => {
+            console.log('Updating stage:', stageId, updates);
+            // Handle stage configuration updates
+          }}
+          onConfigChange={(config: any) => {
+            console.log('Pipeline config changed:', config);
+            // Handle pipeline configuration changes
+          }}
+        />
+      ) : (
+        <SimplePipelineView
+          stages={pipelineStages}
+          onMoveToNext={handleMoveToNext}
+          onLeadClick={handleLeadClick}
+          onAddLead={handleAddLead}
+        />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { useTheme } from '@/components/ui/theme-provider';
 import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
 import { DeleteAccountDialog } from '@/components/ui/delete-account-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +35,7 @@ import {
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -415,74 +417,74 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Business Phone Number
                     </label>
                     <input
                       type="text"
                       value={whatsappSettings.businessPhone}
                       onChange={(e) => setWhatsappSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Display Name
                     </label>
                     <input
                       type="text"
                       value={whatsappSettings.displayName}
                       onChange={(e) => setWhatsappSettings(prev => ({ ...prev, displayName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Welcome Message
                   </label>
                   <textarea
                     rows={3}
                     value={whatsappSettings.welcomeMessage}
                     onChange={(e) => setWhatsappSettings(prev => ({ ...prev, welcomeMessage: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                   />
                 </div>
 
                 <div className="border-t pt-6">
                   <h4 className="text-lg font-medium mb-4">Meta Business Account</h4>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
                     <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-5 w-5 text-blue-600" />
-                      <span className="font-medium text-blue-900">Connected to Meta Business Manager</span>
+                      <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="font-medium text-blue-900 dark:text-blue-100">Connected to Meta Business Manager</span>
                     </div>
-                    <p className="text-sm text-blue-700 mt-1">
+                    <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">
                       Your WhatsApp Business Account is connected and verified. All message templates and webhook endpoints are configured.
                     </p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Business Account ID
                       </label>
                       <input
                         type="text"
                         value={whatsappSettings.businessAccountId}
                         onChange={(e) => setWhatsappSettings(prev => ({ ...prev, businessAccountId: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Phone Number ID
                       </label>
                       <input
                         type="text"
                         value={whatsappSettings.phoneNumberId}
                         onChange={(e) => setWhatsappSettings(prev => ({ ...prev, phoneNumberId: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -494,8 +496,9 @@ export default function SettingsPage() {
                     id="auto-reply" 
                     checked={whatsappSettings.autoReply}
                     onChange={(e) => setWhatsappSettings(prev => ({ ...prev, autoReply: e.target.checked }))}
+                    className="rounded"
                   />
-                  <label htmlFor="auto-reply" className="text-sm text-gray-700">
+                  <label htmlFor="auto-reply" className="text-sm text-foreground">
                     Enable automatic welcome messages for new conversations
                   </label>
                 </div>
@@ -506,8 +509,9 @@ export default function SettingsPage() {
                     id="webhook-status" 
                     checked={whatsappSettings.webhookStatus}
                     onChange={(e) => setWhatsappSettings(prev => ({ ...prev, webhookStatus: e.target.checked }))}
+                    className="rounded"
                   />
-                  <label htmlFor="webhook-status" className="text-sm text-gray-700">
+                  <label htmlFor="webhook-status" className="text-sm text-foreground">
                     Real-time message webhook notifications
                   </label>
                 </div>
@@ -528,20 +532,20 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Response Confidence Threshold
                     </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <select className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
                       <option value="70">70% - More responses, less accuracy</option>
                       <option value="80" selected>80% - Balanced (Recommended)</option>
                       <option value="90">90% - Fewer responses, high accuracy</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Response Tone
                     </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    <select className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
                       <option value="professional">Professional</option>
                       <option value="friendly" selected>Friendly</option>
                       <option value="casual">Casual</option>
@@ -551,32 +555,32 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Business Context (helps AI understand your business)
                   </label>
                   <textarea
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
                     defaultValue="We provide CRM solutions for small and medium businesses in India. Our focus is on WhatsApp integration and automated lead nurturing."
                   />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-scoring" defaultChecked />
-                    <label htmlFor="auto-scoring" className="text-sm text-gray-700">
+                    <input type="checkbox" id="auto-scoring" defaultChecked className="rounded" />
+                    <label htmlFor="auto-scoring" className="text-sm text-foreground">
                       Enable automatic lead scoring
                     </label>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-suggestions" defaultChecked />
-                    <label htmlFor="auto-suggestions" className="text-sm text-gray-700">
+                    <input type="checkbox" id="auto-suggestions" defaultChecked className="rounded" />
+                    <label htmlFor="auto-suggestions" className="text-sm text-foreground">
                       Generate response suggestions automatically
                     </label>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-followup" />
-                    <label htmlFor="auto-followup" className="text-sm text-gray-700">
+                    <input type="checkbox" id="auto-followup" className="rounded" />
+                    <label htmlFor="auto-followup" className="text-sm text-foreground">
                       Schedule automatic follow-ups for inactive leads
                     </label>
                   </div>
@@ -860,25 +864,37 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">Theme</h3>
+                  <h3 className="font-medium text-foreground">Theme</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="border-2 border-primary rounded-lg p-4 cursor-pointer">
-                      <div className="w-full h-20 bg-white border rounded mb-3"></div>
-                      <p className="text-sm font-medium text-center">Light Mode</p>
+                    <div 
+                      className={`border-2 ${theme === 'light' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
+                      onClick={() => setTheme('light')}
+                    >
+                      <div className="w-full h-20 bg-white border border-gray-200 rounded mb-3 shadow-sm"></div>
+                      <p className="text-sm font-medium text-center text-foreground">Light Mode</p>
                     </div>
-                    <div className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer">
-                      <div className="w-full h-20 bg-gray-900 border rounded mb-3"></div>
-                      <p className="text-sm font-medium text-center">Dark Mode</p>
+                    <div 
+                      className={`border-2 ${theme === 'dark' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
+                      onClick={() => setTheme('dark')}
+                    >
+                      <div className="w-full h-20 bg-gray-900 border border-gray-700 rounded mb-3 shadow-sm"></div>
+                      <p className="text-sm font-medium text-center text-foreground">Dark Mode</p>
                     </div>
-                    <div className="border-2 border-gray-200 rounded-lg p-4 cursor-pointer">
-                      <div className="w-full h-20 bg-gradient-to-r from-white to-gray-900 border rounded mb-3"></div>
-                      <p className="text-sm font-medium text-center">Auto</p>
+                    <div 
+                      className={`border-2 ${theme === 'system' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
+                      onClick={() => setTheme('system')}
+                    >
+                      <div className="w-full h-20 bg-gradient-to-r from-white via-gray-200 to-gray-900 border border-gray-300 rounded mb-3 shadow-sm"></div>
+                      <p className="text-sm font-medium text-center text-foreground">System</p>
                     </div>
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Current theme: <span className="font-medium text-foreground">{theme === 'system' ? `System (${resolvedTheme})` : theme}</span>
+                  </p>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">Color Scheme</h3>
+                  <h3 className="font-medium text-foreground">Color Scheme</h3>
                   <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                     {[
                       'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500',
@@ -886,35 +902,35 @@ export default function SettingsPage() {
                     ].map((color, index) => (
                       <div 
                         key={index}
-                        className={`w-10 h-10 rounded-full cursor-pointer ${color} ${index === 0 ? 'ring-2 ring-offset-2 ring-blue-500' : ''}`}
+                        className={`w-10 h-10 rounded-full cursor-pointer ${color} hover:scale-110 transition-transform ${index === 0 ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-background' : ''}`}
                       ></div>
                     ))}
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900">Display Settings</h3>
+                  <h3 className="font-medium text-foreground">Display Settings</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Compact Mode</p>
-                        <p className="text-xs text-gray-500">Reduce spacing and padding</p>
+                        <p className="text-sm font-medium text-foreground">Compact Mode</p>
+                        <p className="text-xs text-muted-foreground">Reduce spacing and padding</p>
                       </div>
-                      <input type="checkbox" />
+                      <input type="checkbox" className="rounded" />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-700">Show Animations</p>
-                        <p className="text-xs text-gray-500">Enable UI animations and transitions</p>
+                        <p className="text-sm font-medium text-foreground">Show Animations</p>
+                        <p className="text-xs text-muted-foreground">Enable UI animations and transitions</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input type="checkbox" defaultChecked className="rounded" />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-700">High Contrast</p>
-                        <p className="text-xs text-gray-500">Improve accessibility with higher contrast</p>
+                        <p className="text-sm font-medium text-foreground">High Contrast</p>
+                        <p className="text-xs text-muted-foreground">Improve accessibility with higher contrast</p>
                       </div>
-                      <input type="checkbox" />
+                      <input type="checkbox" className="rounded" />
                     </div>
                   </div>
                 </div>

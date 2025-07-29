@@ -87,6 +87,37 @@ class IntegrationsAPI {
         // Clear invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        
+        // Retry with auto-login in development
+        if (process.env.NODE_ENV !== 'production') {
+          try {
+            const loginResponse = await fetch(`${this.baseUrl}/api/auth/dev-login`, {
+              method: 'POST',
+            });
+            
+            if (loginResponse.ok) {
+              const loginData = await loginResponse.json();
+              localStorage.setItem('token', loginData.token);
+              localStorage.setItem('user', JSON.stringify(loginData.user));
+              
+              // Retry the original request with new token
+              const retryResponse = await fetch(`${this.baseUrl}/api/integrations${endpoint}`, {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${loginData.token}`,
+                  ...options.headers,
+                },
+                ...options,
+              });
+              
+              if (retryResponse.ok) {
+                return retryResponse.json();
+              }
+            }
+          } catch (error) {
+            console.warn('Auto-login retry failed:', error);
+          }
+        }
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }

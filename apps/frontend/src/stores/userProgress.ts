@@ -310,6 +310,10 @@ export const useUserProgressStore = create<UserProgressStore>()(
       
       // Getters
       canAccessFeature: (feature) => {
+        // Check if feature gates are bypassed (development mode)
+        if (typeof window !== 'undefined' && (window as any).__BYPASS_FEATURE_GATES) {
+          return true;
+        }
         const state = get();
         return state.unlockedFeatures.includes(feature);
       },
@@ -366,6 +370,10 @@ export const useUserProgressStore = create<UserProgressStore>()(
             totalSessions: 25
           }
         });
+        // Force bypass all feature gates for development
+        if (typeof window !== 'undefined') {
+          (window as any).__BYPASS_FEATURE_GATES = true;
+        }
       },
 
       setStage: (stage) => {

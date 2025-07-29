@@ -4,6 +4,11 @@
 set -e
 
 echo "🚀 Starting CRM MVP Development Environment..."
+if [ "${VERBOSE:-false}" = "true" ]; then
+    echo "📝 Verbose mode enabled - showing real-time logs"
+else
+    echo "💡 Tip: Use 'VERBOSE=true ./scripts/dev/start.sh' for real-time logs"
+fi
 
 # Navigate to project root
 cd "$(dirname "$0")/../.."
@@ -133,29 +138,40 @@ if check_port 3001; then
     echo -e "${YELLOW}⚠️  Port 3001 already in use (backend may already be running)${NC}"
 fi
 
-# Start backend
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
+# Start backend with verbose logging
 echo -e "${YELLOW}🔧 Starting backend server...${NC}"
 cd apps/backend
-npm run dev > ../../logs/backend.log 2>&1 &
+if [ "${VERBOSE:-false}" = "true" ]; then
+    echo -e "${BLUE}📝 Backend logs will be shown below:${NC}"
+    npm run dev 2>&1 | tee ../../logs/backend.log &
+else
+    npm run dev > ../../logs/backend.log 2>&1 &
+fi
 BACKEND_PID=$!
 cd ../..
 
 # Wait a moment for backend to start
-sleep 3
+echo -e "${YELLOW}⏳ Waiting for backend to initialize...${NC}"
+sleep 5
 
-# Start frontend
+# Start frontend with verbose logging
 echo -e "${YELLOW}🎨 Starting frontend server...${NC}"
 cd apps/frontend
-npm run dev > ../../logs/frontend.log 2>&1 &
+if [ "${VERBOSE:-false}" = "true" ]; then
+    echo -e "${BLUE}📝 Frontend logs will be shown below:${NC}"
+    npm run dev 2>&1 | tee ../../logs/frontend.log &
+else
+    npm run dev > ../../logs/frontend.log 2>&1 &
+fi
 FRONTEND_PID=$!
 cd ../..
 
-# Create logs directory if it doesn't exist
-mkdir -p logs
-
 # Wait for services to be ready
 echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
-sleep 5
+sleep 3
 
 # Check if services are running
 if check_port 3001; then
@@ -180,6 +196,7 @@ echo "   🐘 Database:  localhost:5432"
 echo ""
 echo -e "${YELLOW}📋 Useful commands:${NC}"
 echo "   📊 View logs:     tail -f logs/frontend.log logs/backend.log"
+echo "   📝 Verbose mode:  VERBOSE=true ./scripts/dev/start.sh"
 echo "   🛑 Stop all:      ./scripts/dev/stop.sh"
 echo "   🔄 Restart:       ./scripts/dev/restart.sh"
 echo ""

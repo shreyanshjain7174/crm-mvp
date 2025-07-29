@@ -30,18 +30,9 @@ import {
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-// Simple workflow builder components (placeholder for future implementation)
-interface WorkflowNodeType {
-  id: string;
-  type: string;
-}
-
-// Mock workflow store
-const useWorkflowStore = () => ({
-  clearWorkflow: () => {},
-  validateWorkflow: () => ({ isValid: true, errors: [] }),
-  addNode: (type: WorkflowNodeType, position: { x: number; y: number }, workflowId: string) => {}
-});
+import { VisualWorkflowBuilder, WorkflowData } from '@/components/workflows/VisualWorkflowBuilder';
+import { WorkflowSuggestionEngine } from '@/components/workflows/WorkflowSuggestionEngine';
+import { PipelineAnalytics } from '@/components/analytics/PipelineAnalytics';
 
 interface WorkflowTemplate {
   id: string;
@@ -243,12 +234,35 @@ export default function WorkflowsPage() {
 
       {/* Workflow Management */}
       <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="active">Active Workflows</TabsTrigger>
           <TabsTrigger value="builder">Visual Builder</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        {/* AI Suggestions Tab */}
+        <TabsContent value="suggestions" className="space-y-6">
+          <WorkflowSuggestionEngine
+            userStats={{
+              contactsAdded: stats.contactsAdded,
+              messagesSent: stats.messagesSent || 0,
+              leadsConverted: workflowTemplates.filter(w => w.isActive).length,
+              averageResponseTime: 4.2,
+              mostActiveHours: [10, 11, 14, 15, 18, 19],
+              commonLeadSources: ['WhatsApp', 'Website', 'Referral']
+            }}
+            onCreateWorkflow={(suggestion) => {
+              console.log('Creating workflow from suggestion:', suggestion);
+              // Switch to builder tab and populate with suggestion data
+            }}
+            onPreviewWorkflow={(suggestion) => {
+              console.log('Previewing workflow:', suggestion);
+              // Show workflow preview modal
+            }}
+          />
+        </TabsContent>
 
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-6">
@@ -355,209 +369,33 @@ export default function WorkflowsPage() {
 
         {/* Visual Builder Tab */}
         <TabsContent value="builder" className="space-y-6">
-          <WorkflowBuilderInterface />
+          <Card className="h-[800px] overflow-hidden">
+            <VisualWorkflowBuilder
+              onSave={(workflow: WorkflowData) => {
+                console.log('Saving workflow:', workflow);
+                // Here you would save the workflow to your backend
+              }}
+              onTest={(workflow: WorkflowData) => {
+                console.log('Testing workflow:', workflow);
+                // Here you would test the workflow execution
+              }}
+              className="h-full"
+            />
+          </Card>
         </TabsContent>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workflow Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Success Rate</span>
-                    <span className="font-medium">94%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '94%' }}></div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Average Execution Time</span>
-                    <span className="font-medium">1.2s</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '78%' }}></div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Error Rate</span>
-                    <span className="font-medium">6%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '6%' }}></div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Time Savings by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { category: 'Lead Management', hours: 15.2, color: 'bg-blue-500' },
-                    { category: 'Follow-up Automation', hours: 12.8, color: 'bg-green-500' },
-                    { category: 'Message Responses', hours: 8.3, color: 'bg-purple-500' },
-                    { category: 'Pipeline Updates', hours: 5.1, color: 'bg-orange-500' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                        <span className="text-sm">{item.category}</span>
-                      </div>
-                      <span className="font-medium">{item.hours}h</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <PipelineAnalytics
+            timeRange="30d"
+            onTimeRangeChange={(range) => {
+              console.log('Time range changed:', range);
+              // Handle time range change for analytics
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function WorkflowBuilderInterface() {
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
-  const [showBuilder, setShowBuilder] = useState(false);
-  const { clearWorkflow, validateWorkflow, addNode } = useWorkflowStore();
-
-  const handleSaveWorkflow = () => {
-    console.log('Saving workflow...');
-    // Implementation for saving workflow
-  };
-
-  const handleTestWorkflow = () => {
-    const validation = validateWorkflow();
-    if (!validation.isValid) {
-      alert(`Workflow validation failed: ${validation.errors.join(', ')}`);
-      return;
-    }
-    console.log('Testing workflow...');
-    // Implementation for testing workflow
-  };
-
-  const createNewWorkflow = () => {
-    const workflowId = `workflow-${Date.now()}`;
-    setSelectedWorkflow(workflowId);
-    clearWorkflow();
-    setShowBuilder(true);
-  };
-
-  const handleNodeDrop = (type: WorkflowNodeType, position: { x: number; y: number }) => {
-    if (selectedWorkflow) {
-      addNode(type, position, selectedWorkflow);
-    }
-  };
-
-  if (showBuilder && selectedWorkflow) {
-    return (
-      <div className="h-[800px] border rounded-lg overflow-hidden bg-white">
-        {/* Builder Header */}
-        <div className="border-b bg-gray-50 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setShowBuilder(false)}
-            >
-              ← Back to Templates
-            </Button>
-            <div>
-              <h3 className="font-semibold">Workflow Builder</h3>
-              <p className="text-sm text-gray-600">Drag nodes from the palette to create your workflow</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleSaveWorkflow}>
-              <Settings className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-            <Button size="sm" onClick={handleTestWorkflow}>
-              <Play className="w-4 h-4 mr-2" />
-              Test
-            </Button>
-          </div>
-        </div>
-
-        {/* Builder Interface */}
-        <div className="flex h-full">
-          {/* Node Palette */}
-          <div className="w-80 border-r bg-gray-50 overflow-y-auto">
-            <div className="p-4">
-              <h4 className="font-medium mb-3">Workflow Nodes</h4>
-              <div className="space-y-2">
-                <div className="p-3 bg-white rounded border text-sm">🎯 Trigger: New Lead</div>
-                <div className="p-3 bg-white rounded border text-sm">📨 Action: Send Message</div>
-                <div className="p-3 bg-white rounded border text-sm">❓ Condition: If/Then</div>
-                <div className="p-3 bg-white rounded border text-sm">⏱️ Delay: Wait</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Workflow Canvas */}
-          <div className="flex-1 bg-gray-100 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <Workflow className="h-16 w-16 mx-auto mb-4" />
-              <p>Visual workflow builder coming soon...</p>
-              <p className="text-sm mt-2">Drag nodes from the left to create workflows</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Visual Workflow Builder</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center py-12">
-          <Workflow className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold mb-2">Drag & Drop Workflow Builder</h3>
-          <p className="text-gray-600 mb-6">
-            Create complex automation workflows with our intuitive visual interface
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
-            <div className="p-4 border border-dashed border-blue-200 rounded-lg">
-              <Target className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-              <h4 className="font-medium mb-1">Triggers</h4>
-              <p className="text-sm text-gray-600">New lead, message received, time-based</p>
-            </div>
-            
-            <div className="p-4 border border-dashed border-purple-200 rounded-lg">
-              <Zap className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-              <h4 className="font-medium mb-1">Actions</h4>
-              <p className="text-sm text-gray-600">Send message, update status, create task</p>
-            </div>
-            
-            <div className="p-4 border border-dashed border-green-200 rounded-lg">
-              <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-              <h4 className="font-medium mb-1">Conditions</h4>
-              <p className="text-sm text-gray-600">If/then logic, filters, smart routing</p>
-            </div>
-          </div>
-          
-          <Button 
-            className="bg-purple-600 hover:bg-purple-700"
-            onClick={createNewWorkflow}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Start Building Workflow
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

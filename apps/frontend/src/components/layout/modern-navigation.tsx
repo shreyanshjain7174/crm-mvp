@@ -72,7 +72,7 @@ const navigationItems: NavigationItem[] = [
     label: 'Workflows',
     icon: Workflow,
     href: '/dashboard/workflows',
-    requiredFeature: 'workflow_builder',
+    requiredFeature: 'workflows:custom',
     isNew: true,
   },
   {
@@ -80,7 +80,7 @@ const navigationItems: NavigationItem[] = [
     label: 'AI Agents',
     icon: Bot,
     href: '/dashboard/ai-agents',
-    requiredFeature: 'ai_features',
+    requiredFeature: 'ai:suggestions',
     isNew: true,
     subItems: [
       {
@@ -88,14 +88,14 @@ const navigationItems: NavigationItem[] = [
         label: 'Templates',
         icon: FileText,
         href: '/dashboard/ai-agents/templates',
-        requiredFeature: 'ai_features',
+        requiredFeature: 'templates:create',
       },
       {
         id: 'ai-marketplace',
         label: 'Marketplace',
         icon: Zap,
         href: '/dashboard/ai-agents/marketplace',
-        requiredFeature: 'ai_features',
+        requiredFeature: 'agents:marketplace',
       },
     ],
   },

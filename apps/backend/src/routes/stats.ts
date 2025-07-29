@@ -1,8 +1,16 @@
 import { FastifyInstance } from 'fastify';
+import { cacheMiddleware, cacheKeyGenerators } from '../middleware/cache-middleware';
 
 export async function statsRoutes(fastify: FastifyInstance) {
   // Get dashboard statistics
-  fastify.get('/dashboard', async (request, reply) => {
+  fastify.get('/dashboard', {
+    preHandler: [
+      cacheMiddleware({
+        ttl: 180, // 3 minutes cache for dashboard stats
+        keyGenerator: () => 'dashboard:stats'
+      })
+    ]
+  }, async (request, reply) => {
     try {
       // Get total contacts count (using contacts table instead of leads)
       const contactsResult = await fastify.db.query('SELECT COUNT(*) as count FROM contacts');
@@ -110,7 +118,14 @@ export async function statsRoutes(fastify: FastifyInstance) {
   });
 
   // Get user progress statistics
-  fastify.get('/user/progress', async (request, reply) => {
+  fastify.get('/user/progress', {
+    preHandler: [
+      cacheMiddleware({
+        ttl: 300, // 5 minutes cache for user progress
+        keyGenerator: () => 'user:progress:stats'
+      })
+    ]
+  }, async (request, reply) => {
     try {
       // Get contact count
       const contactsResult = await fastify.db.query('SELECT COUNT(*) as count FROM contacts');

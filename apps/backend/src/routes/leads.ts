@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache, cacheKeyGenerators } from '../middleware/cache-middleware';
 import { z } from 'zod';
 import { LeadStatus, Priority } from '../types/enums';
 
@@ -23,7 +24,13 @@ const updateLeadSchema = z.object({
 export async function leadRoutes(fastify: FastifyInstance) {
   // Get all leads
   fastify.get('/', {
-    preHandler: [authenticate]
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 60, // 1 minute cache for leads list
+        keyGenerator: cacheKeyGenerators.userWithQuery
+      })
+    ]
   }, async (request, reply) => {
     try {
       const result = await fastify.db.query(`
@@ -72,7 +79,10 @@ export async function leadRoutes(fastify: FastifyInstance) {
 
   // Create new lead
   fastify.post<{ Body: z.infer<typeof createLeadSchema> }>('/', {
-    preHandler: [authenticate]
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:route:GET:/api/leads*'])
+    ]
   }, async (request, reply) => {
     try {
       const data = createLeadSchema.parse(request.body);

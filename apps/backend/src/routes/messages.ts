@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { MessageType } from '../types/enums';
 import { authenticate } from '../middleware/auth';
+import { cacheMiddleware, invalidateCache, cacheKeyGenerators } from '../middleware/cache-middleware';
 
 const sendMessageSchema = z.object({
   leadId: z.string(),
@@ -14,7 +15,15 @@ export async function messageRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', authenticate);
 
   // Get all messages with pagination and filters
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 60, // 1 minute cache for messages list
+        keyGenerator: cacheKeyGenerators.userWithQuery
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       const { 
@@ -115,7 +124,15 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Get message stats
-  fastify.get('/stats', async (request, reply) => {
+  fastify.get('/stats', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 300, // 5 minutes cache for message stats
+        keyGenerator: cacheKeyGenerators.userSpecific
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       
@@ -140,7 +157,15 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Get all conversations (grouped by lead)
-  fastify.get('/conversations', async (request, reply) => {
+  fastify.get('/conversations', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 120, // 2 minutes cache for conversations
+        keyGenerator: cacheKeyGenerators.userSpecific
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       
@@ -161,7 +186,15 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Get messages for a lead
-  fastify.get<{ Params: { leadId: string } }>('/lead/:leadId', async (request, reply) => {
+  fastify.get<{ Params: { leadId: string } }>('/lead/:leadId', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 180, // 3 minutes cache for lead messages
+        keyGenerator: cacheKeyGenerators.resourceById('lead-messages')
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const { leadId } = request.params;
       
@@ -179,7 +212,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Send message
-  fastify.post<{ Body: z.infer<typeof sendMessageSchema> }>('/send', async (request, reply) => {
+  fastify.post<{ Body: z.infer<typeof sendMessageSchema> }>('/send', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*message*', 'user:*:*conversation*'])
+    ]
+  }, async (request, reply) => {
     try {
       const data = sendMessageSchema.parse(request.body);
       const userId = (request as any).user?.userId || (request as any).user?.id;
@@ -226,7 +264,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Mark message as read
-  fastify.put<{ Params: { id: string } }>('/:id/read', async (request, reply) => {
+  fastify.put<{ Params: { id: string } }>('/:id/read', {
+    preHandler: [
+      authenticate,
+      invalidateCache(['user:*:*message*'])
+    ]
+  }, async (request, reply) => {
     try {
       const { id } = request.params;
       
@@ -255,7 +298,15 @@ export async function messageRoutes(fastify: FastifyInstance) {
   });
 
   // Get conversation for a specific lead
-  fastify.get<{ Params: { leadId: string } }>('/conversation/:leadId', async (request, reply) => {
+  fastify.get<{ Params: { leadId: string } }>('/conversation/:leadId', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 180, // 3 minutes cache for conversations
+        keyGenerator: cacheKeyGenerators.resourceById('conversation')
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       const { leadId } = request.params;
