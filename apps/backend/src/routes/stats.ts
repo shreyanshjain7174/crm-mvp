@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { cacheMiddleware, cacheKeyGenerators } from '../middleware/cache-middleware';
+import { cacheMiddleware } from '../middleware/cache-middleware';
 
 export async function statsRoutes(fastify: FastifyInstance) {
   // Get dashboard statistics

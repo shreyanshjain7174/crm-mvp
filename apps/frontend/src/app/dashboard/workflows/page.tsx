@@ -387,6 +387,31 @@ export default function WorkflowsPage() {
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           <PipelineAnalytics
+            metrics={{
+              totalValue: 1250000,
+              totalDeals: 47,
+              conversionRate: 24,
+              averageDealSize: 26596,
+              averageCycleTime: 23,
+              velocityScore: 8.4,
+              stageMetrics: [],
+              trends: [
+                { period: '30d', totalValue: 1250000, dealCount: 47, conversionRate: 24 }
+              ],
+              forecasting: {
+                projectedRevenue: 890000,
+                projectedDeals: 32,
+                confidenceLevel: 84,
+                riskFactors: ['Economic uncertainty', 'Seasonal trends']
+              },
+              healthScore: {
+                overall: 85,
+                factors: [
+                  { name: 'Conversion Rate', score: 85, trend: 'up' as const, impact: 'high' as const },
+                  { name: 'Deal Velocity', score: 82, trend: 'stable' as const, impact: 'medium' as const }
+                ]
+              }
+            }}
             timeRange="30d"
             onTimeRangeChange={(range) => {
               console.log('Time range changed:', range);

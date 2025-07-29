@@ -17,7 +17,7 @@ export function cacheMiddleware(options: CacheMiddlewareOptions = {}) {
     ttl = 300, // 5 minutes default
     keyGenerator = (req) => `route:${req.method}:${req.url}`,
     condition = () => true,
-    invalidatePatterns = []
+    invalidatePatterns = [] // eslint-disable-line @typescript-eslint/no-unused-vars
   } = options;
 
   return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -73,7 +73,7 @@ export function cacheMiddleware(options: CacheMiddlewareOptions = {}) {
  * Invalidate cache patterns - useful for mutations
  */
 export function invalidateCache(patterns: string[]) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
+  return async (_request: FastifyRequest, _reply: FastifyReply) => {
     try {
       for (const pattern of patterns) {
         await cacheService.delPattern(pattern);

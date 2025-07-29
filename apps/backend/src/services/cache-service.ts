@@ -20,11 +20,9 @@ class CacheService {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
       
       this.redis = new Redis(redisUrl, {
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: 3,
         lazyConnect: true,
         enableReadyCheck: true,
-        maxLoadingTimeout: 2000,
       });
 
       this.redis.on('connect', () => {
@@ -86,7 +84,7 @@ class CacheService {
         return null;
       }
 
-      return options.json !== false ? JSON.parse(value) : value;
+      return options.json !== false ? JSON.parse(value) : value as T;
     } catch (error) {
       logger.error('Cache get error:', error);
       return null;
@@ -216,7 +214,8 @@ class CacheService {
     try {
       const info = await this.redis.info('stats');
       const dbsize = await this.redis.dbsize();
-      const memory = await this.redis.memory('usage');
+      // Get memory usage stats
+      const memoryStats = await this.redis.info('memory');
 
       // Parse stats from Redis INFO command
       const stats = info.split('\r\n').reduce((acc: any, line) => {
@@ -227,10 +226,19 @@ class CacheService {
         return acc;
       }, {});
 
+      // Parse memory stats
+      const memoryInfo = memoryStats.split('\r\n').reduce((acc: any, line) => {
+        const [key, value] = line.split(':');
+        if (key && value) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
       return {
         connected: this.isConnected,
         keys: dbsize,
-        memory: `${Math.round(memory / 1024 / 1024 * 100) / 100} MB`,
+        memory: `${Math.round((parseInt(memoryInfo.used_memory) || 0) / 1024 / 1024 * 100) / 100} MB`,
         hits: parseInt(stats.keyspace_hits) || 0,
         misses: parseInt(stats.keyspace_misses) || 0,
       };

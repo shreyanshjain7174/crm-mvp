@@ -140,7 +140,10 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
           />
         }
       >
-        <AIAgentStatus />
+        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 rounded-lg border border-blue-200 dark:border-blue-500/30">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">🤖 AI Assistant Active</h3>
+          <p className="text-blue-700 dark:text-blue-300">Your AI assistant is ready to help with response suggestions and automation.</p>
+        </div>
       </FeatureGate>
       
       {/* Stage 5: Advanced Features (unlocked after 25 AI interactions) */}
