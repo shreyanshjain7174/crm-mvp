@@ -1117,18 +1117,20 @@ export function HybridWorkflowBuilder() {
                   
                   return (
                     <g>
-                      <path
-                        d={pathData}
-                        stroke="#3b82f6"
-                        strokeWidth="3"
-                        strokeDasharray="8,4"
-                        fill="none"
-                        className="animate-pulse"
-                        style={{
-                          animation: 'dash 1s linear infinite'
-                        }}
-                      />
                       <defs>
+                        <marker
+                          id="drag-arrowhead"
+                          markerWidth="10"
+                          markerHeight="7"
+                          refX="9"
+                          refY="3.5"
+                          orient="auto"
+                        >
+                          <polygon
+                            points="0 0, 10 3.5, 0 7"
+                            fill="#3b82f6"
+                          />
+                        </marker>
                         <style>
                           {`
                             @keyframes dash {
@@ -1139,6 +1141,18 @@ export function HybridWorkflowBuilder() {
                           `}
                         </style>
                       </defs>
+                      <path
+                        d={pathData}
+                        stroke="#3b82f6"
+                        strokeWidth="3"
+                        strokeDasharray="8,4"
+                        fill="none"
+                        markerEnd="url(#drag-arrowhead)"
+                        className="animate-pulse"
+                        style={{
+                          animation: 'dash 1s linear infinite'
+                        }}
+                      />
                     </g>
                   );
                 })()}
