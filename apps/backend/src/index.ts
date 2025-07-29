@@ -27,6 +27,7 @@ import marketplaceRoutes from './routes/marketplace';
 import contactRoutes from './routes/contacts';
 import achievementRoutes from './routes/achievements';
 import notificationRoutes from './routes/notifications';
+import { workflowRoutes } from './routes/workflows';
 import { authenticate } from './middleware/auth';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
@@ -197,6 +198,7 @@ async function buildApp() {
   await app.register(contactRoutes, { prefix: '/api/contacts' });
   await app.register(achievementRoutes, { prefix: '/api/achievements' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
+  await app.register(workflowRoutes, { prefix: '/api/workflows' });
 
   // Serve static files from frontend build in production
   if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {

@@ -2,7 +2,64 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '@/contexts/socket-context';
-// Placeholder imports for removed LangGraph dependencies
+// Import the existing API client structure
+
+// New hybrid workflow interfaces
+export interface WorkflowDefinition {
+  id?: string;
+  name: string;
+  description: string;
+  type: 'n8n' | 'langgraph' | 'hybrid';
+  status: 'active' | 'inactive' | 'draft';
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  triggers: WorkflowTrigger[];
+  settings: {
+    timeout: number;
+    retryPolicy: {
+      maxRetries: number;
+      backoffType: 'fixed' | 'exponential';
+      delay: number;
+    };
+    errorHandling: 'continue' | 'stop' | 'retry';
+  };
+  metadata?: {
+    version: string;
+    createdAt: Date;
+    updatedAt: Date;
+    createdBy: string;
+    tags: string[];
+  };
+}
+
+export interface WorkflowNode {
+  id: string;
+  type: 'trigger' | 'action' | 'condition' | 'ai' | 'transform' | 'integration';
+  engine: 'n8n' | 'langgraph';
+  name: string;
+  config: Record<string, any>;
+  position: { x: number; y: number };
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  conditions?: WorkflowCondition[];
+}
+
+export interface WorkflowTrigger {
+  id: string;
+  type: 'webhook' | 'schedule' | 'event' | 'manual';
+  config: Record<string, any>;
+  conditions?: WorkflowCondition[];
+}
+
+export interface WorkflowCondition {
+  field: string;
+  operator: 'equals' | 'contains' | 'greater' | 'less' | 'in' | 'exists';
+  value: any;
+}
 
 export interface WorkflowStep {
   id: string;
@@ -411,6 +468,149 @@ export function useWorkflows() {
   const getRunningExecutions = () => executions.filter(e => e.status === 'running');
   const getRecentExecutions = () => executions.slice(0, 10);
   
+  // New hybrid workflow API methods
+  const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch all workflows
+  const fetchWorkflows = useCallback(async (filters?: {
+    type?: string;
+    status?: string;
+    tags?: string[];
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const queryParams = new URLSearchParams();
+      if (filters?.type) queryParams.append('type', filters.type);
+      if (filters?.status) queryParams.append('status', filters.status);
+      if (filters?.tags?.length) queryParams.append('tags', filters.tags.join(','));
+      
+      const query = queryParams.toString();
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`/api/workflows${query ? `?${query}` : ''}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setWorkflows(data.workflows);
+      } else {
+        throw new Error(data.error || 'Failed to fetch workflows');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch workflows');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Create workflow
+  const createWorkflow = useCallback(async (workflow: Omit<WorkflowDefinition, 'id' | 'metadata'>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(workflow),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setWorkflows(prev => [...prev, data.workflow]);
+        return data.workflow;
+      } else {
+        throw new Error(data.error || 'Failed to create workflow');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create workflow');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Execute hybrid workflow
+  const executeHybridWorkflow = useCallback(async (
+    id: string, 
+    input: Record<string, any> = {},
+    triggeredBy: string = 'manual'
+  ) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/workflows/${id}/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          input,
+          triggeredBy
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.execution;
+      } else {
+        throw new Error(data.error || 'Failed to execute workflow');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to execute workflow');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch workflow templates
+  const fetchHybridTemplates = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/workflows/templates', {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return data.templates;
+      } else {
+        throw new Error(data.error || 'Failed to fetch templates');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch templates');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const stats = {
     totalExecutions: executions.length,
     runningExecutions: executions.filter(e => e.status === 'running').length,
@@ -422,6 +622,7 @@ export function useWorkflows() {
   };
 
   return {
+    // Legacy workflow system
     executions,
     templates,
     selectedExecution,
@@ -436,6 +637,20 @@ export function useWorkflows() {
     approveStep,
     retryStep,
     getRunningExecutions,
-    getRecentExecutions
+    getRecentExecutions,
+    
+    // New hybrid workflow system
+    workflows,
+    loading,
+    error,
+    fetchWorkflows,
+    createWorkflow,
+    executeHybridWorkflow,
+    fetchHybridTemplates,
+    
+    // Helpers
+    getWorkflowById: (id: string) => workflows.find(w => w.id === id),
+    getActiveWorkflows: () => workflows.filter(w => w.status === 'active'),
+    getWorkflowsByType: (type: string) => workflows.filter(w => w.type === type),
   };
 }
