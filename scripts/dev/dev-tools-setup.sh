@@ -69,7 +69,8 @@ cat > .vscode/extensions.json << 'EOF'
 }
 EOF
 
-# Create development environment variables template
+# Create development environment variables template (if not exists)
+if [ ! -f ".env.example" ]; then
 cat > .env.example << 'EOF'
 # Development Environment Variables
 NODE_ENV=development
@@ -95,6 +96,9 @@ OPENAI_API_KEY=your-openai-api-key
 DEBUG=false
 LOG_LEVEL=info
 EOF
+else
+    echo "⏭️  .env.example already exists, skipping..."
+fi
 
 # Create pre-commit hook
 mkdir -p .git/hooks
@@ -128,21 +132,15 @@ chmod +x .git/hooks/pre-commit
 # Create development convenience scripts
 echo "📝 Creating development convenience scripts..."
 
-# Add package.json scripts for development tools
-cat > temp_package_scripts.json << 'EOF'
-{
-  "dev:tools": "scripts/dev/dev-tools-setup.sh",
-  "dev:analyze": "scripts/dev/analyze-bundle.sh", 
-  "dev:perf": "scripts/dev/check-performance.sh",
-  "dev:clean": "rm -rf apps/frontend/.next apps/backend/dist node_modules/*/node_modules",
-  "dev:reset": "npm run dev:clean && npm install",
-  "code:format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-  "code:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-  "deps:check": "npm outdated",
-  "deps:update": "npm update",
-  "security:audit": "npm audit --audit-level moderate"
-}
-EOF
+# Note: Package.json scripts would need to be manually added to the main package.json
+echo "📝 Suggested package.json scripts (add these manually):"
+echo '  "dev:tools": "scripts/dev/dev-tools-setup.sh"'
+echo '  "dev:analyze": "scripts/dev/analyze-bundle.sh"'
+echo '  "dev:perf": "scripts/dev/check-performance.sh"'
+echo '  "dev:clean": "rm -rf apps/frontend/.next apps/backend/dist node_modules/*/node_modules"'
+echo '  "dev:reset": "npm run dev:clean && npm install"'
+echo '  "code:format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""'
+echo '  "code:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""'
 
 echo "✅ Development tools setup complete!"
 echo ""
@@ -160,5 +158,4 @@ echo "   2. Install recommended VS Code extensions"
 echo "   3. Run 'npm run dev:perf' to baseline performance"
 echo "   4. Use 'npm run dev:analyze' before major releases"
 
-# Cleanup
-rm -f temp_package_scripts.json
+# All tools configured

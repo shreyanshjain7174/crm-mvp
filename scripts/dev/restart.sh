@@ -6,11 +6,13 @@ echo "🔄 Restarting CRM MVP Development Environment..."
 # Navigate to project root
 cd "$(dirname "$0")/../.."
 
-# Stop and start services
-echo "🛑 Stopping services..."
-docker-compose -f infra/docker/docker-compose.dev.yml down
+# Stop all services
+echo "🛑 Stopping all services..."
+./scripts/dev/stop.sh
 
-echo "🚀 Starting services..."
-docker-compose -f infra/docker/docker-compose.dev.yml up -d
+# Wait a moment
+sleep 2
 
-echo "✅ Development environment restarted!"
+# Start all services
+echo "🚀 Starting all services..."
+./scripts/dev/start.sh

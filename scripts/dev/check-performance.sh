@@ -18,10 +18,20 @@ time npm run lint
 echo ""
 echo "🔍 3. Analyzing package sizes..."
 echo "Frontend dependencies:"
-cd apps/frontend && npm list --depth=0 --parseable | wc -l | awk '{print "  Total packages: " $1}'
+if [ -d "apps/frontend" ]; then
+    cd apps/frontend && npm list --depth=0 --parseable 2>/dev/null | wc -l | awk '{print "  Total packages: " $1}' || echo "  Could not count packages"
+    cd ../..
+else
+    echo "  Frontend directory not found"
+fi
 
-echo "Backend dependencies:"  
-cd ../backend && npm list --depth=0 --parseable | wc -l | awk '{print "  Total packages: " $1}'
+echo "Backend dependencies:"
+if [ -d "apps/backend" ]; then
+    cd apps/backend && npm list --depth=0 --parseable 2>/dev/null | wc -l | awk '{print "  Total packages: " $1}' || echo "  Could not count packages"
+    cd ../..
+else
+    echo "  Backend directory not found"
+fi
 
 cd ../..
 
@@ -38,16 +48,23 @@ find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \
 
 echo ""
 echo "🔍 5. Build performance test..."
-echo "Frontend build time:"
-cd apps/frontend
-time npm run build > /dev/null 2>&1
+if [ -d "apps/frontend" ]; then
+    echo "Frontend build time:"
+    cd apps/frontend
+    time npm run build > /dev/null 2>&1 || echo "  Frontend build failed"
+    cd ../..
+else
+    echo "Frontend directory not found, skipping build test"
+fi
 
-echo ""
-echo "Backend build time:"
-cd ../backend  
-time npm run build > /dev/null 2>&1
-
-cd ../..
+if [ -d "apps/backend" ]; then
+    echo "Backend build time:"
+    cd apps/backend
+    time npm run build > /dev/null 2>&1 || echo "  Backend build failed"
+    cd ../..
+else
+    echo "Backend directory not found, skipping build test"
+fi
 
 echo ""
 echo "✅ Performance analysis complete!"
