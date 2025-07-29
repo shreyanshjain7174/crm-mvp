@@ -1060,6 +1060,30 @@ export function HybridWorkflowBuilder() {
                       fill="#64748b"
                     />
                   </marker>
+                  <marker
+                    id="drag-arrowhead"
+                    markerWidth="12"
+                    markerHeight="9"
+                    refX="11"
+                    refY="4.5"
+                    orient="auto"
+                  >
+                    <polygon
+                      points="0 0, 12 4.5, 0 9"
+                      fill="#3b82f6"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                  </marker>
+                  <style>
+                    {`
+                      @keyframes dash {
+                        to {
+                          stroke-dashoffset: -12;
+                        }
+                      }
+                    `}
+                  </style>
                 </defs>
                 
                 {/* Existing Edges */}
@@ -1115,44 +1139,33 @@ export function HybridWorkflowBuilder() {
                   const controlPointX = startX + Math.abs(endX - startX) / 2;
                   const pathData = `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
                   
+                  // Calculate arrow angle based on the end direction
+                  const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                  
                   return (
                     <g>
-                      <defs>
-                        <marker
-                          id="drag-arrowhead"
-                          markerWidth="10"
-                          markerHeight="7"
-                          refX="9"
-                          refY="3.5"
-                          orient="auto"
-                        >
-                          <polygon
-                            points="0 0, 10 3.5, 0 7"
-                            fill="#3b82f6"
-                          />
-                        </marker>
-                        <style>
-                          {`
-                            @keyframes dash {
-                              to {
-                                stroke-dashoffset: -12;
-                              }
-                            }
-                          `}
-                        </style>
-                      </defs>
+                      {/* Main connection line without marker */}
                       <path
                         d={pathData}
                         stroke="#3b82f6"
                         strokeWidth="3"
                         strokeDasharray="8,4"
                         fill="none"
-                        markerEnd="url(#drag-arrowhead)"
                         className="animate-pulse"
                         style={{
                           animation: 'dash 1s linear infinite'
                         }}
                       />
+                      {/* Separate arrow positioned at end point */}
+                      <g transform={`translate(${endX}, ${endY}) rotate(${angle})`}>
+                        <polygon
+                          points="-10,-4 2,0 -10,4"
+                          fill="#3b82f6"
+                          stroke="#ffffff"
+                          strokeWidth="1"
+                          className="animate-pulse"
+                        />
+                      </g>
                     </g>
                   );
                 })()}
