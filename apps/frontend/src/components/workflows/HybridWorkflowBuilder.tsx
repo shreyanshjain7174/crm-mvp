@@ -166,6 +166,9 @@ export function HybridWorkflowBuilder() {
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [connectionMode, setConnectionMode] = useState(false);
+  const [sourceNode, setSourceNode] = useState<string | null>(null);
+  const [dragConnection, setDragConnection] = useState<{ x: number; y: number } | null>(null);
 
   // Viewport control functions
   const zoomIn = useCallback(() => {
@@ -255,24 +258,35 @@ export function HybridWorkflowBuilder() {
       }));
       
       setLastPanPoint({ x: e.clientX, y: e.clientY });
+    } else if (connectionMode && sourceNode && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      setDragConnection({
+        x: (e.clientX - rect.left - viewport.x) / viewport.zoom,
+        y: (e.clientY - rect.top - viewport.y) / viewport.zoom
+      });
     }
-  }, [isPanning, lastPanPoint]);
+  }, [isPanning, lastPanPoint, connectionMode, sourceNode, viewport]);
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
   }, []);
 
-  // Add global mouse up listener for panning
+  // Add global mouse up listener for panning and connections
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       setIsPanning(false);
+      setDragConnection(null);
+      if (connectionMode) {
+        setConnectionMode(false);
+        setSourceNode(null);
+      }
     };
 
-    if (isPanning) {
+    if (isPanning || connectionMode) {
       document.addEventListener('mouseup', handleGlobalMouseUp);
       return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
     }
-  }, [isPanning]);
+  }, [isPanning, connectionMode]);
 
   // Wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -336,6 +350,15 @@ export function HybridWorkflowBuilder() {
   }, []);
 
   const connectNodes = useCallback((sourceId: string, targetId: string) => {
+    // Check if connection already exists
+    const existingEdge = workflow.edges.find(
+      edge => edge.source === sourceId && edge.target === targetId
+    );
+    
+    if (existingEdge || sourceId === targetId) {
+      return; // Don't create duplicate connections or self-connections
+    }
+
     const newEdge: WorkflowEdge = {
       id: `edge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       source: sourceId,
@@ -345,6 +368,29 @@ export function HybridWorkflowBuilder() {
     setWorkflow(prev => ({
       ...prev,
       edges: [...prev.edges, newEdge]
+    }));
+  }, [workflow.edges]);
+
+  const handleConnectionStart = useCallback((nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConnectionMode(true);
+    setSourceNode(nodeId);
+  }, []);
+
+  const handleConnectionEnd = useCallback((targetNodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (connectionMode && sourceNode && sourceNode !== targetNodeId) {
+      connectNodes(sourceNode, targetNodeId);
+    }
+    setConnectionMode(false);
+    setSourceNode(null);
+    setDragConnection(null);
+  }, [connectionMode, sourceNode, connectNodes]);
+
+  const deleteEdge = useCallback((edgeId: string) => {
+    setWorkflow(prev => ({
+      ...prev,
+      edges: prev.edges.filter(edge => edge.id !== edgeId)
     }));
   }, []);
 
@@ -729,6 +775,18 @@ export function HybridWorkflowBuilder() {
             </div>
           </div>
 
+          {/* Connection Mode Indicator */}
+          {connectionMode && (
+            <div className="absolute top-4 left-4 z-10">
+              <div className="bg-blue-100 border border-blue-300 rounded-lg px-3 py-2 text-sm font-medium text-blue-800">
+                🔗 Connection Mode Active
+                <div className="text-xs text-blue-600 mt-1">
+                  Click on a target node to connect
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Zoom Level Indicator */}
           <div className="absolute bottom-4 right-4 z-10">
             <div className="bg-card border rounded px-2 py-1 text-sm font-mono">
@@ -768,29 +826,38 @@ export function HybridWorkflowBuilder() {
                   <motion.div
                     key={node.id}
                     className={cn(
-                      "absolute w-48 p-3 rounded-lg border-2 cursor-pointer shadow-sm",
+                      "absolute w-48 p-3 rounded-lg border-2 cursor-pointer shadow-sm group",
                       getNodeColor(node),
                       getStatusColor(node.status),
-                      selectedNode?.id === node.id && "ring-2 ring-primary"
+                      selectedNode?.id === node.id && "ring-2 ring-primary",
+                      connectionMode && sourceNode === node.id && "ring-2 ring-blue-400"
                     )}
                     style={{
                       left: node.position.x,
                       top: node.position.y
                     }}
-                    onClick={() => setSelectedNode(node)}
-                    onDoubleClick={() => setIsConfigOpen(true)}
-                    drag
+                    onClick={(e) => {
+                      if (connectionMode && sourceNode) {
+                        handleConnectionEnd(node.id, e);
+                      } else {
+                        setSelectedNode(node);
+                      }
+                    }}
+                    onDoubleClick={() => !connectionMode && setIsConfigOpen(true)}
+                    drag={!connectionMode}
                     dragMomentum={false}
                     onDrag={(_, info) => {
-                      updateNode(node.id, {
-                        position: {
-                          x: node.position.x + info.delta.x / viewport.zoom,
-                          y: node.position.y + info.delta.y / viewport.zoom
-                        }
-                      });
+                      if (!connectionMode) {
+                        updateNode(node.id, {
+                          position: {
+                            x: node.position.x + info.delta.x / viewport.zoom,
+                            y: node.position.y + info.delta.y / viewport.zoom
+                          }
+                        });
+                      }
                     }}
                     onMouseDown={(e) => e.stopPropagation()} // Prevent canvas panning when dragging nodes
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: connectionMode ? 1.0 : 1.02 }}
                     whileDrag={{ scale: 1.05 }}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -819,24 +886,61 @@ export function HybridWorkflowBuilder() {
                         {node.engine}
                       </Badge>
                       
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNode(node.id);
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className={cn(
+                            "h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                            connectionMode && "opacity-100"
+                          )}
+                          onClick={(e) => {
+                            if (!connectionMode) {
+                              handleConnectionStart(node.id, e);
+                            }
+                          }}
+                          title="Connect to another node"
+                        >
+                          <ArrowRight className="w-3 h-3" />
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNode(node.id);
+                          }}
+                          title="Delete node"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* Connection Handles */}
+                    {node.inputs && node.inputs.length > 0 && (
+                      <div 
+                        className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-crosshair opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Input connection point"
+                        onClick={(e) => connectionMode && handleConnectionEnd(node.id, e)}
+                      />
+                    )}
+                    
+                    {node.outputs && node.outputs.length > 0 && (
+                      <div 
+                        className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 bg-green-500 border-2 border-white rounded-full cursor-crosshair opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Output connection point"
+                        onClick={(e) => handleConnectionStart(node.id, e)}
+                      />
+                    )}
                   </motion.div>
                 );
               })}
 
               {/* Edges */}
-              <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+              <svg className="absolute inset-0" style={{ zIndex: 1 }}>
                 <defs>
                   <marker
                     id="arrowhead"
@@ -848,11 +952,12 @@ export function HybridWorkflowBuilder() {
                   >
                     <polygon
                       points="0 0, 10 3.5, 0 7"
-                      fill="currentColor"
-                      className="text-muted-foreground"
+                      fill="#64748b"
                     />
                   </marker>
                 </defs>
+                
+                {/* Existing Edges */}
                 {workflow.edges.map(edge => {
                   const sourceNode = workflow.nodes.find(n => n.id === edge.source);
                   const targetNode = workflow.nodes.find(n => n.id === edge.target);
@@ -869,17 +974,53 @@ export function HybridWorkflowBuilder() {
                   const pathData = `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
                   
                   return (
-                    <path
-                      key={edge.id}
-                      d={pathData}
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      className="text-muted-foreground"
-                      markerEnd="url(#arrowhead)"
-                    />
+                    <g key={edge.id}>
+                      <path
+                        d={pathData}
+                        stroke="#64748b"
+                        strokeWidth="3"
+                        fill="none"
+                        markerEnd="url(#arrowhead)"
+                        className="cursor-pointer hover:stroke-red-500 transition-colors"
+                        onClick={() => deleteEdge(edge.id)}
+                      />
+                      {/* Invisible wider path for easier clicking */}
+                      <path
+                        d={pathData}
+                        stroke="transparent"
+                        strokeWidth="12"
+                        fill="none"
+                        className="cursor-pointer"
+                        onClick={() => deleteEdge(edge.id)}
+                      />
+                    </g>
                   );
                 })}
+                
+                {/* Drag Connection Line */}
+                {connectionMode && sourceNode && dragConnection && (() => {
+                  const srcNode = workflow.nodes.find(n => n.id === sourceNode);
+                  if (!srcNode) return null;
+                  
+                  const startX = srcNode.position.x + 192;
+                  const startY = srcNode.position.y + 40;
+                  const endX = dragConnection.x;
+                  const endY = dragConnection.y;
+                  
+                  const controlPointX = startX + Math.abs(endX - startX) / 2;
+                  const pathData = `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
+                  
+                  return (
+                    <path
+                      d={pathData}
+                      stroke="#3b82f6"
+                      strokeWidth="2"
+                      strokeDasharray="5,5"
+                      fill="none"
+                      className="animate-pulse"
+                    />
+                  );
+                })()}
               </svg>
 
               {/* Empty State */}
@@ -900,6 +1041,9 @@ export function HybridWorkflowBuilder() {
                         <p>• Use Ctrl/Cmd + scroll to zoom</p>
                         <p>• Alt + drag or middle mouse to pan</p>
                         <p>• Use zoom controls on the right</p>
+                        <p>• Hover over nodes to see connection handles</p>
+                        <p>• Click → button or green handle to connect nodes</p>
+                        <p>• Click on connections to delete them</p>
                       </div>
                     </div>
                   </div>
