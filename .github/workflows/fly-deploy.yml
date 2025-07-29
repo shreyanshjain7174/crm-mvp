@@ -1,11 +1,28 @@
-# GitHub Actions workflow for automatic Fly.io deployment
-name: Deploy to Fly.io
+# GitHub Actions workflow for testing and manual deployment
+# 
+# Behavior:
+# - Tests run automatically on all pushes and PRs
+# - Deployments are MANUAL ONLY via workflow_dispatch
+# - No automatic deployments to production
+name: Test and Deploy
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      deploy_to_production:
+        type: boolean
+        description: 'Deploy to Fly.io Production (Backend)'
+        required: false
+        default: false
+      deploy_to_vercel:
+        type: boolean  
+        description: 'Deploy to Vercel (Frontend)'
+        required: false
+        default: false
 
 # Only run one deployment at a time
 concurrency:
@@ -16,7 +33,7 @@ env:
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
 jobs:
-  # Run tests first
+  # Run tests automatically on all pushes and PRs
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -90,13 +107,13 @@ jobs:
           JWT_SECRET: test-secret
           SESSION_SECRET: test-session-secret
 
-  # Deploy to Fly.io
+  # Deploy to Fly.io (Manual only)
   deploy:
     name: Deploy to Fly.io
     runs-on: ubuntu-latest
-    needs: test
-    # Only deploy on main branch pushes (not PRs)
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test]
+    # Only deploy via manual workflow dispatch
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_to_production == true && needs.test.result == 'success'
     
     steps:
       - name: Checkout code
@@ -128,13 +145,57 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-  # Optional: Deploy to staging on PRs
+  # Deploy to Vercel (Manual only)
+  deploy-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: [test]
+    # Only deploy via manual workflow dispatch
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_to_vercel == true && needs.test.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          
+      - name: Install dependencies
+        run: |
+          cd apps/frontend
+          npm install --legacy-peer-deps
+          
+      - name: Build frontend
+        run: |
+          cd apps/frontend
+          npm run build
+          
+      - name: Deploy to Vercel
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "VERCEL_TOKEN is not set. Skipping Vercel deployment."
+            echo "Please add VERCEL_TOKEN to your repository secrets."
+            exit 0
+          fi
+          
+          # Install Vercel CLI and deploy
+          npm install -g vercel
+          cd apps/frontend
+          vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Deploy to staging (Disabled - use manual deployment instead)
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: test
-    # Only deploy staging on PRs
-    if: github.event_name == 'pull_request'
+    needs: [test]
+    # Staging deployment disabled - use manual workflow dispatch instead
+    if: false
     
     steps:
       - name: Checkout code
@@ -145,16 +206,20 @@ jobs:
       
       - name: Deploy to staging
         run: |
-          # Skip staging deployment if no FLY_API_TOKEN or use existing app
+          # Skip staging deployment if no FLY_API_TOKEN
           if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
             echo "FLY_API_TOKEN is not set. Skipping staging deployment."
             exit 0
           fi
           
-          # Deploy to existing backend app for staging (same as production for now)
-          # TODO: Create separate staging app when FLY_API_TOKEN has proper permissions
-          echo "Staging deployment temporarily disabled - using production app only"
-          echo "To enable staging: 1) Create crm-backend-api-staging app 2) Update this workflow"
-          exit 0
+          # Check if staging app exists
+          if ! flyctl apps list | grep -q "crm-backend-api-staging"; then
+            echo "Staging app crm-backend-api-staging does not exist."
+            echo "Create it with: flyctl apps create crm-backend-api-staging"
+            exit 0
+          fi
+          
+          # Deploy to staging app
+          flyctl deploy --app crm-backend-api-staging --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
