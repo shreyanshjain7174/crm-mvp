@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -28,7 +28,13 @@ import {
   Target,
   Filter,
   Download,
-  Upload
+  Upload,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Minimize,
+  Move,
+  RotateCcw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -149,6 +155,148 @@ export function HybridWorkflowBuilder() {
   const [executionLogs, setExecutionLogs] = useState<string[]>([]);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
+  
+  // New viewport state for zoom and pan
+  const [viewport, setViewport] = useState({
+    x: 0,
+    y: 0,
+    zoom: 1
+  });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Viewport control functions
+  const zoomIn = useCallback(() => {
+    setViewport(prev => ({
+      ...prev,
+      zoom: Math.min(prev.zoom * 1.2, 3)
+    }));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setViewport(prev => ({
+      ...prev,
+      zoom: Math.max(prev.zoom / 1.2, 0.1)
+    }));
+  }, []);
+
+  const resetViewport = useCallback(() => {
+    setViewport({ x: 0, y: 0, zoom: 1 });
+  }, []);
+
+  const fitToScreen = useCallback(() => {
+    if (workflow.nodes.length === 0) {
+      resetViewport();
+      return;
+    }
+
+    const nodes = workflow.nodes;
+    const bounds = {
+      minX: Math.min(...nodes.map(n => n.position.x)),
+      maxX: Math.max(...nodes.map(n => n.position.x + 192)), // node width
+      minY: Math.min(...nodes.map(n => n.position.y)),
+      maxY: Math.max(...nodes.map(n => n.position.y + 80)) // node height
+    };
+
+    const width = bounds.maxX - bounds.minX;
+    const height = bounds.maxY - bounds.minY;
+    const centerX = bounds.minX + width / 2;
+    const centerY = bounds.minY + height / 2;
+
+    const scaleX = (canvasSize.width * 0.8) / width;
+    const scaleY = (canvasSize.height * 0.8) / height;
+    const scale = Math.min(scaleX, scaleY, 1);
+
+    setViewport({
+      x: (canvasSize.width / 2) - (centerX * scale),
+      y: (canvasSize.height / 2) - (centerY * scale),
+      zoom: scale
+    });
+  }, [workflow.nodes, canvasSize]);
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
+  // Canvas size observer
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        setCanvasSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
+
+  // Pan handling
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle mouse or Alt+Left
+      setIsPanning(true);
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+      e.preventDefault();
+    }
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      const deltaX = e.clientX - lastPanPoint.x;
+      const deltaY = e.clientY - lastPanPoint.y;
+      
+      setViewport(prev => ({
+        ...prev,
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+    }
+  }, [isPanning, lastPanPoint]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Add global mouse up listener for panning
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsPanning(false);
+    };
+
+    if (isPanning) {
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+      return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+    }
+  }, [isPanning]);
+
+  // Wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      setViewport(prev => {
+        const newZoom = Math.min(Math.max(prev.zoom * delta, 0.1), 3);
+        const zoomRatio = newZoom / prev.zoom;
+        
+        return {
+          x: mouseX - (mouseX - prev.x) * zoomRatio,
+          y: mouseY - (mouseY - prev.y) * zoomRatio,
+          zoom: newZoom
+        };
+      });
+    }
+  }, []);
 
   const addNode = useCallback((nodeType: any, position: { x: number; y: number }) => {
     const newNode: WorkflowNode = {
@@ -206,13 +354,13 @@ export function HybridWorkflowBuilder() {
 
     const rect = canvasRef.current.getBoundingClientRect();
     const position = {
-      x: e.clientX - rect.left - canvasOffset.x,
-      y: e.clientY - rect.top - canvasOffset.y
+      x: (e.clientX - rect.left - viewport.x) / viewport.zoom,
+      y: (e.clientY - rect.top - viewport.y) / viewport.zoom
     };
 
     addNode(draggedNodeType, position);
     setDraggedNodeType(null);
-  }, [draggedNodeType, canvasOffset, addNode]);
+  }, [draggedNodeType, viewport, addNode]);
 
   const executeWorkflow = async () => {
     setIsExecuting(true);
@@ -522,14 +670,97 @@ export function HybridWorkflowBuilder() {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 relative bg-grid-pattern">
+        <div className={cn(
+          "flex-1 relative bg-grid-pattern overflow-hidden",
+          isFullscreen && "fixed inset-0 z-50 bg-background"
+        )}>
+          {/* Viewport Controls */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+            <div className="bg-card border rounded-lg p-1 shadow-sm">
+              <div className="flex flex-col gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={zoomIn}
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={zoomOut}
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={fitToScreen}
+                  title="Fit to Screen"
+                >
+                  <Maximize className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={resetViewport}
+                  title="Reset View"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="bg-card border rounded-lg p-1 shadow-sm">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Zoom Level Indicator */}
+          <div className="absolute bottom-4 right-4 z-10">
+            <div className="bg-card border rounded px-2 py-1 text-sm font-mono">
+              {Math.round(viewport.zoom * 100)}%
+            </div>
+          </div>
+
           <div
             ref={canvasRef}
-            className="w-full h-full overflow-auto"
+            className="w-full h-full overflow-hidden cursor-grab"
+            style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
             onDrop={handleCanvasDrop}
             onDragOver={(e) => e.preventDefault()}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
           >
-            <div className="min-w-[2000px] min-h-[2000px] relative">
+            <div 
+              className="absolute inset-0"
+              style={{
+                transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+                transformOrigin: '0 0',
+                width: '2000px',
+                height: '2000px',
+                backgroundImage: `
+                  radial-gradient(circle at 1px 1px, rgba(0,0,0,0.1) 1px, transparent 0)
+                `,
+                backgroundSize: '20px 20px',
+              }}
+            >
               {/* Nodes */}
               {workflow.nodes.map(node => {
                 const Icon = getNodeIcon(node);
@@ -553,11 +784,12 @@ export function HybridWorkflowBuilder() {
                     onDrag={(_, info) => {
                       updateNode(node.id, {
                         position: {
-                          x: node.position.x + info.delta.x,
-                          y: node.position.y + info.delta.y
+                          x: node.position.x + info.delta.x / viewport.zoom,
+                          y: node.position.y + info.delta.y / viewport.zoom
                         }
                       });
                     }}
+                    onMouseDown={(e) => e.stopPropagation()} // Prevent canvas panning when dragging nodes
                     whileHover={{ scale: 1.02 }}
                     whileDrag={{ scale: 1.05 }}
                     initial={{ scale: 0, opacity: 0 }}
@@ -605,6 +837,22 @@ export function HybridWorkflowBuilder() {
 
               {/* Edges */}
               <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+                <defs>
+                  <marker
+                    id="arrowhead"
+                    markerWidth="10"
+                    markerHeight="7"
+                    refX="9"
+                    refY="3.5"
+                    orient="auto"
+                  >
+                    <polygon
+                      points="0 0, 10 3.5, 0 7"
+                      fill="currentColor"
+                      className="text-muted-foreground"
+                    />
+                  </marker>
+                </defs>
                 {workflow.edges.map(edge => {
                   const sourceNode = workflow.nodes.find(n => n.id === edge.source);
                   const targetNode = workflow.nodes.find(n => n.id === edge.target);
@@ -616,33 +864,20 @@ export function HybridWorkflowBuilder() {
                   const endX = targetNode.position.x;
                   const endY = targetNode.position.y + 40;
                   
+                  // Create a curved path
+                  const controlPointX = startX + Math.abs(endX - startX) / 2;
+                  const pathData = `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
+                  
                   return (
-                    <g key={edge.id}>
-                      <path
-                        d={`M ${startX} ${startY} Q ${startX + 50} ${startY} ${startX + 50} ${(startY + endY) / 2} Q ${startX + 50} ${endY} ${endX} ${endY}`}
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
-                        className="text-muted-foreground"
-                        markerEnd="url(#arrowhead)"
-                      />
-                      <defs>
-                        <marker
-                          id="arrowhead"
-                          markerWidth="10"
-                          markerHeight="7"
-                          refX="9"
-                          refY="3.5"
-                          orient="auto"
-                        >
-                          <polygon
-                            points="0 0, 10 3.5, 0 7"
-                            fill="currentColor"
-                            className="text-muted-foreground"
-                          />
-                        </marker>
-                      </defs>
-                    </g>
+                    <path
+                      key={edge.id}
+                      d={pathData}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                      className="text-muted-foreground"
+                      markerEnd="url(#arrowhead)"
+                    />
                   );
                 })}
               </svg>
@@ -656,9 +891,17 @@ export function HybridWorkflowBuilder() {
                     <p className="text-muted-foreground mb-4">
                       Drag components from the left panel to begin
                     </p>
-                    <Badge variant="outline">
-                      Supports both n8n and LangGraph
-                    </Badge>
+                    <div className="flex flex-col gap-2">
+                      <Badge variant="outline">
+                        Supports both n8n and LangGraph
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        <p>💡 Tips:</p>
+                        <p>• Use Ctrl/Cmd + scroll to zoom</p>
+                        <p>• Alt + drag or middle mouse to pan</p>
+                        <p>• Use zoom controls on the right</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
