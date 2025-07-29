@@ -3,6 +3,9 @@
   "outputDirectory": "apps/frontend/.next",
   "installCommand": "cd apps/frontend && npm install",
   "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": false
+  },
   "env": {
     "NEXT_PUBLIC_BACKEND_URL": "https://crm-backend-api.fly.dev",
     "NEXT_PUBLIC_WS_URL": "wss://crm-backend-api.fly.dev",
