@@ -273,7 +273,7 @@ export function HybridWorkflowBuilder() {
     setIsPanning(false);
   }, []);
 
-  // Add global mouse up listener for panning and connections
+  // Add global mouse event listeners for panning and connections
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       setIsPanning(false);
@@ -284,11 +284,27 @@ export function HybridWorkflowBuilder() {
       }
     };
 
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (connectionMode && sourceNode && canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        setDragConnection({
+          x: (e.clientX - rect.left - viewport.x) / viewport.zoom,
+          y: (e.clientY - rect.top - viewport.y) / viewport.zoom
+        });
+      }
+    };
+
     if (isPanning || connectionMode) {
       document.addEventListener('mouseup', handleGlobalMouseUp);
-      return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+      if (connectionMode) {
+        document.addEventListener('mousemove', handleGlobalMouseMove);
+      }
+      return () => {
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+      };
     }
-  }, [isPanning, connectionMode]);
+  }, [isPanning, connectionMode, sourceNode, viewport]);
 
   // Wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -377,7 +393,19 @@ export function HybridWorkflowBuilder() {
     e.stopPropagation();
     setConnectionMode(true);
     setSourceNode(nodeId);
-  }, []);
+    
+    // Initialize drag connection at the source node's output position
+    if (canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const sourceNodeObj = workflow.nodes.find(n => n.id === nodeId);
+      if (sourceNodeObj) {
+        setDragConnection({
+          x: (sourceNodeObj.position.x + 192), // Start at node's right edge
+          y: (sourceNodeObj.position.y + 40)   // Center vertically
+        });
+      }
+    }
+  }, [workflow.nodes]);
 
   const handleConnectionEnd = useCallback((targetNodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1088,14 +1116,30 @@ export function HybridWorkflowBuilder() {
                   const pathData = `M ${startX} ${startY} C ${controlPointX} ${startY}, ${controlPointX} ${endY}, ${endX} ${endY}`;
                   
                   return (
-                    <path
-                      d={pathData}
-                      stroke="#3b82f6"
-                      strokeWidth="2"
-                      strokeDasharray="5,5"
-                      fill="none"
-                      className="animate-pulse"
-                    />
+                    <g>
+                      <path
+                        d={pathData}
+                        stroke="#3b82f6"
+                        strokeWidth="3"
+                        strokeDasharray="8,4"
+                        fill="none"
+                        className="animate-pulse"
+                        style={{
+                          animation: 'dash 1s linear infinite'
+                        }}
+                      />
+                      <defs>
+                        <style>
+                          {`
+                            @keyframes dash {
+                              to {
+                                stroke-dashoffset: -12;
+                              }
+                            }
+                          `}
+                        </style>
+                      </defs>
+                    </g>
                   );
                 })()}
               </svg>
