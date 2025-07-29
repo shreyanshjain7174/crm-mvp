@@ -10,6 +10,7 @@ import {
   Trash2,
   Copy,
   ArrowRight,
+  Keyboard,
   Bot,
   Workflow,
   Zap,
@@ -147,6 +148,7 @@ export function HybridWorkflowBuilder() {
       errorHandling: 'stop'
     }
   });
+
 
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -394,6 +396,39 @@ export function HybridWorkflowBuilder() {
     }));
   }, []);
 
+  // Keyboard shortcuts for delete and escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Delete: Delete or Backspace (when node is selected)
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode && !connectionMode) {
+        e.preventDefault();
+        deleteNode(selectedNode.id);
+        setSelectedNode(null);
+      }
+      // Escape: Cancel connection mode or deselect node
+      else if (e.key === 'Escape') {
+        if (connectionMode) {
+          setConnectionMode(false);
+          setSourceNode(null);
+          setDragConnection(null);
+        } else if (selectedNode) {
+          setSelectedNode(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNode, connectionMode, deleteNode]);
+
+  // Delete selected nodes function
+  const deleteSelectedNode = useCallback(() => {
+    if (selectedNode) {
+      deleteNode(selectedNode.id);
+      setSelectedNode(null);
+    }
+  }, [selectedNode, deleteNode]);
+
   const handleCanvasDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     if (!draggedNodeType || !canvasRef.current) return;
@@ -535,6 +570,20 @@ export function HybridWorkflowBuilder() {
               <Save className="w-4 h-4 mr-2" />
               Save
             </Button>
+            
+            {/* Delete Selected Node */}
+            {selectedNode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deleteSelectedNode}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Delete Selected Node (Delete/Backspace)"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Node
+              </Button>
+            )}
             
             <Dialog>
               <DialogTrigger asChild>
@@ -781,11 +830,39 @@ export function HybridWorkflowBuilder() {
               <div className="bg-blue-100 border border-blue-300 rounded-lg px-3 py-2 text-sm font-medium text-blue-800">
                 🔗 Connection Mode Active
                 <div className="text-xs text-blue-600 mt-1">
-                  Click on a target node to connect
+                  Click on a target node to connect • Press Escape to cancel
                 </div>
               </div>
             </div>
           )}
+          
+          {/* Selected Node Indicator */}
+          {selectedNode && !connectionMode && (
+            <div className="absolute top-4 left-4 z-10">
+              <div className="bg-green-100 border border-green-300 rounded-lg px-3 py-2 text-sm font-medium text-green-800">
+                📋 {selectedNode.name} Selected
+                <div className="text-xs text-green-600 mt-1">
+                  Press Delete/Backspace to remove • Double-click to configure
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Keyboard Shortcuts Help */}
+          <div className="absolute bottom-4 left-4 z-10">
+            <div className="bg-card border rounded-lg p-2 text-xs text-muted-foreground max-w-xs">
+              <div className="font-medium mb-1 flex items-center gap-1">
+                <Keyboard className="w-3 h-3" />
+                Shortcuts
+              </div>
+              <div className="space-y-0.5">
+                <div><kbd className="bg-muted px-1 rounded text-xs">Del</kbd> Delete selected</div>
+                <div><kbd className="bg-muted px-1 rounded text-xs">Esc</kbd> Cancel/Deselect</div>
+                <div><kbd className="bg-muted px-1 rounded text-xs">Ctrl+Scroll</kbd> Zoom</div>
+                <div><kbd className="bg-muted px-1 rounded text-xs">Alt+Drag</kbd> Pan</div>
+              </div>
+            </div>
+          </div>
 
           {/* Zoom Level Indicator */}
           <div className="absolute bottom-4 right-4 z-10">
@@ -1044,6 +1121,8 @@ export function HybridWorkflowBuilder() {
                         <p>• Hover over nodes to see connection handles</p>
                         <p>• Click → button or green handle to connect nodes</p>
                         <p>• Click on connections to delete them</p>
+                        <p>• Press Delete key to remove selected nodes</p>
+                        <p>• Press Escape to cancel actions</p>
                       </div>
                     </div>
                   </div>
