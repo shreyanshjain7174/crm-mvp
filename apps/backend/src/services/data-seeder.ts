@@ -445,4 +445,8 @@ export class DataSeeder {
 export async function initializeDataSeeding(fastify: FastifyInstance): Promise<void> {
   const seeder = new DataSeeder(fastify);
   await seeder.seedAll();
+  
+  // Skip marketplace data seeding - requires database tables that don't exist
+  // const { seedMarketplaceData } = await import('./marketplace-seeder');
+  // await seedMarketplaceData(fastify);
 }

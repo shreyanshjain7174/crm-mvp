@@ -23,7 +23,8 @@ import agentRuntimeRoutes from './routes/agent-runtime';
 import integrationsRoutes from './routes/integrations';
 import billingRoutes from './routes/billing';
 import { agentMonitoringRoutes } from './routes/agent-monitoring';
-import marketplaceRoutes from './routes/marketplace';
+// import marketplaceRoutes from './routes/marketplace'; // Disabled - requires database tables
+import { enhancedMarketplaceRoutes } from './routes/marketplace-enhanced';
 import contactRoutes from './routes/contacts';
 import achievementRoutes from './routes/achievements';
 import notificationRoutes from './routes/notifications';
@@ -199,7 +200,9 @@ async function buildApp() {
   await app.register(integrationsRoutes, { prefix: '/api/integrations' });
   await app.register(billingRoutes, { prefix: '/api/billing' });
   await app.register(agentMonitoringRoutes, { prefix: '/api/monitoring' });
-  await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
+  // Use enhanced marketplace routes instead of original
+  // await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
+  await app.register(enhancedMarketplaceRoutes, { prefix: '/api/marketplace' });
   await app.register(contactRoutes, { prefix: '/api/contacts' });
   await app.register(achievementRoutes, { prefix: '/api/achievements' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
