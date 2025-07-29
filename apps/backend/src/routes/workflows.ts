@@ -154,7 +154,7 @@ export async function workflowRoutes(fastify: FastifyInstance) {
   fastify.post('/:id/execute', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { id } = request.params as any;
-      const { input = {}, triggeredBy = 'manual', config } = request.body as ExecuteWorkflowRequest;
+      const { input = {}, triggeredBy = 'manual' } = request.body as ExecuteWorkflowRequest;
       
       const execution = await workflowOrchestrator.executeWorkflow(id, input, triggeredBy);
       

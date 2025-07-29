@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/auth';
+import { cacheMiddleware, cacheKeyGenerators } from '../middleware/cache-middleware';
 import { z } from 'zod';
 
 // Achievement schema validation (kept for future use)
@@ -21,7 +22,15 @@ export async function achievementRoutes(fastify: FastifyInstance) {
   fastify.addHook('preHandler', authenticate);
 
   // Get user achievements
-  fastify.get('/', async (request, reply) => {
+  fastify.get('/', {
+    preHandler: [
+      authenticate,
+      cacheMiddleware({
+        ttl: 300, // 5 minutes cache for achievements
+        keyGenerator: cacheKeyGenerators.userSpecific
+      })
+    ]
+  }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
 

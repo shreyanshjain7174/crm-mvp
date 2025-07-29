@@ -462,7 +462,7 @@ export class WorkflowOrchestrator extends EventEmitter {
   private async simulateWorkflowExecution(
     workflow: WorkflowDefinition,
     execution: WorkflowExecution,
-    input: Record<string, any>
+    _input: Record<string, any>
   ) {
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
@@ -477,7 +477,7 @@ export class WorkflowOrchestrator extends EventEmitter {
   private async simulateAIWorkflowExecution(
     workflow: WorkflowDefinition,
     execution: WorkflowExecution,
-    input: Record<string, any>
+    _input: Record<string, any>
   ) {
     // Simulate AI processing time (longer for AI operations)
     await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));

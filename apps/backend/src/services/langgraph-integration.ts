@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { WorkflowDefinition, WorkflowExecution } from './workflow-orchestrator';
+import { WorkflowDefinition } from './workflow-orchestrator';
 
 interface LangGraphNode {
   id: string;
@@ -298,7 +298,7 @@ export class LangGraphIntegration {
   private async executeToolNode(
     node: LangGraphNode,
     state: LangGraphState,
-    execution: LangGraphExecution
+    _execution: LangGraphExecution
   ): Promise<any> {
     const toolName = node.config.tool || 'generic_tool';
     
@@ -313,7 +313,7 @@ export class LangGraphIntegration {
   private async executeConditionNode(
     node: LangGraphNode,
     state: LangGraphState,
-    execution: LangGraphExecution
+    _execution: LangGraphExecution
   ): Promise<any> {
     const conditions = node.config.conditions || {};
     const result: Record<string, boolean> = {};
@@ -331,7 +331,7 @@ export class LangGraphIntegration {
   private async executeTransformNode(
     node: LangGraphNode,
     state: LangGraphState,
-    execution: LangGraphExecution
+    _execution: LangGraphExecution
   ): Promise<any> {
     const transformation = node.config.transformation || 'identity';
     
@@ -349,9 +349,9 @@ export class LangGraphIntegration {
    * Execute human node (human-in-the-loop)
    */
   private async executeHumanNode(
-    node: LangGraphNode,
-    state: LangGraphState,
-    execution: LangGraphExecution
+    _node: LangGraphNode,
+    _state: LangGraphState,
+    _execution: LangGraphExecution
   ): Promise<any> {
     // TODO: Implement human interaction mechanism
     // For now, simulate human input
@@ -456,7 +456,7 @@ export class LangGraphIntegration {
   /**
    * Simulate AI response
    */
-  private async simulateAIResponse(prompt: string, config: any): Promise<string> {
+  private async simulateAIResponse(_prompt: string, _config: any): Promise<string> {
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
     
@@ -477,7 +477,7 @@ export class LangGraphIntegration {
   private async simulateToolExecution(
     toolName: string,
     context: any,
-    config: any
+    _config: any
   ): Promise<any> {
     // Simulate tool processing time
     await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
@@ -494,7 +494,7 @@ export class LangGraphIntegration {
   /**
    * Evaluate condition
    */
-  private evaluateCondition(condition: any, context: any): boolean {
+  private evaluateCondition(_condition: any, _context: any): boolean {
     // TODO: Implement proper condition evaluation
     // For now, simulate random success
     return Math.random() > 0.3;

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { logger } from '../utils/logger';
-import { WorkflowDefinition, WorkflowExecution } from './workflow-orchestrator';
+import { WorkflowDefinition } from './workflow-orchestrator';
 
 interface N8NWorkflowData {
   id: string;
@@ -351,7 +351,7 @@ export class N8NIntegration {
   /**
    * Simulate workflow creation when n8n is not available
    */
-  private simulateWorkflowCreation(workflow: WorkflowDefinition): string {
+  private simulateWorkflowCreation(_workflow: WorkflowDefinition): string {
     const simulatedId = `n8n_sim_${Date.now()}`;
     logger.info(`Simulated n8n workflow creation: ${simulatedId}`);
     return simulatedId;

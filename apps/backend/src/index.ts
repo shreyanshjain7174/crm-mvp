@@ -28,7 +28,9 @@ import contactRoutes from './routes/contacts';
 import achievementRoutes from './routes/achievements';
 import notificationRoutes from './routes/notifications';
 import { workflowRoutes } from './routes/workflows';
+import { performanceRoutes } from './routes/performance';
 import { authenticate } from './middleware/auth';
+import { performanceMonitor } from './services/performance-monitor';
 import { logger } from './utils/logger';
 import { socketService } from './services/socket-service';
 import { initializeAgentRuntime } from './services/agent-runtime';
@@ -93,6 +95,9 @@ async function buildApp() {
     logger.error('Database initialization failed:', error);
     throw error; // Critical error - don't start server
   }
+
+  // Add performance monitoring middleware
+  app.addHook('preHandler', performanceMonitor.requestTracker());
   
   // Decorate fastify instance
   app.decorate('db', pool);
@@ -199,6 +204,7 @@ async function buildApp() {
   await app.register(achievementRoutes, { prefix: '/api/achievements' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
   await app.register(workflowRoutes, { prefix: '/api/workflows' });
+  await app.register(performanceRoutes, { prefix: '/api/performance' });
 
   // Serve static files from frontend build in production
   if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
