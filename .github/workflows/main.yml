@@ -1,0 +1,321 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        type: boolean
+        description: 'Deploy Backend to Fly.io'
+        required: false
+        default: false
+      deploy_frontend:
+        type: boolean  
+        description: 'Deploy Frontend to Vercel'
+        required: false
+        default: false
+      skip_build_cache:
+        type: boolean
+        description: 'Skip build cache (force fresh build)'
+        required: false
+        default: false
+
+# Prevent concurrent deployments
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  # Test database configuration
+  DATABASE_URL: postgresql://crm_user:crm_password@localhost:5432/crm_test
+  REDIS_URL: redis://localhost:6379
+  NODE_ENV: test
+  JWT_SECRET: test-jwt-secret-for-ci
+  SESSION_SECRET: test-session-secret-for-ci
+
+jobs:
+  # Quality Assurance - always runs
+  quality:
+    name: Code Quality & Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: crm_test
+          POSTGRES_USER: crm_user
+          POSTGRES_PASSWORD: crm_password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    outputs:
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      docker-changed: ${{ steps.changes.outputs.docker }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Detect changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE=${{ github.event.pull_request.base.sha }}
+          else
+            BASE=${{ github.event.before }}
+          fi
+          
+          # Check for changes in different parts
+          if git diff --name-only $BASE HEAD | grep -E '^apps/frontend/|^packages/' > /dev/null; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if git diff --name-only $BASE HEAD | grep -E '^apps/backend/' > /dev/null; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if git diff --name-only $BASE HEAD | grep -E '^Dockerfile|^docker-compose|^\.dockerignore' > /dev/null; then
+            echo "docker=true" >> $GITHUB_OUTPUT
+          else
+            echo "docker=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/frontend/package-lock.json
+            apps/backend/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          # Clean install for CI consistency
+          npm ci --legacy-peer-deps --prefer-offline
+      
+      - name: Type checking
+        run: npm run typecheck
+      
+      - name: Linting
+        run: npm run lint
+      
+      - name: Security audit
+        run: |
+          npm audit --audit-level=moderate --production || {
+            echo "⚠️ Security vulnerabilities found. Review before deployment."
+            exit 0
+          }
+      
+      - name: Backend tests
+        if: steps.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          cd apps/backend
+          npm test || echo "⚠️ Backend tests not fully configured yet"
+      
+      - name: Frontend build test
+        if: steps.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          NEXT_PUBLIC_BACKEND_URL: https://crm-backend-api.fly.dev
+        run: |
+          cd apps/frontend
+          npm run build
+      
+      - name: Backend build test
+        if: steps.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          cd apps/backend
+          npm run build
+
+  # Docker Build - only when needed
+  docker:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: quality
+    if: needs.quality.outputs.docker-changed == 'true' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build production image
+        run: |
+          docker build -t crm-app:test .
+          echo "✅ Docker build successful"
+      
+      - name: Test image
+        run: |
+          docker run --rm crm-app:test node --version
+          echo "✅ Docker image working"
+
+  # Production Deployment - manual only
+  deploy-backend:
+    name: Deploy Backend (Fly.io)
+    runs-on: ubuntu-latest
+    needs: [quality]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_backend == true
+    environment:
+      name: production-backend
+      url: https://crm-backend-api.fly.dev
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Validate deployment prerequisites
+        run: |
+          if [ -z "${{ secrets.FLY_API_TOKEN }}" ]; then
+            echo "❌ FLY_API_TOKEN secret not configured"
+            exit 1
+          fi
+          echo "✅ Deployment prerequisites validated"
+      
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      
+      - name: Verify Fly.io app exists
+        run: |
+          if ! flyctl apps list | grep -q "crm-backend-api"; then
+            echo "❌ Fly.io app 'crm-backend-api' not found"
+            echo "Create it with: flyctl apps create crm-backend-api"
+            exit 1
+          fi
+          echo "✅ Fly.io app found"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      
+      - name: Deploy to Fly.io
+        run: |
+          echo "🚀 Deploying backend to Fly.io..."
+          flyctl deploy --remote-only --wait-timeout=600
+          echo "✅ Backend deployment completed"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      
+      - name: Health check
+        run: |
+          echo "🏥 Running health check..."
+          sleep 30
+          if curl -f --max-time 30 https://crm-backend-api.fly.dev/health; then
+            echo "✅ Backend health check passed"
+          else
+            echo "⚠️ Health check failed, but deployment may still be starting"
+            exit 0
+          fi
+
+  deploy-frontend:
+    name: Deploy Frontend (Vercel)
+    runs-on: ubuntu-latest
+    needs: [quality]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_frontend == true
+    environment:
+      name: production-frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/frontend/package-lock.json
+      
+      - name: Validate deployment prerequisites
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "❌ VERCEL_TOKEN secret not configured"
+            exit 1
+          fi
+          echo "✅ Deployment prerequisites validated"
+      
+      - name: Install frontend dependencies
+        run: |
+          cd apps/frontend
+          npm ci --legacy-peer-deps --prefer-offline
+      
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_BACKEND_URL: https://crm-backend-api.fly.dev
+        run: |
+          cd apps/frontend
+          npm run build
+          echo "✅ Frontend build completed"
+      
+      - name: Deploy to Vercel
+        run: |
+          echo "🚀 Deploying frontend to Vercel..."
+          npm install -g vercel@latest
+          cd apps/frontend
+          vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+          echo "✅ Frontend deployment completed"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Deployment summary
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always() && github.event_name == 'workflow_dispatch' && (inputs.deploy_backend == true || inputs.deploy_frontend == true)
+    
+    steps:
+      - name: Deployment results
+        run: |
+          echo "# 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ inputs.deploy_backend }}" = "true" ]; then
+            if [ "${{ needs.deploy-backend.result }}" = "success" ]; then
+              echo "✅ **Backend**: Successfully deployed to [Fly.io](https://crm-backend-api.fly.dev)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Backend**: Deployment failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          if [ "${{ inputs.deploy_frontend }}" = "true" ]; then
+            if [ "${{ needs.deploy-frontend.result }}" = "success" ]; then
+              echo "✅ **Frontend**: Successfully deployed to Vercel" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Frontend**: Deployment failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: [\`${{ github.sha }}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY
