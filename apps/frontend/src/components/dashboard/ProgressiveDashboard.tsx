@@ -12,6 +12,11 @@ import { ExpertStage } from './stages/ExpertStage';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 import { ModernDashboard } from '@/components/ui/modern-dashboard';
 
+// Import new onboarding components
+import { InteractiveOnboarding } from '@/components/onboarding/InteractiveOnboarding';
+import { CelebrationManager } from '@/components/onboarding/CelebrationAnimations';
+import { GuidedTour, useTour, dashboardTour } from '@/components/onboarding/GuidedTour';
+
 // Import existing dashboard components
 import { DashboardStats } from './dashboard-stats';
 import { LeadsPipeline } from './leads-pipeline';
@@ -29,9 +34,17 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   const { canAccess: hasAI } = useFeatureGate('ai:suggestions');
   const { canAccess: hasAdvancedFeatures } = useFeatureGate('monitoring:system');
   
+  // Tour management
+  const { activeTour, startTour, completeTour, skipTour, hasTourCompleted } = useTour();
+  
   // Sync user progress with backend on component mount (only once)
   useEffect(() => {
     syncWithBackend();
+    
+    // Start dashboard tour for new users who haven't seen it
+    if (stage === 'new' && !hasTourCompleted('dashboard')) {
+      setTimeout(() => startTour('dashboard'), 1000);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array to run only once on mount
   
@@ -43,73 +56,122 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   if (isNewUser || stage === 'new') {
     console.log('Rendering ModernNewUserStage (Empty State) - Stage:', stage, 'Stats:', stats);
     return (
-      <ModernNewUserStage 
-        onAddContact={onAddContact || (() => {})} 
-      />
+      <>
+        <ModernNewUserStage 
+          onAddContact={onAddContact || (() => {})} 
+        />
+        
+        {/* Guided Tour for new users */}
+        {activeTour === 'dashboard' && (
+          <GuidedTour
+            steps={dashboardTour}
+            isActive={true}
+            onComplete={() => completeTour('dashboard')}
+            onSkip={skipTour}
+            tourId="dashboard"
+          />
+        )}
+        
+        {/* Celebration Manager */}
+        <CelebrationManager />
+      </>
     );
   }
   
   // Show beginner stage for users who just started
   if (stage === 'beginner' && stats.contactsAdded < 5) {
     return (
-      <div className="space-y-6">
-        <DashboardStats />
-        <BeginnerStage 
-          onSendMessage={() => {/* Navigate to messages */}}
-          onViewContacts={() => {/* Navigate to contacts */}}
-        />
-      </div>
+      <>
+        <div className="space-y-6">
+          {/* Interactive Onboarding Component */}
+          <InteractiveOnboarding />
+          
+          <DashboardStats />
+          <BeginnerStage 
+            onSendMessage={() => {/* Navigate to messages */}}
+            onViewContacts={() => {/* Navigate to contacts */}}
+          />
+        </div>
+        
+        {/* Celebration Manager */}
+        <CelebrationManager />
+      </>
     );
   }
   
   // Show intermediate stage for users building their network
   if (stage === 'intermediate') {
     return (
-      <div className="space-y-6">
-        <DashboardStats />
-        <IntermediateStage />
-      </div>
+      <>
+        <div className="space-y-6">
+          {/* Interactive Onboarding Component */}
+          <InteractiveOnboarding />
+          
+          <DashboardStats />
+          <IntermediateStage />
+        </div>
+        
+        {/* Celebration Manager */}
+        <CelebrationManager />
+      </>
     );
   }
   
   // Show advanced stage for AI-powered users with modern elements
   if (stage === 'advanced') {
     return (
-      <div className="space-y-6">
-        <DashboardStats />
-        <div className="grid grid-cols-1 gap-6">
-          <LeadsPipeline />
+      <>
+        <div className="space-y-6">
+          {/* Interactive Onboarding Component */}
+          <InteractiveOnboarding />
+          
+          <DashboardStats />
+          <div className="grid grid-cols-1 gap-6">
+            <LeadsPipeline />
+          </div>
         </div>
-      </div>
+        
+        {/* Celebration Manager */}
+        <CelebrationManager />
+      </>
     );
   }
   
   // Show expert stage for CRM masters with modern dashboard
   if (stage === 'expert') {
     return (
-      <div className="space-y-6">
-        <DashboardStats />
-        <div className="grid grid-cols-1 gap-6">
-          <LeadsPipeline />
+      <>
+        <div className="space-y-6">
+          <DashboardStats />
+          <div className="grid grid-cols-1 gap-6">
+            <LeadsPipeline />
+          </div>
+          <ExpertStage />
         </div>
-        <ExpertStage />
-      </div>
+        
+        {/* Celebration Manager */}
+        <CelebrationManager />
+      </>
     );
   }
   
   // For users with some progress, show progressive dashboard with real stats
   return (
-    <div className="space-y-6">
+    <>
       <div className="space-y-6">
-        {/* Welcome back message for returning users */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-lg p-6 border border-border backdrop-blur-sm">
-          <h2 className="text-xl font-semibold text-foreground mb-2">
-            Welcome back! 👋
-          </h2>
-          <p className="text-muted-foreground">
-            {getWelcomeMessage(stage, stats)}
-          </p>
-        </div>
+        <div className="space-y-6">
+          {/* Interactive Onboarding Component */}
+          <InteractiveOnboarding />
+          
+          {/* Welcome back message for returning users */}
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-lg p-6 border border-border backdrop-blur-sm">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              Welcome back! 👋
+            </h2>
+            <p className="text-muted-foreground">
+              {getWelcomeMessage(stage, stats)}
+            </p>
+          </div>
       
       {/* Progressive feature sections */}
       
@@ -163,8 +225,12 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
           <p className="text-purple-700">System monitoring and advanced analytics are now available.</p>
         </div>
       </FeatureGate>
+        </div>
       </div>
-    </div>
+      
+      {/* Celebration Manager */}
+      <CelebrationManager />
+    </>
   );
 }
 
