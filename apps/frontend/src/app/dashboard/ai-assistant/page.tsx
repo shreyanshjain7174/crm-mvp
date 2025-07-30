@@ -24,46 +24,9 @@ import {
   Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiClient, AISuggestion, AIAnalytics } from '@/lib/api';
 
-type SuggestionType = 'MESSAGE' | 'FOLLOW_UP' | 'STATUS_CHANGE' | 'PRIORITY_UPDATE';
 type SuggestionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
-interface AISuggestion {
-  id: string;
-  type: SuggestionType;
-  leadName: string;
-  content: string;
-  context: string;
-  confidence: number;
-  status: SuggestionStatus;
-  createdAt: string;
-  reason: string;
-}
-
-const mockSuggestions: AISuggestion[] = [
-  {
-    id: '1',
-    type: 'MESSAGE',
-    leadName: 'Rajesh Kumar',
-    content: 'Hi Rajesh! Thanks for your interest in our CRM solution. Based on your business size, I recommend starting with our Professional plan. Would you like me to schedule a personalized demo this week?',
-    context: 'Lead asked about pricing and business size is 25-50 employees',
-    confidence: 89,
-    status: 'PENDING',
-    createdAt: '2 minutes ago',
-    reason: 'Lead engagement pattern suggests immediate follow-up needed'
-  },
-  {
-    id: '2',
-    type: 'STATUS_CHANGE',
-    leadName: 'Priya Sharma',
-    content: 'Change status from WARM to HOT',
-    context: 'Multiple message exchanges, asked for demo, high engagement',
-    confidence: 92,
-    status: 'PENDING',
-    createdAt: '5 minutes ago',
-    reason: 'Lead behavior indicates strong purchase intent'
-  }
-];
 
 export default function AIAssistantPage() {
   const router = useRouter();
@@ -72,8 +35,34 @@ export default function AIAssistantPage() {
   
   const [showFeatureReveal, setShowFeatureReveal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<SuggestionStatus | 'ALL'>('ALL');
-  const [suggestions, setSuggestions] = useState(mockSuggestions);
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
+  const [analytics, setAnalytics] = useState<AIAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Load AI data
+  useEffect(() => {
+    const loadAIData = async () => {
+      if (!canAccessAI) return;
+      
+      try {
+        setLoading(true);
+        const [suggestionsData, analyticsData] = await Promise.all([
+          apiClient.getPendingAISuggestions(),
+          apiClient.getAIAnalytics()
+        ]);
+        
+        setSuggestions(suggestionsData);
+        setAnalytics(analyticsData);
+      } catch (error) {
+        console.error('Error loading AI data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAIData();
+  }, [canAccessAI]);
+  
   // Check if this is the first time accessing AI assistant
   useEffect(() => {
     const aiCelebration = pendingCelebrations.find(c => c === 'feature-ai:suggestions');
@@ -91,35 +80,49 @@ export default function AIAssistantPage() {
     router.push('/dashboard/pipeline');
   };
 
-  const handleApproveSuggestion = (suggestionId: string) => {
-    setSuggestions(prev => 
-      prev.map(s => s.id === suggestionId ? { ...s, status: 'APPROVED' as SuggestionStatus } : s)
-    );
-    incrementStat('aiInteractions');
+  const handleApproveSuggestion = async (suggestionId: string) => {
+    try {
+      const updatedSuggestion = await apiClient.approveAISuggestion(suggestionId, { approved: true });
+      setSuggestions(prev => 
+        prev.map(s => s.id === suggestionId ? { ...updatedSuggestion, status: 'APPROVED' as SuggestionStatus } : s)
+      );
+      incrementStat('aiInteractions');
+    } catch (error) {
+      console.error('Error approving suggestion:', error);
+      alert('Failed to approve suggestion. Please try again.');
+    }
   };
 
-  const handleRejectSuggestion = (suggestionId: string) => {
-    setSuggestions(prev => 
-      prev.map(s => s.id === suggestionId ? { ...s, status: 'REJECTED' as SuggestionStatus } : s)
-    );
-    incrementStat('aiInteractions');
+  const handleRejectSuggestion = async (suggestionId: string) => {
+    try {
+      const updatedSuggestion = await apiClient.approveAISuggestion(suggestionId, { approved: false });
+      setSuggestions(prev => 
+        prev.map(s => s.id === suggestionId ? { ...updatedSuggestion, status: 'REJECTED' as SuggestionStatus } : s)
+      );
+      incrementStat('aiInteractions');
+    } catch (error) {
+      console.error('Error rejecting suggestion:', error);
+      alert('Failed to reject suggestion. Please try again.');
+    }
   };
 
-  const getTypeIcon = (type: SuggestionType) => {
+  const getTypeIcon = (type: string) => {
     switch (type) {
       case 'MESSAGE': return MessageSquare;
       case 'FOLLOW_UP': return Clock;
       case 'STATUS_CHANGE': return TrendingUp;
       case 'PRIORITY_UPDATE': return Zap;
+      default: return MessageSquare;
     }
   };
 
-  const getTypeColor = (type: SuggestionType) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'MESSAGE': return 'bg-blue-100 text-blue-800';
       case 'FOLLOW_UP': return 'bg-yellow-100 text-yellow-800';
       case 'STATUS_CHANGE': return 'bg-green-100 text-green-800';
       case 'PRIORITY_UPDATE': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
 
@@ -137,13 +140,21 @@ export default function AIAssistantPage() {
     return 'text-red-600';
   };
 
-  const filteredSuggestions = suggestions.filter(suggestion =>
-    selectedStatus === 'ALL' || suggestion.status === selectedStatus
-  );
+  // Helper to get suggestion status
+  const getSuggestionStatus = (suggestion: AISuggestion): SuggestionStatus => {
+    if (suggestion.executed) return 'APPROVED';
+    if (suggestion.approved === false) return 'REJECTED';
+    return 'PENDING';
+  };
 
-  const pendingCount = suggestions.filter(s => s.status === 'PENDING').length;
-  const approvedCount = suggestions.filter(s => s.status === 'APPROVED').length;
-  const rejectedCount = suggestions.filter(s => s.status === 'REJECTED').length;
+  const filteredSuggestions = suggestions.filter(suggestion => {
+    const status = getSuggestionStatus(suggestion);
+    return selectedStatus === 'ALL' || status === selectedStatus;
+  });
+
+  const pendingCount = suggestions.filter(s => getSuggestionStatus(s) === 'PENDING').length;
+  const approvedCount = suggestions.filter(s => getSuggestionStatus(s) === 'APPROVED').length;
+  const rejectedCount = suggestions.filter(s => getSuggestionStatus(s) === 'REJECTED').length;
 
   // Show empty state if AI is locked
   if (!canAccessAI) {
@@ -196,8 +207,10 @@ export default function AIAssistantPage() {
         <Card>
           <CardContent className="p-6 text-center">
             <Bot className="h-8 w-8 mx-auto text-primary mb-2" />
-            <p className="text-2xl font-bold text-primary">89.5%</p>
-            <p className="text-sm text-gray-600">Accuracy Rate</p>
+            <p className="text-2xl font-bold text-primary">
+              {analytics ? `${analytics.averageConfidence.toFixed(1)}%` : '--'}
+            </p>
+            <p className="text-sm text-gray-600">Avg Confidence</p>
           </CardContent>
         </Card>
         <Card>
@@ -217,8 +230,10 @@ export default function AIAssistantPage() {
         <Card>
           <CardContent className="p-6 text-center">
             <TrendingUp className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-            <p className="text-2xl font-bold text-blue-600">24%</p>
-            <p className="text-sm text-gray-600">Response Time Reduction</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {analytics ? `${analytics.approvalRate.toFixed(1)}%` : '--'}
+            </p>
+            <p className="text-sm text-gray-600">Approval Rate</p>
           </CardContent>
         </Card>
       </div>
@@ -228,31 +243,31 @@ export default function AIAssistantPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-yellow-500" />
-            AI Learning Progress
+            AI Performance Metrics
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>Message Pattern Recognition</span>
-                <span className="font-medium">85%</span>
+                <span>Total Suggestions</span>
+                <span className="font-medium">{analytics?.totalSuggestions || 0}</span>
               </div>
-              <Progress value={85} className="h-2" />
+              <Progress value={Math.min((analytics?.totalSuggestions || 0) * 5, 100)} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>Lead Scoring Accuracy</span>
-                <span className="font-medium">92%</span>
+                <span>Execution Rate</span>
+                <span className="font-medium">{analytics ? `${analytics.executionRate.toFixed(1)}%` : '0%'}</span>
               </div>
-              <Progress value={92} className="h-2" />
+              <Progress value={analytics?.executionRate || 0} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>Response Quality</span>
-                <span className="font-medium">78%</span>
+                <span>Average Confidence</span>
+                <span className="font-medium">{analytics ? `${analytics.averageConfidence.toFixed(1)}%` : '0%'}</span>
               </div>
-              <Progress value={78} className="h-2" />
+              <Progress value={analytics?.averageConfidence || 0} className="h-2" />
             </div>
           </div>
         </CardContent>
@@ -276,68 +291,91 @@ export default function AIAssistantPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredSuggestions.map((suggestion) => {
-              const TypeIcon = getTypeIcon(suggestion.type);
-              return (
-                <Card key={suggestion.id} className="border-l-4 border-l-primary">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="p-2 rounded-full bg-primary/10">
-                          <TypeIcon className="h-5 w-5 text-primary" />
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span>Loading AI suggestions...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredSuggestions.map((suggestion) => {
+                const TypeIcon = getTypeIcon(suggestion.type);
+                const status = getSuggestionStatus(suggestion);
+                const leadName = suggestion.lead?.name || 'Unknown Lead';
+                const formattedDate = new Date(suggestion.createdAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                
+                return (
+                  <Card key={suggestion.id} className="border-l-4 border-l-primary">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4 flex-1">
+                          <div className="p-2 rounded-full bg-primary/10">
+                            <TypeIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-3">
+                              <h3 className="font-semibold text-gray-900">{leadName}</h3>
+                              <Badge className={cn('text-xs', getTypeColor(suggestion.type))}>
+                                {suggestion.type.replace('_', ' ')}
+                              </Badge>
+                              <Badge className={cn('text-xs', getStatusColor(status))}>
+                                {status}
+                              </Badge>
+                              <span className={cn('text-sm font-medium', getConfidenceColor(suggestion.confidence * 100))}>
+                                {(suggestion.confidence * 100).toFixed(0)}% confidence
+                              </span>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                              <p className="text-gray-900 text-sm font-medium mb-2">Suggested Action:</p>
+                              <p className="text-gray-700">{suggestion.content}</p>
+                            </div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              {suggestion.context && (
+                                <p><strong>Context:</strong> {suggestion.context}</p>
+                              )}
+                              <p><strong>Generated:</strong> {formattedDate}</p>
+                              {suggestion.lead && (
+                                <div className="flex gap-4">
+                                  <p><strong>Lead Status:</strong> {suggestion.lead.status}</p>
+                                  <p><strong>Priority:</strong> {suggestion.lead.priority}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
-                            <h3 className="font-semibold text-gray-900">{suggestion.leadName}</h3>
-                            <Badge className={cn('text-xs', getTypeColor(suggestion.type))}>
-                              {suggestion.type.replace('_', ' ')}
-                            </Badge>
-                            <Badge className={cn('text-xs', getStatusColor(suggestion.status))}>
-                              {suggestion.status}
-                            </Badge>
-                            <span className={cn('text-sm font-medium', getConfidenceColor(suggestion.confidence))}>
-                              {suggestion.confidence}% confidence
-                            </span>
+                        {status === 'PENDING' && (
+                          <div className="flex items-center space-x-2 ml-4">
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApproveSuggestion(suggestion.id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                              onClick={() => handleRejectSuggestion(suggestion.id)}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 mb-3">
-                            <p className="text-gray-900 text-sm font-medium mb-2">Suggested Action:</p>
-                            <p className="text-gray-700">{suggestion.content}</p>
-                          </div>
-                          <div className="text-sm text-gray-600 space-y-1">
-                            <p><strong>Context:</strong> {suggestion.context}</p>
-                            <p><strong>Reasoning:</strong> {suggestion.reason}</p>
-                            <p><strong>Generated:</strong> {suggestion.createdAt}</p>
-                          </div>
-                        </div>
+                        )}
                       </div>
-                      {suggestion.status === 'PENDING' && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Button 
-                            size="sm" 
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApproveSuggestion(suggestion.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                            onClick={() => handleRejectSuggestion(suggestion.id)}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           {filteredSuggestions.length === 0 && (
             <div className="text-center py-12">
