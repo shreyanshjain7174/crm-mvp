@@ -169,16 +169,43 @@ export async function messageRoutes(fastify: FastifyInstance) {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
       
+      // Get leads with their messages
       const result = await fastify.db.query(`
-        SELECT l.*, 
-          (SELECT row_to_json(m) FROM (SELECT * FROM messages WHERE lead_id = l.id ORDER BY timestamp DESC LIMIT 1) m) as latest_message
+        SELECT 
+          l.id,
+          l.name,
+          l.phone,
+          l.status,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id', m.id,
+                'leadId', m.lead_id,
+                'content', m.content,
+                'direction', m.direction,
+                'messageType', m.message_type,
+                'status', m.status,
+                'timestamp', m.timestamp
+              ) ORDER BY m.timestamp ASC
+            ) FILTER (WHERE m.id IS NOT NULL),
+            '[]'::json
+          ) as messages
         FROM leads l 
+        LEFT JOIN messages m ON l.id = m.lead_id
         WHERE l.user_id = $1 AND EXISTS (SELECT 1 FROM messages WHERE lead_id = l.id)
+        GROUP BY l.id, l.name, l.phone, l.status, l.updated_at
         ORDER BY l.updated_at DESC
       `, [userId]);
-      const leads = result.rows;
       
-      return leads;
+      const conversations = result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        status: row.status,
+        messages: row.messages || []
+      }));
+      
+      return conversations;
     } catch (error) {
       fastify.log.error('Error fetching conversations:', error);
       reply.status(500).send({ error: 'Failed to fetch conversations' });
