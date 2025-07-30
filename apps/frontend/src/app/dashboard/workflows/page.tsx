@@ -32,7 +32,9 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { VisualWorkflowBuilder, WorkflowData } from '@/components/workflows/VisualWorkflowBuilder';
 import { WorkflowSuggestionEngine } from '@/components/workflows/WorkflowSuggestionEngine';
-import { PipelineAnalytics } from '@/components/analytics/PipelineAnalytics';
+import { HybridWorkflowBuilder } from '@/components/workflows/HybridWorkflowBuilder';
+import { WorkflowMarketplace } from '@/components/workflows/WorkflowMarketplace';
+import { WorkflowAnalytics } from '@/components/workflows/WorkflowAnalytics';
 
 interface WorkflowTemplate {
   id: string;
@@ -234,11 +236,12 @@ export default function WorkflowsPage() {
 
       {/* Workflow Management */}
       <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
+          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+          <TabsTrigger value="hybrid-builder">Hybrid Builder</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="active">Active Workflows</TabsTrigger>
-          <TabsTrigger value="builder">Visual Builder</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -330,6 +333,16 @@ export default function WorkflowsPage() {
           </div>
         </TabsContent>
 
+        {/* Marketplace Tab */}
+        <TabsContent value="marketplace" className="space-y-6">
+          <WorkflowMarketplace />
+        </TabsContent>
+
+        {/* Hybrid Builder Tab */}
+        <TabsContent value="hybrid-builder" className="space-y-6">
+          <HybridWorkflowBuilder />
+        </TabsContent>
+
         {/* Active Workflows Tab */}
         <TabsContent value="active" className="space-y-6">
           <Card>
@@ -386,36 +399,11 @@ export default function WorkflowsPage() {
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
-          <PipelineAnalytics
-            metrics={{
-              totalValue: 1250000,
-              totalDeals: 47,
-              conversionRate: 24,
-              averageDealSize: 26596,
-              averageCycleTime: 23,
-              velocityScore: 8.4,
-              stageMetrics: [],
-              trends: [
-                { period: '30d', totalValue: 1250000, dealCount: 47, conversionRate: 24 }
-              ],
-              forecasting: {
-                projectedRevenue: 890000,
-                projectedDeals: 32,
-                confidenceLevel: 84,
-                riskFactors: ['Economic uncertainty', 'Seasonal trends']
-              },
-              healthScore: {
-                overall: 85,
-                factors: [
-                  { name: 'Conversion Rate', score: 85, trend: 'up' as const, impact: 'high' as const },
-                  { name: 'Deal Velocity', score: 82, trend: 'stable' as const, impact: 'medium' as const }
-                ]
-              }
-            }}
+          <WorkflowAnalytics
             timeRange="30d"
             onTimeRangeChange={(range) => {
-              console.log('Time range changed:', range);
-              // Handle time range change for analytics
+              console.log('Workflow analytics time range changed:', range);
+              // Handle time range change for workflow analytics
             }}
           />
         </TabsContent>

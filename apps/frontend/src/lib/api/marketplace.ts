@@ -143,11 +143,31 @@ class MarketplaceAPI {
     const queryString = this.buildQueryString(filters);
     const endpoint = `/agents${queryString ? `?${queryString}` : ''}`;
     
-    const response = await this.request<Agent[]>(endpoint);
+    const response = await this.request<any>(endpoint);
     
-    // Transform dates from string to Date objects
+    // Handle enhanced marketplace routes response format
+    if (response.success && response.agents) {
+      const agents = response.agents.map((agent: any) => ({
+        ...agent,
+        createdAt: new Date(agent.createdAt || agent.created_at),
+        updatedAt: new Date(agent.updatedAt || agent.updated_at),
+      }));
+      
+      return {
+        success: true,
+        data: agents,
+        meta: {
+          total: response.total || agents.length,
+          limit: response.limit || 20,
+          offset: response.offset || 0,
+          hasMore: response.hasMore || false
+        }
+      };
+    }
+    
+    // Fallback to original format if available
     if (response.success && response.data) {
-      response.data = response.data.map(agent => ({
+      response.data = response.data.map((agent: any) => ({
         ...agent,
         createdAt: new Date(agent.createdAt),
         updatedAt: new Date(agent.updatedAt),
@@ -161,11 +181,25 @@ class MarketplaceAPI {
    * Get featured agents
    */
   async getFeaturedAgents(): Promise<MarketplaceResponse<Agent[]>> {
-    const response = await this.request<Agent[]>('/featured');
+    const response = await this.request<any>('/featured');
     
-    // Transform dates from string to Date objects
+    // Handle enhanced marketplace routes response format
+    if (response.success && response.featured) {
+      const agents = response.featured.map((agent: any) => ({
+        ...agent,
+        createdAt: new Date(agent.createdAt || agent.created_at),
+        updatedAt: new Date(agent.updatedAt || agent.updated_at),
+      }));
+      
+      return {
+        success: true,
+        data: agents
+      };
+    }
+    
+    // Fallback to original format if available
     if (response.success && response.data) {
-      response.data = response.data.map(agent => ({
+      response.data = response.data.map((agent: any) => ({
         ...agent,
         createdAt: new Date(agent.createdAt),
         updatedAt: new Date(agent.updatedAt),
@@ -207,7 +241,17 @@ class MarketplaceAPI {
    * Get available categories
    */
   async getCategories(): Promise<MarketplaceResponse<AgentCategory[]>> {
-    return this.request<AgentCategory[]>('/categories');
+    const response = await this.request<any>('/categories');
+    
+    // Handle enhanced marketplace routes response format
+    if (response.success && response.categories) {
+      return {
+        success: true,
+        data: response.categories
+      };
+    }
+    
+    return response;
   }
 
   /**
@@ -250,6 +294,37 @@ class MarketplaceAPI {
       }),
     });
   }
+
+  /**
+   * Get marketplace statistics
+   */
+  async getStats(): Promise<MarketplaceResponse<{
+    totalAgents: number;
+    featuredAgents: number;
+    verifiedAgents: number;
+    totalInstalls: number;
+    averageRating: number;
+    categoryCounts: Record<string, number>;
+    pricingModels: Record<string, number>;
+    topRated: Array<{
+      id: string;
+      name: string;
+      rating: number;
+      installs: number;
+    }>;
+  }>> {
+    const response = await this.request<any>('/stats');
+    
+    // Handle enhanced marketplace routes response format
+    if (response.success && response.stats) {
+      return {
+        success: true,
+        data: response.stats
+      };
+    }
+    
+    return response;
+  }
 }
 
 // Create and export singleton instance
@@ -261,6 +336,7 @@ export const {
   getFeaturedAgents,
   getAgentDetails,
   getCategories,
+  getStats,
   checkInstallationEligibility,
   installAgent,
 } = marketplaceAPI;
