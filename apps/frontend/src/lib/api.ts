@@ -106,6 +106,25 @@ export interface AIAnalytics {
   averageConfidence: number;
 }
 
+export interface TeamMember {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  role: 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+  department?: string;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  permissions: Record<string, boolean>;
+  avatar_url?: string;
+  hired_date?: string;
+  last_active_at?: string;
+  invited_at: string;
+  joined_at?: string;
+  created_at: string;
+  updated_at: string;
+  is_registered: boolean;
+}
+
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
@@ -639,6 +658,74 @@ class ApiClient {
     if (params?.period) searchParams.set('period', params.period);
     
     return this.request(`/api/reports/analytics/${metric}?${searchParams.toString()}`);
+  }
+
+  // Team API
+  async getTeamMembers(): Promise<TeamMember[]> {
+    return this.request('/api/team');
+  }
+
+  async getTeamMember(id: string): Promise<TeamMember> {
+    return this.request(`/api/team/${id}`);
+  }
+
+  async inviteTeamMember(data: {
+    email: string;
+    name: string;
+    phone?: string;
+    role?: 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+    department?: string;
+    permissions?: Record<string, boolean>;
+  }): Promise<{
+    success: boolean;
+    member: TeamMember;
+    message: string;
+  }> {
+    return this.request('/api/team/invite', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTeamMember(id: string, data: {
+    name?: string;
+    phone?: string;
+    role?: 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
+    department?: string;
+    status?: 'active' | 'inactive' | 'pending' | 'suspended';
+    permissions?: Record<string, boolean>;
+  }): Promise<{
+    success: boolean;
+    member: TeamMember;
+    message: string;
+  }> {
+    return this.request(`/api/team/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async removeTeamMember(id: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    return this.request(`/api/team/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTeamStats(): Promise<{
+    total_members: number;
+    active_members: number;
+    pending_invites: number;
+    owners: number;
+    admins: number;
+    managers: number;
+    members: number;
+    viewers: number;
+    active_last_week: number;
+  }> {
+    return this.request('/api/team/stats');
   }
 }
 

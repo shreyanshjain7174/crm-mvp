@@ -33,6 +33,7 @@ import { workflowRoutes } from './routes/workflows';
 import { performanceRoutes } from './routes/performance';
 import { settingsRoutes } from './routes/settings';
 import { reportsRoutes } from './routes/reports';
+import { teamRoutes } from './routes/team';
 import { authenticate } from './middleware/auth';
 import { performanceMonitor } from './services/performance-monitor';
 import { logger } from './utils/logger';
@@ -233,6 +234,7 @@ async function buildApp() {
   await app.register(performanceRoutes, { prefix: '/api/performance' });
   await app.register(settingsRoutes, { prefix: '/api/settings' });
   await app.register(reportsRoutes, { prefix: '/api/reports' });
+  await app.register(teamRoutes, { prefix: '/api/team' });
 
   // Serve static files from frontend build in production
   if (process.env.NODE_ENV === 'production' || process.env.SERVE_FRONTEND === 'true') {
