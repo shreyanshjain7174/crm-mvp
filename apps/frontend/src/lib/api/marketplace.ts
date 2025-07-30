@@ -73,6 +73,29 @@ export interface MarketplaceResponse<T> {
     hasMore: boolean;
   };
   error?: string;
+  // Enhanced marketplace response properties
+  agents?: Agent[];
+  featured?: Agent[];
+  categories?: AgentCategory[];
+  stats?: {
+    totalAgents: number;
+    featuredAgents: number;
+    verifiedAgents: number;
+    totalInstalls: number;
+    averageRating: number;
+    categoryCounts: Record<string, number>;
+    pricingModels: Record<string, number>;
+    topRated: Array<{
+      id: string;
+      name: string;
+      rating: number;
+      installs: number;
+    }>;
+  };
+  total?: number;
+  limit?: number;
+  offset?: number;
+  hasMore?: boolean;
 }
 
 export interface InstallationEligibility {
