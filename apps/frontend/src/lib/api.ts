@@ -839,6 +839,110 @@ class ApiClient {
       body: JSON.stringify({ status }),
     });
   }
+
+  // Performance/Monitoring API
+  async getPerformanceMetrics(): Promise<{
+    success: boolean;
+    metrics: {
+      averageResponseTime: number;
+      errorRate: number;
+      cacheHitRate: number;
+      requestCount: number;
+      memoryUsage: {
+        rss: number;
+        heapTotal: number;
+        heapUsed: number;
+        external: number;
+      };
+      activeConnections: number;
+      uptime: number;
+    };
+  }> {
+    return this.request('/api/performance/metrics');
+  }
+
+  async getPerformanceReport(): Promise<{
+    success: boolean;
+    report: any;
+  }> {
+    return this.request('/api/performance/report');
+  }
+
+  async getRouteMetrics(): Promise<{
+    success: boolean;
+    routes: Array<{
+      path: string;
+      method: string;
+      count: number;
+      averageTime: number;
+      errors: number;
+      successRate: number;
+    }>;
+  }> {
+    return this.request('/api/performance/routes');
+  }
+
+  async getCacheStats(): Promise<{
+    success: boolean;
+    cache: {
+      connected: boolean;
+      keys: number;
+      memory: string;
+      hitRate?: number;
+    };
+  }> {
+    return this.request('/api/performance/cache');
+  }
+
+  async getPerformanceAlerts(): Promise<{
+    success: boolean;
+    alerts: Array<{
+      id: string;
+      type: 'warning' | 'error' | 'info';
+      message: string;
+      timestamp: string;
+      severity: 'low' | 'medium' | 'high';
+      metric?: string;
+      threshold?: number;
+      currentValue?: number;
+    }>;
+  }> {
+    return this.request('/api/performance/alerts');
+  }
+
+  async getSystemHealth(): Promise<{
+    healthy: boolean;
+    timestamp: string;
+    metrics: {
+      averageResponseTime: string;
+      errorRate: string;
+      cacheHitRate: string;
+      memoryUsage: string;
+      activeConnections: number;
+    };
+    cache?: {
+      connected: boolean;
+      keys: number;
+      memory: string;
+    };
+    alerts: any[];
+  }> {
+    return this.request('/api/performance/health');
+  }
+
+  async warmupCache(): Promise<{
+    success: boolean;
+    message: string;
+    results: Array<{
+      route: string;
+      status?: number;
+      error?: string;
+    }>;
+  }> {
+    return this.request('/api/performance/warmup', {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
