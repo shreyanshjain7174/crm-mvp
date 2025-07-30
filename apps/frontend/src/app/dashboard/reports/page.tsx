@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { apiClient } from '@/lib/api';
 import { 
   Download,
   FileText,
@@ -52,16 +53,17 @@ interface ReportData {
   };
   topPerformers: Array<{
     name: string;
-    metric: string;
-    value: number;
+    email: string;
+    performance: number;
     change: number;
+    trend: 'up' | 'down';
   }>;
   recentActivities: Array<{
-    id: string;
-    type: 'lead' | 'call' | 'email' | 'meeting';
+    type: string;
     description: string;
     timestamp: string;
-    status: 'success' | 'pending' | 'failed';
+    user: string;
+    status: string;
   }>;
 }
 
@@ -71,66 +73,83 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
 
-  // Mock data - in production this would come from API
+  // Load real report data from API
   useEffect(() => {
-    const mockData: ReportData = {
-      period: selectedPeriod,
-      metrics: {
-        totalLeads: 156,
-        convertedLeads: 23,
-        conversionRate: 14.7,
-        totalRevenue: 125000,
-        avgDealSize: 5434,
-        activePipelineValue: 245000,
-        responseTime: 2.3,
-        messagesSent: 342,
-        callsMade: 67,
-        emailsSent: 89
-      },
-      trends: {
-        leads: 12.5,
-        conversion: -2.1,
-        revenue: 18.3,
-        activity: 7.8
-      },
-      topPerformers: [
-        { name: 'Rajesh Kumar', metric: 'Conversion Rate', value: 23.5, change: 5.2 },
-        { name: 'Priya Sharma', metric: 'Deals Closed', value: 8, change: 2 },
-        { name: 'Amit Patel', metric: 'Revenue Generated', value: 45000, change: 12.3 }
-      ],
-      recentActivities: [
-        {
-          id: '1',
-          type: 'lead',
-          description: 'New lead: TechStart Solutions',
-          timestamp: '2 hours ago',
-          status: 'success'
-        },
-        {
-          id: '2',
-          type: 'call',
-          description: 'Call completed with Innovative Corp',
-          timestamp: '4 hours ago',
-          status: 'success'
-        },
-        {
-          id: '3',
-          type: 'email',
-          description: 'Follow-up email sent to Global Tech',
-          timestamp: '6 hours ago',
-          status: 'pending'
+    const loadReportData = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.getReports({
+          period: selectedPeriod as '7d' | '30d' | '90d' | '1y',
+          reportType: selectedReport as 'overview' | 'leads' | 'revenue' | 'activity'
+        });
+
+        if (response.success) {
+          setReportData({
+            period: response.data.period,
+            metrics: response.data.metrics,
+            trends: response.data.trends,
+            topPerformers: response.data.topPerformers,
+            recentActivities: response.data.recentActivities
+          });
+        } else {
+          console.error('Failed to load report data');
         }
-      ]
+      } catch (error) {
+        console.error('Error loading report data:', error);
+        // Fallback to basic empty data
+        setReportData({
+          period: selectedPeriod,
+          metrics: {
+            totalLeads: 0,
+            convertedLeads: 0,
+            conversionRate: 0,
+            totalRevenue: 0,
+            avgDealSize: 0,
+            activePipelineValue: 0,
+            responseTime: 0,
+            messagesSent: 0,
+            callsMade: 0,
+            emailsSent: 0
+          },
+          trends: {
+            leads: 0,
+            conversion: 0,
+            revenue: 0,
+            activity: 0
+          },
+          topPerformers: [],
+          recentActivities: []
+        });
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    setReportData(mockData);
-  }, [selectedPeriod]);
+
+    loadReportData();
+  }, [selectedPeriod, selectedReport]);
 
   const handleRefresh = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
+    try {
+      const response = await apiClient.getReports({
+        period: selectedPeriod as '7d' | '30d' | '90d' | '1y',
+        reportType: selectedReport as 'overview' | 'leads' | 'revenue' | 'activity'
+      });
+
+      if (response.success) {
+        setReportData({
+          period: response.data.period,
+          metrics: response.data.metrics,
+          trends: response.data.trends,
+          topPerformers: response.data.topPerformers,
+          recentActivities: response.data.recentActivities
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing report data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
@@ -376,14 +395,11 @@ export default function ReportsPage() {
                 <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div>
                     <p className="font-medium text-foreground">{performer.name}</p>
-                    <p className="text-sm text-muted-foreground">{performer.metric}</p>
+                    <p className="text-sm text-muted-foreground">{performer.email}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-foreground">
-                      {typeof performer.value === 'number' && performer.value > 1000 
-                        ? formatCurrency(performer.value)
-                        : `${performer.value}${performer.metric.includes('Rate') ? '%' : ''}`
-                      }
+                      {performer.performance}%
                     </p>
                     {formatTrend(performer.change)}
                   </div>
@@ -400,8 +416,8 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {reportData.recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+              {reportData.recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
                   <div className="flex-shrink-0">
                     {getActivityIcon(activity.type)}
                   </div>
@@ -410,7 +426,7 @@ export default function ReportsPage() {
                       {activity.description}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {activity.timestamp}
+                      {activity.timestamp} • {activity.user}
                     </p>
                   </div>
                   <div className="flex-shrink-0">

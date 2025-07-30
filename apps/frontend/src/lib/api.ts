@@ -574,6 +574,72 @@ class ApiClient {
 
     return response.blob();
   }
+
+  // Reports API
+  async getReports(params?: {
+    period?: '7d' | '30d' | '90d' | '1y';
+    reportType?: 'overview' | 'leads' | 'revenue' | 'activity';
+  }): Promise<{
+    success: boolean;
+    data: {
+      period: string;
+      reportType: string;
+      metrics: {
+        totalLeads: number;
+        convertedLeads: number;
+        conversionRate: number;
+        totalRevenue: number;
+        avgDealSize: number;
+        activePipelineValue: number;
+        responseTime: number;
+        messagesSent: number;
+        callsMade: number;
+        emailsSent: number;
+      };
+      trends: {
+        leads: number;
+        conversion: number;
+        revenue: number;
+        activity: number;
+      };
+      topPerformers: Array<{
+        name: string;
+        email: string;
+        performance: number;
+        change: number;
+        trend: 'up' | 'down';
+      }>;
+      recentActivities: Array<{
+        type: string;
+        description: string;
+        timestamp: string;
+        user: string;
+        status: string;
+      }>;
+      generatedAt: string;
+    };
+  }> {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set('period', params.period);
+    if (params?.reportType) searchParams.set('reportType', params.reportType);
+    
+    return this.request(`/api/reports?${searchParams.toString()}`);
+  }
+
+  async getAnalytics(metric: 'conversion-funnel' | 'performance-trends', params?: {
+    period?: '7d' | '30d' | '90d';
+  }): Promise<{
+    success: boolean;
+    data: any;
+    metric: string;
+    period: string;
+    generatedAt: string;
+  }> {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set('period', params.period);
+    
+    return this.request(`/api/reports/analytics/${metric}?${searchParams.toString()}`);
+  }
 }
 
 export const apiClient = new ApiClient();

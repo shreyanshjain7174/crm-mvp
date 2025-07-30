@@ -320,15 +320,16 @@ export async function settingsRoutes(fastify: FastifyInstance) {
       let filename;
       
       switch (type) {
-        case 'contacts':
+        case 'contacts': {
           const contactsResult = await fastify.db.query(`
             SELECT * FROM contacts WHERE user_id = $1
           `, [userId]);
           data = contactsResult.rows;
           filename = `contacts-export-${Date.now()}.json`;
           break;
+        }
           
-        case 'messages':
+        case 'messages': {
           const messagesResult = await fastify.db.query(`
             SELECT m.* FROM messages m
             JOIN leads l ON m.lead_id = l.id
@@ -337,8 +338,9 @@ export async function settingsRoutes(fastify: FastifyInstance) {
           data = messagesResult.rows;
           filename = `messages-export-${Date.now()}.json`;
           break;
+        }
           
-        case 'analytics':
+        case 'analytics': {
           // Get various analytics data
           const statsResult = await fastify.db.query(`
             SELECT 
@@ -350,6 +352,7 @@ export async function settingsRoutes(fastify: FastifyInstance) {
           data = statsResult.rows[0];
           filename = `analytics-export-${Date.now()}.json`;
           break;
+        }
           
         default:
           return reply.status(400).send({ error: 'Invalid export type' });
@@ -370,8 +373,6 @@ export async function settingsRoutes(fastify: FastifyInstance) {
     preHandler: [authenticate]
   }, async (request, reply) => {
     try {
-      const userId = (request as any).user.userId;
-      
       // In a real implementation, this would check actual backup status
       // For now, we'll simulate it
       const lastBackup = new Date();
