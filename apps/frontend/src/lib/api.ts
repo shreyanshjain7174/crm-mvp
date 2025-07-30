@@ -727,6 +727,118 @@ class ApiClient {
   }> {
     return this.request('/api/team/stats');
   }
+
+  // Workflow API
+  async getWorkflows(params?: {
+    type?: 'n8n' | 'langgraph' | 'hybrid';
+    status?: 'active' | 'inactive' | 'draft';
+    tags?: string[];
+  }): Promise<{
+    success: boolean;
+    workflows: any[];
+    total: number;
+  }> {
+    const searchParams = new URLSearchParams();
+    if (params?.type) searchParams.set('type', params.type);
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.tags) searchParams.set('tags', params.tags.join(','));
+    
+    return this.request(`/api/workflows?${searchParams.toString()}`);
+  }
+
+  async getWorkflow(id: string): Promise<{
+    success: boolean;
+    workflow: any;
+  }> {
+    return this.request(`/api/workflows/${id}`);
+  }
+
+  async createWorkflow(data: {
+    name: string;
+    description: string;
+    type: 'n8n' | 'langgraph' | 'hybrid';
+    triggers: any[];
+    nodes: any[];
+    edges: any[];
+    settings?: any;
+  }): Promise<{
+    success: boolean;
+    workflow: any;
+  }> {
+    return this.request('/api/workflows', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async executeWorkflow(id: string, data?: {
+    input?: Record<string, any>;
+    triggeredBy?: string;
+    config?: {
+      streaming?: boolean;
+      maxIterations?: number;
+    };
+  }): Promise<{
+    success: boolean;
+    execution: any;
+  }> {
+    return this.request(`/api/workflows/${id}/execute`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  async getWorkflowExecutions(id: string, limit?: number): Promise<{
+    success: boolean;
+    executions: any[];
+    total: number;
+  }> {
+    const searchParams = new URLSearchParams();
+    if (limit) searchParams.set('limit', limit.toString());
+    
+    return this.request(`/api/workflows/${id}/executions?${searchParams.toString()}`);
+  }
+
+  async getWorkflowStats(): Promise<{
+    success: boolean;
+    stats: {
+      totalWorkflows: number;
+      activeWorkflows: number;
+      totalExecutions: number;
+      successRate: number;
+      avgExecutionTime: number;
+      categoryCounts: Record<string, number>;
+    };
+  }> {
+    return this.request('/api/workflows/stats');
+  }
+
+  async getWorkflowTemplates(): Promise<{
+    success: boolean;
+    templates: Array<{
+      id: string;
+      name: string;
+      description: string;
+      type: 'n8n' | 'langgraph' | 'hybrid';
+      category: string;
+      difficulty: 'beginner' | 'intermediate' | 'advanced';
+      estimatedTime: string;
+      nodes: any[];
+      benefits: string[];
+    }>;
+  }> {
+    return this.request('/api/workflows/templates');
+  }
+
+  async updateWorkflowStatus(id: string, status: 'active' | 'inactive' | 'draft'): Promise<{
+    success: boolean;
+    workflow: any;
+  }> {
+    return this.request(`/api/workflows/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

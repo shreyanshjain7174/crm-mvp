@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,11 +31,13 @@ import {
   Brain,
   Lock,
   Save,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { apiClient } from '@/lib/api';
 
 interface AutomationRule {
   id: string;
@@ -62,6 +64,52 @@ export default function AutomationPage() {
   const { stats } = useUserProgressStore();
   const [isCreating, setIsCreating] = useState(false);
   const [editingRule, setEditingRule] = useState<string | null>(null);
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflowStats, setWorkflowStats] = useState<any>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load workflow data
+  useEffect(() => {
+    const loadWorkflowData = async () => {
+      if (!canAccessAutomation) return;
+      
+      try {
+        setLoading(true);
+        const [workflowsData, statsData, templatesData] = await Promise.all([
+          apiClient.getWorkflows(),
+          apiClient.getWorkflowStats(),
+          apiClient.getWorkflowTemplates()
+        ]);
+        
+        setWorkflows(workflowsData.workflows || []);
+        setWorkflowStats(statsData.stats || null);
+        setTemplates(templatesData.templates || []);
+      } catch (error) {
+        console.error('Error loading workflow data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWorkflowData();
+  }, [canAccessAutomation]);
+
+  // Handle workflow status toggle
+  const handleToggleWorkflow = async (workflowId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      await apiClient.updateWorkflowStatus(workflowId, newStatus);
+      
+      // Update local state
+      setWorkflows(prev => 
+        prev.map(w => w.id === workflowId ? { ...w, status: newStatus } : w)
+      );
+    } catch (error) {
+      console.error('Error toggling workflow:', error);
+      alert('Failed to update workflow status. Please try again.');
+    }
+  };
 
   // Show feature locked if not expert
   if (!canAccessAutomation) {
@@ -94,105 +142,19 @@ export default function AutomationPage() {
     );
   }
 
-  // Mock automation rules
-  const automationRules: AutomationRule[] = [
-    {
-      id: 'rule-1',
-      name: 'Welcome New Leads',
-      description: 'Send welcome message to new leads from WhatsApp',
-      trigger: {
-        type: 'contact_added',
-        conditions: { source: 'whatsapp' }
-      },
-      actions: [
-        {
-          type: 'send_message',
-          parameters: { template: 'welcome_message', delay: 5 }
-        },
-        {
-          type: 'update_lead_score',
-          parameters: { increment: 10 }
-        }
-      ],
-      isActive: true,
-      executionCount: 156,
-      successRate: 94.2,
-      lastExecuted: '2 hours ago',
-      category: 'lead-management'
-    },
-    {
-      id: 'rule-2',
-      name: 'High Value Lead Alert',
-      description: 'Notify team when lead score exceeds 80',
-      trigger: {
-        type: 'lead_score_change',
-        conditions: { threshold: 80, direction: 'above' }
-      },
-      actions: [
-        {
-          type: 'send_notification',
-          parameters: { recipient: 'sales_team', priority: 'high' }
-        },
-        {
-          type: 'change_pipeline_stage',
-          parameters: { stage: 'qualified' }
-        }
-      ],
-      isActive: true,
-      executionCount: 23,
-      successRate: 100,
-      lastExecuted: '1 day ago',
-      category: 'scoring'
-    },
-    {
-      id: 'rule-3',
-      name: 'Follow-up Reminder',
-      description: 'Create follow-up task if no response in 3 days',
-      trigger: {
-        type: 'time_based',
-        conditions: { delay: '3 days', condition: 'no_response' }
-      },
-      actions: [
-        {
-          type: 'create_task',
-          parameters: { title: 'Follow up with lead', priority: 'medium' }
-        },
-        {
-          type: 'send_notification',
-          parameters: { recipient: 'assigned_user' }
-        }
-      ],
-      isActive: false,
-      executionCount: 89,
-      successRate: 87.6,
-      lastExecuted: '5 hours ago',
-      category: 'follow-up'
-    },
-    {
-      id: 'rule-4',
-      name: 'Pipeline Progression',
-      description: 'Auto-advance leads with 3+ positive interactions',
-      trigger: {
-        type: 'message_received',
-        conditions: { sentiment: 'positive', count: 3 }
-      },
-      actions: [
-        {
-          type: 'change_pipeline_stage',
-          parameters: { stage: 'contacted' }
-        },
-        {
-          type: 'update_lead_score',
-          parameters: { increment: 15 }
-        }
-      ],
-      isActive: true,
-      executionCount: 67,
-      successRate: 91.0,
-      lastExecuted: '30 minutes ago',
-      category: 'lead-management'
-    }
-  ];
+  // Convert workflow data to automation rule format for compatibility
+  const automationRules: AutomationRule[] = workflows.map(workflow => ({
+    id: workflow.id,
+    name: workflow.name,
+    description: workflow.description,
+    trigger: workflow.triggers?.[0] || { type: 'contact_added', conditions: {} },
+    actions: workflow.nodes?.filter((node: any) => node.type === 'action') || [],
+    isActive: workflow.status === 'active',
+    executionCount: workflow.metadata?.executionCount || 0,
+    successRate: workflow.metadata?.successRate || 0,
+    lastExecuted: workflow.metadata?.lastExecuted || 'Never',
+    category: (workflow.category || 'lead-management') as 'lead-management' | 'follow-up' | 'scoring' | 'notification'
+  }));
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -226,10 +188,10 @@ export default function AutomationPage() {
     }
   };
 
-  const totalRules = automationRules.length;
-  const activeRules = automationRules.filter(r => r.isActive).length;
-  const totalExecutions = automationRules.reduce((sum, r) => sum + r.executionCount, 0);
-  const avgSuccessRate = automationRules.reduce((sum, r) => sum + r.successRate, 0) / totalRules;
+  const totalRules = workflowStats?.totalWorkflows || workflows.length;
+  const activeRules = workflowStats?.activeWorkflows || workflows.filter(w => w.status === 'active').length;
+  const totalExecutions = workflowStats?.totalExecutions || 0;
+  const avgSuccessRate = workflowStats?.successRate || 0;
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
@@ -304,9 +266,26 @@ export default function AutomationPage() {
 
         {/* Rules Tab */}
         <TabsContent value="rules" className="space-y-6">
-          <div className="space-y-4">
-            {automationRules.map((rule) => (
-              <Card key={rule.id} className="hover:shadow-md transition-shadow">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span>Loading automation rules...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {automationRules.length === 0 ? (
+                <div className="text-center py-12">
+                  <Workflow className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No automation rules yet</h3>
+                  <p className="text-gray-600 mb-6">Create your first automation rule to streamline your workflow</p>
+                  <Button onClick={() => setIsCreating(true)} className="bg-purple-600 hover:bg-purple-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Rule
+                  </Button>
+                </div>
+              ) : (
+                automationRules.map((rule) => (
+                  <Card key={rule.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -373,6 +352,7 @@ export default function AutomationPage() {
                       <Button 
                         size="sm" 
                         variant={rule.isActive ? "destructive" : "default"}
+                        onClick={() => handleToggleWorkflow(rule.id, rule.isActive ? 'active' : 'inactive')}
                       >
                         {rule.isActive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                       </Button>
@@ -383,8 +363,10 @@ export default function AutomationPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </TabsContent>
 
         {/* Rule Builder Tab */}
@@ -432,51 +414,14 @@ export default function AutomationPage() {
 
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                name: 'Welcome Sequence',
-                description: 'Send welcome messages to new leads',
-                trigger: 'Contact Added',
-                actions: ['Send Message', 'Update Score'],
-                category: 'lead-management'
-              },
-              {
-                name: 'Hot Lead Alert',
-                description: 'Notify team of high-scoring leads',
-                trigger: 'Score Change',
-                actions: ['Send Notification', 'Change Stage'],
-                category: 'scoring'
-              },
-              {
-                name: 'Follow-up Reminder',
-                description: 'Create tasks for follow-ups',
-                trigger: 'Time Based',
-                actions: ['Create Task', 'Send Reminder'],
-                category: 'follow-up'
-              },
-              {
-                name: 'Pipeline Automation',
-                description: 'Auto-advance qualified leads',
-                trigger: 'Message Received',
-                actions: ['Change Stage', 'Update Score'],
-                category: 'lead-management'
-              },
-              {
-                name: 'Response Automation',
-                description: 'AI-powered auto responses',
-                trigger: 'Message Received',
-                actions: ['Generate Response', 'Tag Conversation'],
-                category: 'notification'
-              },
-              {
-                name: 'Lead Scoring',
-                description: 'Dynamic lead scoring updates',
-                trigger: 'Activity Completed',
-                actions: ['Update Score', 'Check Threshold'],
-                category: 'scoring'
-              }
-            ].map((template, index) => (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span>Loading templates...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templates.map((template, index) => (
               <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
@@ -489,10 +434,13 @@ export default function AutomationPage() {
                   
                   <div className="space-y-2 text-xs">
                     <div>
-                      <span className="font-medium">Trigger:</span> {template.trigger}
+                      <span className="font-medium">Type:</span> {template.type}
                     </div>
                     <div>
-                      <span className="font-medium">Actions:</span> {template.actions.join(', ')}
+                      <span className="font-medium">Difficulty:</span> {template.difficulty}
+                    </div>
+                    <div>
+                      <span className="font-medium">Time:</span> {template.estimatedTime}
                     </div>
                   </div>
                   
@@ -501,59 +449,78 @@ export default function AutomationPage() {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Rule Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {automationRules.map((rule) => (
-                    <div key={rule.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-sm">{rule.name}</p>
-                        <p className="text-xs text-gray-600">{rule.executionCount} executions</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              <span>Loading analytics...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rule Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {automationRules.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No automation rules to analyze yet
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-sm">{rule.successRate}%</p>
-                        <p className="text-xs text-gray-600">success</p>
+                    ) : (
+                      automationRules.map((rule) => (
+                        <div key={rule.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-sm">{rule.name}</p>
+                            <p className="text-xs text-gray-600">{rule.executionCount} executions</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-sm">{rule.successRate.toFixed(1)}%</p>
+                            <p className="text-xs text-gray-600">success</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Execution by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {workflowStats?.categoryCounts ? (
+                      Object.entries(workflowStats.categoryCounts).map(([category, count], index) => (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              index === 0 ? 'bg-blue-500' : 
+                              index === 1 ? 'bg-green-500' : 
+                              index === 2 ? 'bg-purple-500' : 'bg-orange-500'
+                            }`}></div>
+                            <span className="text-sm capitalize">{category.replace('-', ' ')}</span>
+                          </div>
+                          <span className="font-medium">{typeof count === 'number' ? count : 0}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No category data available yet
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Execution by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { category: 'Lead Management', executions: 223, color: 'bg-blue-500' },
-                    { category: 'Follow-up', executions: 89, color: 'bg-green-500' },
-                    { category: 'Scoring', executions: 23, color: 'bg-purple-500' },
-                    { category: 'Notification', executions: 0, color: 'bg-orange-500' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                        <span className="text-sm">{item.category}</span>
-                      </div>
-                      <span className="font-medium">{item.executions}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
