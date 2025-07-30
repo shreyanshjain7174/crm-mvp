@@ -468,6 +468,112 @@ class ApiClient {
   }> {
     return this.request('/api/stats/dashboard');
   }
+
+  // Settings API
+  async getAllSettings(): Promise<{
+    whatsapp: any;
+    ai: any;
+    notifications: any;
+    backup: any;
+    appearance: any;
+    updatedAt: string;
+  }> {
+    return this.request('/api/settings/all');
+  }
+
+  async updateWhatsAppSettings(settings: {
+    businessPhone: string;
+    displayName: string;
+    welcomeMessage: string;
+    businessAccountId?: string;
+    phoneNumberId?: string;
+    autoReply: boolean;
+    webhookStatus: boolean;
+  }): Promise<{ settings: any; message: string }> {
+    return this.request('/api/settings/whatsapp', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async updateAISettings(settings: {
+    confidenceThreshold: number;
+    responseTone: 'professional' | 'friendly' | 'casual' | 'formal';
+    businessContext?: string;
+    autoScoring: boolean;
+    autoSuggestions: boolean;
+    autoFollowup: boolean;
+  }): Promise<{ settings: any; message: string }> {
+    return this.request('/api/settings/ai', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async updateNotificationSettings(settings: {
+    email: {
+      newLeads: boolean;
+      whatsappMessages: boolean;
+      aiSuggestions: boolean;
+    };
+    push: {
+      urgentLeads: boolean;
+      followupReminders: boolean;
+    };
+  }): Promise<{ settings: any; message: string }> {
+    return this.request('/api/settings/notifications', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async updateBackupSettings(settings: {
+    autoBackup: boolean;
+    includeMessages: boolean;
+    includeAIData: boolean;
+    frequency: 'hourly' | 'every6hours' | 'daily' | 'weekly';
+  }): Promise<{ settings: any; message: string }> {
+    return this.request('/api/settings/backup', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async updateAppearanceSettings(settings: {
+    theme: 'light' | 'dark' | 'system';
+    primaryColor?: string;
+    compactMode: boolean;
+    showAnimations: boolean;
+    highContrast: boolean;
+  }): Promise<{ settings: any; message: string }> {
+    return this.request('/api/settings/appearance', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async getBackupStatus(): Promise<{
+    lastBackup: string;
+    nextBackup: string;
+    status: string;
+    size: string;
+  }> {
+    return this.request('/api/settings/backup-status');
+  }
+
+  async exportData(type: 'contacts' | 'messages' | 'analytics'): Promise<Blob> {
+    const response = await fetch(`${this.baseURL}/api/settings/export/${type}`, {
+      headers: {
+        Authorization: `Bearer ${this.getToken()}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.status}`);
+    }
+
+    return response.blob();
+  }
 }
 
 export const apiClient = new ApiClient();

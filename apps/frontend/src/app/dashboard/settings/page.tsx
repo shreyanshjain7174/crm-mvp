@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/components/ui/theme-provider';
 import { useWhatsAppStatus } from '@/hooks/use-whatsapp-status';
@@ -17,8 +17,8 @@ import {
   RequiredTextInput 
 } from '@/components/ui/validated-input';
 import { validateUserProfile, validatePassword, validateWhatsAppSettings } from '@/lib/validation';
+import { apiClient } from '@/lib/api';
 import { 
-  Settings, 
   Smartphone, 
   Bot, 
   Bell, 
@@ -26,11 +26,8 @@ import {
   Shield, 
   Database,
   Palette,
-  Globe,
   Save,
-  CheckCircle,
-  AlertCircle,
-  BarChart3
+  CheckCircle
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -41,6 +38,7 @@ export default function SettingsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
   
   const { status: whatsappStatus, loading: whatsappLoading, refresh: refreshWhatsApp } = useWhatsAppStatus();
   
@@ -62,14 +60,91 @@ export default function SettingsPage() {
   
   // WhatsApp form state
   const [whatsappSettings, setWhatsappSettings] = useState({
-    businessPhone: '+91 98765 43210',
+    businessPhone: '',
     displayName: 'CRM Business',
     welcomeMessage: 'Hi! Thanks for reaching out. We\'ll get back to you shortly.',
-    businessAccountId: 'your-business-account-id',
-    phoneNumberId: 'your-phone-number-id',
+    businessAccountId: '',
+    phoneNumberId: '',
     autoReply: true,
     webhookStatus: true
   });
+
+  // AI settings state
+  const [aiSettings, setAiSettings] = useState({
+    confidenceThreshold: 80,
+    responseTone: 'friendly' as 'professional' | 'friendly' | 'casual' | 'formal',
+    businessContext: '',
+    autoScoring: true,
+    autoSuggestions: true,
+    autoFollowup: false
+  });
+
+  // Notification settings state
+  const [notificationSettings, setNotificationSettings] = useState({
+    email: {
+      newLeads: true,
+      whatsappMessages: true,
+      aiSuggestions: false
+    },
+    push: {
+      urgentLeads: true,
+      followupReminders: true
+    }
+  });
+
+  // Backup settings state
+  const [backupSettings, setBackupSettings] = useState({
+    autoBackup: true,
+    includeMessages: true,
+    includeAIData: false,
+    frequency: 'every6hours' as 'hourly' | 'every6hours' | 'daily' | 'weekly'
+  });
+
+  // Appearance settings state
+  const [appearanceSettings, setAppearanceSettings] = useState({
+    theme: 'system' as 'light' | 'dark' | 'system',
+    primaryColor: '#3b82f6',
+    compactMode: false,
+    showAnimations: true,
+    highContrast: false
+  });
+
+  // Load initial settings data
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.getAllSettings();
+        
+        // Update all settings state
+        if (response.whatsapp) {
+          setWhatsappSettings(response.whatsapp);
+        }
+        if (response.ai) {
+          setAiSettings(response.ai);
+        }
+        if (response.notifications) {
+          setNotificationSettings(response.notifications);
+        }
+        if (response.backup) {
+          setBackupSettings(response.backup);
+        }
+        if (response.appearance) {
+          setAppearanceSettings(response.appearance);
+          // Sync theme with appearance settings
+          if (response.appearance.theme) {
+            setTheme(response.appearance.theme);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [setTheme]);
 
   const handleProfileSave = async () => {
     setIsSubmitting(true);
@@ -84,9 +159,11 @@ export default function SettingsPage() {
         return;
       }
       
-      // TODO: Call API to update profile
-      console.log('Saving profile:', validationResult.data);
-      // const response = await apiClient.updateProfile(validationResult.data);
+      // Call API to update profile
+      if (validationResult.data) {
+        const response = await apiClient.updateProfile(validationResult.data);
+        console.log('Profile updated:', response.message);
+      }
       
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -120,9 +197,11 @@ export default function SettingsPage() {
         return;
       }
       
-      // TODO: Call API to change password
-      console.log('Changing password for user');
-      // const response = await apiClient.changePassword(validationResult.data);
+      // Call API to change password
+      if (validationResult.data) {
+        const response = await apiClient.changePassword(validationResult.data);
+        console.log('Password changed:', response.message);
+      }
       
       // Clear password form on success
       setPasswordForm({
@@ -154,9 +233,17 @@ export default function SettingsPage() {
         return;
       }
 
-      // TODO: Add API call to save WhatsApp settings
-      console.log('Saving WhatsApp settings:', validationResult.data);
-      // const response = await apiClient.updateWhatsAppSettings(validationResult.data);
+      // Call API to save WhatsApp settings
+      if (validationResult.data) {
+        // Merge validated data with full settings to include boolean fields
+        const fullSettings = {
+          ...validationResult.data,
+          autoReply: whatsappSettings.autoReply,
+          webhookStatus: whatsappSettings.webhookStatus
+        };
+        const response = await apiClient.updateWhatsAppSettings(fullSettings);
+        console.log('WhatsApp settings updated:', response.message);
+      }
       
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -168,7 +255,83 @@ export default function SettingsPage() {
     }
   };
 
-  // Generic save handler for other sections
+  // AI settings save handler
+  const handleAISave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      const response = await apiClient.updateAISettings(aiSettings);
+      console.log('AI settings updated:', response.message);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving AI settings:', error);
+      setFormErrors({ general: 'Failed to save AI settings. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Notification settings save handler
+  const handleNotificationSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      const response = await apiClient.updateNotificationSettings(notificationSettings);
+      console.log('Notification settings updated:', response.message);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+      setFormErrors({ general: 'Failed to save notification settings. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Backup settings save handler
+  const handleBackupSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      const response = await apiClient.updateBackupSettings(backupSettings);
+      console.log('Backup settings updated:', response.message);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving backup settings:', error);
+      setFormErrors({ general: 'Failed to save backup settings. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Appearance settings save handler
+  const handleAppearanceSave = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    
+    try {
+      const response = await apiClient.updateAppearanceSettings(appearanceSettings);
+      console.log('Appearance settings updated:', response.message);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving appearance settings:', error);
+      setFormErrors({ general: 'Failed to save appearance settings. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Generic save handler for sections that don't have real API integration yet
   const handleSave = async () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -184,6 +347,49 @@ export default function SettingsPage() {
     { id: 'data', name: 'Data & Backup', icon: Database },
     { id: 'appearance', name: 'Appearance', icon: Palette },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+            <p className="text-muted-foreground">Loading your settings...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-lg">Configuration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="animate-pulse space-y-2">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="h-8 bg-muted rounded"></div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader>
+                <div className="animate-pulse">
+                  <div className="h-6 bg-muted rounded w-1/3 mb-2"></div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="animate-pulse space-y-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-4 bg-muted rounded w-full"></div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -516,9 +722,12 @@ export default function SettingsPage() {
                   </label>
                 </div>
 
-                <Button onClick={handleWhatsAppSave}>
+                <Button 
+                  onClick={handleWhatsAppSave}
+                  disabled={isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Save WhatsApp Settings
+                  {isSubmitting ? 'Saving...' : 'Save WhatsApp Settings'}
                 </Button>
               </CardContent>
             </Card>
@@ -535,9 +744,13 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Response Confidence Threshold
                     </label>
-                    <select className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <select 
+                      value={aiSettings.confidenceThreshold}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, confidenceThreshold: parseInt(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
                       <option value="70">70% - More responses, less accuracy</option>
-                      <option value="80" selected>80% - Balanced (Recommended)</option>
+                      <option value="80">80% - Balanced (Recommended)</option>
                       <option value="90">90% - Fewer responses, high accuracy</option>
                     </select>
                   </div>
@@ -545,9 +758,13 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-foreground mb-2">
                       Response Tone
                     </label>
-                    <select className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <select 
+                      value={aiSettings.responseTone}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, responseTone: e.target.value as typeof aiSettings.responseTone }))}
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
                       <option value="professional">Professional</option>
-                      <option value="friendly" selected>Friendly</option>
+                      <option value="friendly">Friendly</option>
                       <option value="casual">Casual</option>
                       <option value="formal">Formal</option>
                     </select>
@@ -560,35 +777,58 @@ export default function SettingsPage() {
                   </label>
                   <textarea
                     rows={4}
+                    value={aiSettings.businessContext}
+                    onChange={(e) => setAiSettings(prev => ({ ...prev, businessContext: e.target.value }))}
                     className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                    defaultValue="We provide CRM solutions for small and medium businesses in India. Our focus is on WhatsApp integration and automated lead nurturing."
+                    placeholder="We provide CRM solutions for small and medium businesses in India. Our focus is on WhatsApp integration and automated lead nurturing."
                   />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-scoring" defaultChecked className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="auto-scoring" 
+                      checked={aiSettings.autoScoring}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, autoScoring: e.target.checked }))}
+                      className="rounded" 
+                    />
                     <label htmlFor="auto-scoring" className="text-sm text-foreground">
                       Enable automatic lead scoring
                     </label>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-suggestions" defaultChecked className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="auto-suggestions" 
+                      checked={aiSettings.autoSuggestions}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, autoSuggestions: e.target.checked }))}
+                      className="rounded" 
+                    />
                     <label htmlFor="auto-suggestions" className="text-sm text-foreground">
                       Generate response suggestions automatically
                     </label>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <input type="checkbox" id="auto-followup" className="rounded" />
+                    <input 
+                      type="checkbox" 
+                      id="auto-followup" 
+                      checked={aiSettings.autoFollowup}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, autoFollowup: e.target.checked }))}
+                      className="rounded" 
+                    />
                     <label htmlFor="auto-followup" className="text-sm text-foreground">
                       Schedule automatic follow-ups for inactive leads
                     </label>
                   </div>
                 </div>
 
-                <Button onClick={handleSave}>
+                <Button 
+                  onClick={handleAISave}
+                  disabled={isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Save AI Settings
+                  {isSubmitting ? 'Saving...' : 'Save AI Settings'}
                 </Button>
               </CardContent>
             </Card>
@@ -608,21 +848,42 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-gray-700">New leads</p>
                         <p className="text-xs text-gray-500">Get notified when new leads are added</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.email.newLeads}
+                        onChange={(e) => setNotificationSettings(prev => ({
+                          ...prev,
+                          email: { ...prev.email, newLeads: e.target.checked }
+                        }))}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">WhatsApp messages</p>
                         <p className="text-xs text-gray-500">Immediate notification for new messages</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.email.whatsappMessages}
+                        onChange={(e) => setNotificationSettings(prev => ({
+                          ...prev,
+                          email: { ...prev.email, whatsappMessages: e.target.checked }
+                        }))}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">AI suggestions</p>
                         <p className="text-xs text-gray-500">When AI generates new suggestions</p>
                       </div>
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.email.aiSuggestions}
+                        onChange={(e) => setNotificationSettings(prev => ({
+                          ...prev,
+                          email: { ...prev.email, aiSuggestions: e.target.checked }
+                        }))}
+                      />
                     </div>
                   </div>
                 </div>
@@ -635,21 +896,38 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-gray-700">Urgent leads</p>
                         <p className="text-xs text-gray-500">High-priority lead activities</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.push.urgentLeads}
+                        onChange={(e) => setNotificationSettings(prev => ({
+                          ...prev,
+                          push: { ...prev.push, urgentLeads: e.target.checked }
+                        }))}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">Follow-up reminders</p>
                         <p className="text-xs text-gray-500">Scheduled follow-up notifications</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={notificationSettings.push.followupReminders}
+                        onChange={(e) => setNotificationSettings(prev => ({
+                          ...prev,
+                          push: { ...prev.push, followupReminders: e.target.checked }
+                        }))}
+                      />
                     </div>
                   </div>
                 </div>
 
-                <Button onClick={handleSave}>
+                <Button 
+                  onClick={handleNotificationSave}
+                  disabled={isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Save Notification Settings
+                  {isSubmitting ? 'Saving...' : 'Save Notification Settings'}
                 </Button>
               </CardContent>
             </Card>
@@ -797,21 +1075,33 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-gray-700">Automatic Backups</p>
                         <p className="text-xs text-gray-500">Create backups every 6 hours</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={backupSettings.autoBackup}
+                        onChange={(e) => setBackupSettings(prev => ({ ...prev, autoBackup: e.target.checked }))}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">Include Message History</p>
                         <p className="text-xs text-gray-500">Backup all WhatsApp conversations</p>
                       </div>
-                      <input type="checkbox" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        checked={backupSettings.includeMessages}
+                        onChange={(e) => setBackupSettings(prev => ({ ...prev, includeMessages: e.target.checked }))}
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-700">Include AI Training Data</p>
                         <p className="text-xs text-gray-500">Backup AI model preferences</p>
                       </div>
-                      <input type="checkbox" />
+                      <input 
+                        type="checkbox" 
+                        checked={backupSettings.includeAIData}
+                        onChange={(e) => setBackupSettings(prev => ({ ...prev, includeAIData: e.target.checked }))}
+                      />
                     </div>
                   </div>
                 </div>
@@ -849,9 +1139,12 @@ export default function SettingsPage() {
                   </Button>
                 </div>
 
-                <Button onClick={handleSave}>
+                <Button 
+                  onClick={handleBackupSave}
+                  disabled={isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Save Backup Settings
+                  {isSubmitting ? 'Saving...' : 'Save Backup Settings'}
                 </Button>
               </CardContent>
             </Card>
@@ -868,21 +1161,30 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div 
                       className={`border-2 ${theme === 'light' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
-                      onClick={() => setTheme('light')}
+                      onClick={() => {
+                        setTheme('light');
+                        setAppearanceSettings(prev => ({ ...prev, theme: 'light' }));
+                      }}
                     >
                       <div className="w-full h-20 bg-white border border-gray-200 rounded mb-3 shadow-sm"></div>
                       <p className="text-sm font-medium text-center text-foreground">Light Mode</p>
                     </div>
                     <div 
                       className={`border-2 ${theme === 'dark' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
-                      onClick={() => setTheme('dark')}
+                      onClick={() => {
+                        setTheme('dark');
+                        setAppearanceSettings(prev => ({ ...prev, theme: 'dark' }));
+                      }}
                     >
                       <div className="w-full h-20 bg-gray-900 border border-gray-700 rounded mb-3 shadow-sm"></div>
                       <p className="text-sm font-medium text-center text-foreground">Dark Mode</p>
                     </div>
                     <div 
                       className={`border-2 ${theme === 'system' ? 'border-primary' : 'border-border'} rounded-lg p-4 cursor-pointer hover:border-primary/50 transition-colors`}
-                      onClick={() => setTheme('system')}
+                      onClick={() => {
+                        setTheme('system');
+                        setAppearanceSettings(prev => ({ ...prev, theme: 'system' }));
+                      }}
                     >
                       <div className="w-full h-20 bg-gradient-to-r from-white via-gray-200 to-gray-900 border border-gray-300 rounded mb-3 shadow-sm"></div>
                       <p className="text-sm font-medium text-center text-foreground">System</p>
@@ -916,28 +1218,46 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-foreground">Compact Mode</p>
                         <p className="text-xs text-muted-foreground">Reduce spacing and padding</p>
                       </div>
-                      <input type="checkbox" className="rounded" />
+                      <input 
+                        type="checkbox" 
+                        checked={appearanceSettings.compactMode}
+                        onChange={(e) => setAppearanceSettings(prev => ({ ...prev, compactMode: e.target.checked }))}
+                        className="rounded" 
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-foreground">Show Animations</p>
                         <p className="text-xs text-muted-foreground">Enable UI animations and transitions</p>
                       </div>
-                      <input type="checkbox" defaultChecked className="rounded" />
+                      <input 
+                        type="checkbox" 
+                        checked={appearanceSettings.showAnimations}
+                        onChange={(e) => setAppearanceSettings(prev => ({ ...prev, showAnimations: e.target.checked }))}
+                        className="rounded" 
+                      />
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-foreground">High Contrast</p>
                         <p className="text-xs text-muted-foreground">Improve accessibility with higher contrast</p>
                       </div>
-                      <input type="checkbox" className="rounded" />
+                      <input 
+                        type="checkbox" 
+                        checked={appearanceSettings.highContrast}
+                        onChange={(e) => setAppearanceSettings(prev => ({ ...prev, highContrast: e.target.checked }))}
+                        className="rounded" 
+                      />
                     </div>
                   </div>
                 </div>
 
-                <Button onClick={handleSave}>
+                <Button 
+                  onClick={handleAppearanceSave}
+                  disabled={isSubmitting}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Save Appearance Settings
+                  {isSubmitting ? 'Saving...' : 'Save Appearance Settings'}
                 </Button>
               </CardContent>
             </Card>
