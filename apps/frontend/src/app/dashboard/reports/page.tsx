@@ -152,11 +152,43 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
-    // Mock export functionality
-    console.log(`Exporting report as ${format.toUpperCase()}`);
-    // In production, this would trigger a download
-    alert(`Report export as ${format.toUpperCase()} would start here`);
+  const handleExport = async (format: 'csv' | 'json') => {
+    try {
+      setLoading(true);
+      
+      // Convert format for API compatibility
+      const apiFormat = format === 'csv' ? 'csv' : 'json';
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/reports/export/${apiFormat}?period=${selectedPeriod}&reportType=${selectedReport}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `crm-report-${selectedPeriod}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log(`Report exported successfully as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert(`Failed to export report as ${format.toUpperCase()}. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -246,9 +278,9 @@ export default function ReportsPage() {
           </Button>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleExport('pdf')}>
+            <Button variant="outline" onClick={() => handleExport('csv')} disabled={loading}>
               <Download className="w-4 h-4 mr-2" />
-              Export
+              Export CSV
             </Button>
           </div>
         </div>
@@ -480,24 +512,20 @@ export default function ReportsPage() {
           <CardTitle>Export Options</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" onClick={() => handleExport('pdf')} className="justify-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button variant="outline" onClick={() => handleExport('csv')} className="justify-start" disabled={loading}>
               <FileText className="w-4 h-4 mr-2" />
-              Export as PDF
-            </Button>
-            <Button variant="outline" onClick={() => handleExport('excel')} className="justify-start">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Export as Excel
-            </Button>
-            <Button variant="outline" onClick={() => handleExport('csv')} className="justify-start">
-              <Download className="w-4 h-4 mr-2" />
               Export as CSV
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('json')} className="justify-start" disabled={loading}>
+              <Download className="w-4 h-4 mr-2" />
+              Export as JSON
             </Button>
           </div>
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-700 dark:text-blue-200">
-              <strong>Note:</strong> Exported reports include all data from the selected time period. 
-              PDF reports contain charts and visualizations, while Excel and CSV formats include raw data for further analysis.
+              <strong>Note:</strong> Exported reports include all contact data from the selected time period. 
+              CSV format provides spreadsheet-compatible data, while JSON format includes structured data for further analysis.
             </p>
           </div>
         </CardContent>
