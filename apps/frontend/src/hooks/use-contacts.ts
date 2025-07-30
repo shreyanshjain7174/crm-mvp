@@ -178,7 +178,16 @@ export function useContacts(options: UseContactsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    options.page,
+    options.limit,
+    options.search,
+    options.status,
+    options.source,
+    options.sortBy,
+    options.sortOrder
+  ]);
 
   useEffect(() => {
     fetchContacts();

@@ -29,10 +29,11 @@ export function ProgressiveDashboard({ onAddContact }: ProgressiveDashboardProps
   const { canAccess: hasAI } = useFeatureGate('ai:suggestions');
   const { canAccess: hasAdvancedFeatures } = useFeatureGate('monitoring:system');
   
-  // Sync user progress with backend on component mount
+  // Sync user progress with backend on component mount (only once)
   useEffect(() => {
     syncWithBackend();
-  }, [syncWithBackend]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only once on mount
   
   // Show stage-specific components based on user progression
   // Prioritize local stats over stage to ensure blank dashboard for truly new users

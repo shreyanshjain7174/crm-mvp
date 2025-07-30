@@ -150,14 +150,14 @@ export class DataSeeder {
     // Create test user
     console.log('📝 Creating test user for data seeding...');
     const result = await this.fastify.db.query(`
-      INSERT INTO users (email, password, name, company, created_at)
+      INSERT INTO users (email, password_hash, name, role, created_at)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id
     `, [
       'test@example.com',
       '$2b$10$dummy.hash.for.test.user.only',
       'Test User',
-      'Demo Company',
+      'admin',
       new Date()
     ]);
     

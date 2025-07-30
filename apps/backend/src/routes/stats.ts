@@ -6,7 +6,7 @@ export async function statsRoutes(fastify: FastifyInstance) {
   fastify.get('/dashboard', {
     preHandler: [
       cacheMiddleware({
-        ttl: 180, // 3 minutes cache for dashboard stats
+        ttl: 600, // 10 minutes cache to prevent excessive load during re-renders
         keyGenerator: () => 'dashboard:stats'
       })
     ]
@@ -121,7 +121,7 @@ export async function statsRoutes(fastify: FastifyInstance) {
   fastify.get('/user/progress', {
     preHandler: [
       cacheMiddleware({
-        ttl: 300, // 5 minutes cache for user progress
+        ttl: 600, // 10 minutes cache to prevent excessive load during re-renders
         keyGenerator: () => 'user:progress:stats'
       })
     ]

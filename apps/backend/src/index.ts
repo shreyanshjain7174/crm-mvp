@@ -25,7 +25,8 @@ import billingRoutes from './routes/billing';
 import { agentMonitoringRoutes } from './routes/agent-monitoring';
 // import marketplaceRoutes from './routes/marketplace'; // Disabled - requires database tables
 import { enhancedMarketplaceRoutes } from './routes/marketplace-enhanced';
-import contactRoutes from './routes/contacts';
+import { contactRoutes } from './routes/contacts';
+import { testRoutes } from './routes/test';
 import achievementRoutes from './routes/achievements';
 import notificationRoutes from './routes/notifications';
 import { workflowRoutes } from './routes/workflows';
@@ -99,6 +100,25 @@ async function buildApp() {
 
   // Add performance monitoring middleware
   app.addHook('preHandler', performanceMonitor.requestTracker());
+  
+  // Add onResponse hook to complete performance tracking
+  app.addHook('onResponse', async (request, reply) => {
+    const startTime = (request as any).startTime;
+    const route = (request as any).route;
+    
+    if (startTime && route) {
+      const duration = Date.now() - startTime;
+      const isError = reply.statusCode >= 400;
+      
+      // Update performance metrics
+      performanceMonitor.trackRequest(route, request.method, duration, isError);
+      
+      // Track slow database queries if applicable
+      if (duration > 1000) {
+        performanceMonitor.trackQuery(`Slow route: ${route}`, duration, route);
+      }
+    }
+  });
   
   // Decorate fastify instance
   app.decorate('db', pool);
@@ -203,6 +223,7 @@ async function buildApp() {
   // Use enhanced marketplace routes instead of original
   // await app.register(marketplaceRoutes, { prefix: '/api/marketplace' });
   await app.register(enhancedMarketplaceRoutes, { prefix: '/api/marketplace' });
+  await app.register(testRoutes, { prefix: '/api/test' });
   await app.register(contactRoutes, { prefix: '/api/contacts' });
   await app.register(achievementRoutes, { prefix: '/api/achievements' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });

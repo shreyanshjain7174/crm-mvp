@@ -57,45 +57,29 @@ class PerformanceMonitor {
   requestTracker() {
     return async (request: FastifyRequest, _reply: FastifyReply) => {
       const startTime = Date.now();
-      const route = `${request.method} ${request.routerPath || request.url}`;
+      const route = `${request.method} ${request.routeOptions?.url || request.url}`;
       
       this.requestCount++;
       this.activeConnections++;
 
-      // Track when request completes using onResponse hook
-      request.server.addHook('onResponse', async (req, rep) => {
-        if (req.id === request.id) {
-          const endTime = Date.now();
-          const duration = endTime - startTime;
-          
-          this.activeConnections--;
-          this.totalResponseTime += duration;
-
-          // Track error responses
-          if (rep.statusCode >= 400) {
-            this.errorCount++;
-          }
-
-          // Update route metrics
-          this.updateRouteMetrics(route, req.method, duration, rep.statusCode >= 400);
-
-          // Track slow queries (>2 seconds)
-          if (duration > 2000) {
-            this.addSlowQuery({
-              query: route,
-              duration,
-              timestamp: new Date(),
-              route: req.routerPath || req.url
-            });
-          }
-
-          // Log slow requests
-          if (duration > 1000) {
-            logger.warn(`Slow request: ${route} took ${duration}ms`);
-          }
-        }
-      });
+      // Store start time on request for later use
+      (request as any).startTime = startTime;
+      (request as any).route = route;
     };
+  }
+
+  /**
+   * Track a completed request
+   */
+  trackRequest(route: string, method: string, duration: number, isError: boolean) {
+    this.totalResponseTime += duration;
+    this.activeConnections = Math.max(0, this.activeConnections - 1);
+    
+    if (isError) {
+      this.errorCount++;
+    }
+    
+    this.updateRouteMetrics(route, method, duration, isError);
   }
 
   /**

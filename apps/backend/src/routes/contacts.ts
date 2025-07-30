@@ -26,13 +26,41 @@ export async function contactRoutes(fastify: FastifyInstance) {
     preHandler: [
       authenticate,
       cacheMiddleware({
-        ttl: 120, // 2 minutes cache for contacts list
+        ttl: 300, // 5 minutes cache to prevent excessive load during re-render loops
         keyGenerator: cacheKeyGenerators.userWithQuery
       })
     ]
   }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
+      
+      // Request frequency monitoring for debugging excessive calls
+      const requestNow = Date.now();
+      const requestKey = `requests_${userId}_${request.url}`;
+      const storedTimes = (global as any)[requestKey] || [];
+      const recentTimes = storedTimes.filter((time: number) => requestNow - time < 60000);
+      recentTimes.push(requestNow);
+      (global as any)[requestKey] = recentTimes;
+      
+      if (recentTimes.length > 5) {
+        fastify.log.warn(`High request frequency: ${recentTimes.length} requests to ${request.url} in 1 minute`);
+      }
+      
+      // Log excessive requests for debugging
+      const now = Date.now();
+      const userKey = `contacts_requests_${userId}`;
+      const requestTimes = (global as any)[userKey] || [];
+      
+      // Clean old requests (older than 1 minute)
+      const recentRequests = requestTimes.filter((time: number) => now - time < 60000);
+      recentRequests.push(now);
+      (global as any)[userKey] = recentRequests;
+      
+      // Log if too many requests
+      if (recentRequests.length > 10) {
+        fastify.log.warn(`High request frequency for user ${userId}: ${recentRequests.length} requests in 1 minute`);
+      }
+      
       const { 
         page = 1, 
         limit = 20, 
@@ -132,13 +160,25 @@ export async function contactRoutes(fastify: FastifyInstance) {
     preHandler: [
       authenticate,
       cacheMiddleware({
-        ttl: 300, // 5 minutes cache for stats
+        ttl: 600, // 10 minutes cache for stats to reduce load
         keyGenerator: cacheKeyGenerators.userSpecific
       })
     ]
   }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
+      
+      // Request frequency monitoring for debugging excessive calls
+      const requestNow = Date.now();
+      const requestKey = `requests_${userId}_${request.url}`;
+      const storedTimes = (global as any)[requestKey] || [];
+      const recentTimes = storedTimes.filter((time: number) => requestNow - time < 60000);
+      recentTimes.push(requestNow);
+      (global as any)[requestKey] = recentTimes;
+      
+      if (recentTimes.length > 5) {
+        fastify.log.warn(`High request frequency: ${recentTimes.length} requests to ${request.url} in 1 minute`);
+      }
 
       const [totalResult, statusResult, sourceResult, recentResult] = await Promise.all([
         fastify.db.query(`
@@ -211,6 +251,18 @@ export async function contactRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
+      
+      // Request frequency monitoring for debugging excessive calls
+      const requestNow = Date.now();
+      const requestKey = `requests_${userId}_${request.url}`;
+      const storedTimes = (global as any)[requestKey] || [];
+      const recentTimes = storedTimes.filter((time: number) => requestNow - time < 60000);
+      recentTimes.push(requestNow);
+      (global as any)[requestKey] = recentTimes;
+      
+      if (recentTimes.length > 5) {
+        fastify.log.warn(`High request frequency: ${recentTimes.length} requests to ${request.url} in 1 minute`);
+      }
       const contactData = request.body as z.infer<typeof contactSchema>;
 
       const result = await fastify.db.query(`
@@ -434,6 +486,18 @@ export async function contactRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = (request as any).user?.userId || (request as any).user?.id;
+      
+      // Request frequency monitoring for debugging excessive calls
+      const requestNow = Date.now();
+      const requestKey = `requests_${userId}_${request.url}`;
+      const storedTimes = (global as any)[requestKey] || [];
+      const recentTimes = storedTimes.filter((time: number) => requestNow - time < 60000);
+      recentTimes.push(requestNow);
+      (global as any)[requestKey] = recentTimes;
+      
+      if (recentTimes.length > 5) {
+        fastify.log.warn(`High request frequency: ${recentTimes.length} requests to ${request.url} in 1 minute`);
+      }
       const { action, contactIds, updateData } = request.body as {
         action: 'delete' | 'update' | 'export';
         contactIds: string[];
