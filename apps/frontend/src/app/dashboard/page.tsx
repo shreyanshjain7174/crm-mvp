@@ -51,7 +51,7 @@ export default function DashboardPage() {
         router.push('/dashboard/leads');
         break;
       case 'try_ai':
-        router.push('/dashboard/ai');
+        router.push('/dashboard/ai-assistant');
         break;
       default:
         console.log('Unknown action:', actionType);

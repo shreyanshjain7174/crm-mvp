@@ -17,7 +17,7 @@ const navigation = [
   { name: 'Leads', href: '/dashboard/leads', icon: Users },
   { name: 'Messages', href: '/dashboard/messages', icon: MessageCircle },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'AI Assistant', href: '/dashboard/ai', icon: Bot },
+  { name: 'AI Assistant', href: '/dashboard/ai-assistant', icon: Bot },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

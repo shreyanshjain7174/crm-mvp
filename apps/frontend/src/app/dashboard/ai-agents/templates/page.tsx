@@ -169,7 +169,7 @@ export default function TemplatesPage() {
             <p className="text-muted-foreground text-center mb-4 max-w-md">
               Access pre-built AI agent templates to quickly automate your workflow. Unlock this feature by exploring AI capabilities first.
             </p>
-            <Button onClick={() => window.location.href = '/dashboard/ai'}>
+            <Button onClick={() => window.location.href = '/dashboard/ai-assistant'}>
               Explore AI Features
             </Button>
           </CardContent>
