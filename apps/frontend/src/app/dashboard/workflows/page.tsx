@@ -1,414 +1,186 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Workflow, 
-  Plus, 
-  Play, 
-  Pause, 
-  Edit, 
-  Trash2, 
-  Copy,
-  Settings,
+  ArrowLeft,
+  GitBranch,
+  Layout,
+  BarChart,
+  Workflow,
+  Plus,
   Zap,
   Clock,
-  Target,
-  MessageSquare,
   Users,
-  BarChart3,
-  CheckCircle,
-  AlertCircle,
-  Activity
+  TrendingUp
 } from 'lucide-react';
-import { useUserProgressStore, useCanAccessFeature } from '@/stores/userProgress';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { VisualWorkflowBuilder, WorkflowData } from '@/components/workflows/VisualWorkflowBuilder';
-import { WorkflowSuggestionEngine } from '@/components/workflows/WorkflowSuggestionEngine';
-import { HybridWorkflowBuilder } from '@/components/workflows/HybridWorkflowBuilder';
-import { WorkflowMarketplace } from '@/components/workflows/WorkflowMarketplace';
-import { WorkflowAnalytics } from '@/components/workflows/WorkflowAnalytics';
 
-interface WorkflowTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: 'lead-management' | 'follow-up' | 'automation' | 'analytics';
-  triggers: string[];
-  actions: string[];
-  estimatedTimeSaved: number;
-  complexity: 'simple' | 'medium' | 'advanced';
-  isActive: boolean;
-  usageCount: number;
-}
-
-interface WorkflowStep {
-  id: string;
-  type: 'trigger' | 'condition' | 'action' | 'delay';
-  title: string;
-  description: string;
-  config: Record<string, any>;
-}
-
-export default function WorkflowsPage() {
+export default function WorkflowsMainPage() {
   const router = useRouter();
-  const canAccessWorkflows = useCanAccessFeature()('workflows:custom');
-  const { stats } = useUserProgressStore();
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
-  // Show feature locked if not expert
-  if (!canAccessWorkflows) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="border-2 border-dashed border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
-              <Workflow className="h-10 w-10 text-purple-500" />
-            </div>
-            
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Workflow Builder Loading... ⚡
-            </h3>
-            
-            <p className="text-gray-600 text-center max-w-md mb-6">
-              Workflow builder is available for Expert users. Continue using your CRM to unlock this powerful automation tool.
-            </p>
-            
-            <Button 
-              onClick={() => router.push('/dashboard')}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <Activity className="h-4 w-4 mr-2" />
-              Continue CRM Journey
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Mock workflow templates
-  const workflowTemplates: WorkflowTemplate[] = [
+  const workflowFeatures = [
     {
-      id: 'lead-nurture',
-      name: 'Lead Nurturing Sequence',
-      description: 'Automatically follow up with new leads over 7 days',
-      category: 'lead-management',
-      triggers: ['New Lead Created', 'Lead Status Changed'],
-      actions: ['Send WhatsApp Message', 'Update Lead Score', 'Schedule Follow-up'],
-      estimatedTimeSaved: 5.2,
-      complexity: 'simple',
-      isActive: true,
-      usageCount: 45
+      id: 'builder',
+      title: 'Visual Builder',
+      description: 'Create workflows with drag-and-drop components',
+      icon: GitBranch,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+      route: '/dashboard/workflows/builder',
+      stats: 'Build visually'
     },
     {
-      id: 'response-automation',
-      name: 'Smart Response Automation',
-      description: 'AI-powered auto-responses based on message content',
-      category: 'automation',
-      triggers: ['Message Received', 'Keyword Detected'],
-      actions: ['Generate AI Response', 'Tag Conversation', 'Notify Team'],
-      estimatedTimeSaved: 8.7,
-      complexity: 'medium',
-      isActive: true,
-      usageCount: 23
+      id: 'templates',
+      title: 'Templates',
+      description: 'Start from pre-built workflow templates',
+      icon: Layout,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
+      route: '/dashboard/workflows/templates',
+      stats: '20+ templates'
     },
     {
-      id: 'pipeline-management',
-      name: 'Pipeline Stage Automation',
-      description: 'Automatically move leads through pipeline stages',
-      category: 'lead-management',
-      triggers: ['Lead Score Updated', 'Activity Completed'],
-      actions: ['Change Pipeline Stage', 'Send Notification', 'Update Priority'],
-      estimatedTimeSaved: 3.5,
-      complexity: 'medium',
-      isActive: false,
-      usageCount: 12
+      id: 'analytics',
+      title: 'Analytics',
+      description: 'Monitor workflow performance and metrics',
+      icon: BarChart,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
+      route: '/dashboard/workflows/analytics',
+      stats: 'Performance insights'
     },
     {
-      id: 'follow-up-reminders',
-      name: 'Smart Follow-up Reminders',
-      description: 'Intelligent reminders based on lead engagement',
-      category: 'follow-up',
-      triggers: ['No Response for X Days', 'Lead Engagement Drop'],
-      actions: ['Create Task', 'Send Reminder', 'Escalate to Manager'],
-      estimatedTimeSaved: 4.3,
-      complexity: 'simple',
-      isActive: true,
-      usageCount: 67
+      id: 'manage',
+      title: 'Manage Workflows',
+      description: 'View, edit, and control all your workflows',
+      icon: Workflow,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200',
+      route: '/dashboard/workflows/manage',
+      stats: 'Full control'
     }
   ];
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'lead-management': return 'bg-blue-100 text-blue-800';
-      case 'follow-up': return 'bg-green-100 text-green-800';
-      case 'automation': return 'bg-purple-100 text-purple-800';
-      case 'analytics': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getComplexityColor = (complexity: string) => {
-    switch (complexity) {
-      case 'simple': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const totalTimeSaved = workflowTemplates
-    .filter(w => w.isActive)
-    .reduce((sum, w) => sum + (w.estimatedTimeSaved * w.usageCount), 0);
+  const quickStats = [
+    { label: 'Active Workflows', value: '8', icon: Zap, color: 'text-blue-600' },
+    { label: 'Time Saved', value: '24h', icon: Clock, color: 'text-green-600' },
+    { label: 'Executions', value: '1.2k', icon: TrendingUp, color: 'text-purple-600' },
+    { label: 'Success Rate', value: '94%', icon: Users, color: 'text-orange-600' }
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Workflow Builder</h1>
-          <p className="text-gray-600">
-            Create powerful automation workflows with our no-code visual builder
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/automation')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Automation
           </Button>
-          
-          <Button 
-            onClick={() => setIsCreating(true)}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Workflow
-          </Button>
-        </div>
-      </div>
-
-      {/* Workflow Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Workflow className="h-8 w-8 mx-auto text-purple-600 mb-2" />
-            <p className="text-2xl font-bold text-purple-600">{workflowTemplates.filter(w => w.isActive).length}</p>
-            <p className="text-sm text-gray-600">Active Workflows</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Clock className="h-8 w-8 mx-auto text-green-600 mb-2" />
-            <p className="text-2xl font-bold text-green-600">{totalTimeSaved.toFixed(1)}h</p>
-            <p className="text-sm text-gray-600">Time Saved This Month</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Zap className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
-            <p className="text-2xl font-bold text-yellow-600">
-              {workflowTemplates.reduce((sum, w) => sum + w.usageCount, 0)}
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Workflows</h1>
+            <p className="text-gray-600">
+              Build, manage, and monitor your automation workflows
             </p>
-            <p className="text-sm text-gray-600">Total Executions</p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
         
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Activity className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-            <p className="text-2xl font-bold text-blue-600">94%</p>
-            <p className="text-sm text-gray-600">Success Rate</p>
-          </CardContent>
-        </Card>
+        <Button 
+          onClick={() => router.push('/dashboard/workflows/builder')}
+          className="bg-purple-600 hover:bg-purple-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Workflow
+        </Button>
       </div>
 
-      {/* Workflow Management */}
-      <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
-          <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-          <TabsTrigger value="hybrid-builder">Hybrid Builder</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="active">Active Workflows</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {quickStats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="p-4 text-center">
+              <stat.icon className={`h-6 w-6 mx-auto ${stat.color} mb-2`} />
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+              <p className="text-sm text-gray-600">{stat.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {/* AI Suggestions Tab */}
-        <TabsContent value="suggestions" className="space-y-6">
-          <WorkflowSuggestionEngine
-            userStats={{
-              contactsAdded: stats.contactsAdded,
-              messagesSent: stats.messagesSent || 0,
-              leadsConverted: workflowTemplates.filter(w => w.isActive).length,
-              averageResponseTime: 4.2,
-              mostActiveHours: [10, 11, 14, 15, 18, 19],
-              commonLeadSources: ['WhatsApp', 'Website', 'Referral']
-            }}
-            onCreateWorkflow={(suggestion) => {
-              console.log('Creating workflow from suggestion:', suggestion);
-              // Switch to builder tab and populate with suggestion data
-            }}
-            onPreviewWorkflow={(suggestion) => {
-              console.log('Previewing workflow:', suggestion);
-              // Show workflow preview modal
-            }}
-          />
-        </TabsContent>
-
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {workflowTemplates.map((template) => (
-              <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">{template.name}</h3>
-                        <Badge className={cn('text-xs', getCategoryColor(template.category))}>
-                          {template.category.replace('-', ' ')}
-                        </Badge>
-                        <Badge className={cn('text-xs', getComplexityColor(template.complexity))}>
-                          {template.complexity}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">{template.description}</p>
-                      
-                      <div className="space-y-2 text-xs">
-                        <div>
-                          <span className="font-medium">Triggers:</span> {template.triggers.join(', ')}
-                        </div>
-                        <div>
-                          <span className="font-medium">Actions:</span> {template.actions.slice(0, 2).join(', ')}
-                          {template.actions.length > 2 && ` +${template.actions.length - 2} more`}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      {template.isActive ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-500">
-                      <span className="font-medium">{template.usageCount}</span> executions • 
-                      <span className="font-medium"> {template.estimatedTimeSaved}h</span> saved per month
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant={template.isActive ? "destructive" : "default"}
-                      >
-                        {template.isActive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Marketplace Tab */}
-        <TabsContent value="marketplace" className="space-y-6">
-          <WorkflowMarketplace />
-        </TabsContent>
-
-        {/* Hybrid Builder Tab */}
-        <TabsContent value="hybrid-builder" className="space-y-6">
-          <HybridWorkflowBuilder />
-        </TabsContent>
-
-        {/* Active Workflows Tab */}
-        <TabsContent value="active" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Currently Running Workflows</CardTitle>
+      {/* Workflow Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {workflowFeatures.map((feature) => (
+          <Card 
+            key={feature.id} 
+            className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${feature.borderColor} border-2`}
+            onClick={() => router.push(feature.route)}
+          >
+            <CardHeader className="pb-4">
+              <div className={`w-12 h-12 ${feature.bgColor} rounded-lg flex items-center justify-center mb-4`}>
+                <feature.icon className={`h-6 w-6 ${feature.color}`} />
+              </div>
+              <CardTitle className="text-xl">{feature.title}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {workflowTemplates.filter(w => w.isActive).map((workflow) => (
-                  <div key={workflow.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{workflow.name}</h4>
-                        <p className="text-sm text-gray-600">Last run: 2 hours ago</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right text-sm">
-                        <div className="font-medium">{workflow.usageCount} executions</div>
-                        <div className="text-gray-500">94% success rate</div>
-                      </div>
-                      
-                      <Button size="sm" variant="outline">
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+            <CardContent className="pt-0">
+              <p className="text-gray-600 mb-4">{feature.description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">{feature.stats}</span>
+                <Button size="sm" variant="outline">
+                  Open
+                </Button>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        ))}
+      </div>
 
-        {/* Visual Builder Tab */}
-        <TabsContent value="builder" className="space-y-6">
-          <Card className="h-[800px] overflow-hidden">
-            <VisualWorkflowBuilder
-              onSave={(workflow: WorkflowData) => {
-                console.log('Saving workflow:', workflow);
-                // Here you would save the workflow to your backend
-              }}
-              onTest={(workflow: WorkflowData) => {
-                console.log('Testing workflow:', workflow);
-                // Here you would test the workflow execution
-              }}
-              className="h-full"
-            />
-          </Card>
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          <WorkflowAnalytics
-            timeRange="30d"
-            onTimeRangeChange={(range) => {
-              console.log('Workflow analytics time range changed:', range);
-              // Handle time range change for workflow analytics
-            }}
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Getting Started */}
+      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+        <CardHeader>
+          <CardTitle className="text-purple-900">Getting Started with Workflows</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-purple-600 font-bold">1</span>
+              </div>
+              <h4 className="font-medium mb-2">Choose a Template</h4>
+              <p className="text-sm text-gray-600">Start with a pre-built template or create from scratch</p>
+            </div>
+            <div className="text-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-purple-600 font-bold">2</span>
+              </div>
+              <h4 className="font-medium mb-2">Build Your Workflow</h4>
+              <p className="text-sm text-gray-600">Use the visual builder to create your automation logic</p>
+            </div>
+            <div className="text-center">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-purple-600 font-bold">3</span>
+              </div>
+              <h4 className="font-medium mb-2">Monitor & Optimize</h4>
+              <p className="text-sm text-gray-600">Track performance and improve your workflows over time</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-center mt-6">
+            <Button 
+              onClick={() => router.push('/dashboard/workflows/templates')}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Layout className="h-4 w-4 mr-2" />
+              Browse Templates
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

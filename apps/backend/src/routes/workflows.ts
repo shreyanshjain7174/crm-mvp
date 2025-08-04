@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { workflowOrchestrator, WorkflowDefinition } from '../services/workflow-orchestrator';
+import { workflowExecutionEngine } from '../services/workflow-execution-engine';
 import { n8nIntegration } from '../services/n8n-integration';
 import { langGraphIntegration } from '../services/langgraph-integration';
 import { cacheMiddleware, cacheKeyGenerators } from '../middleware/cache-middleware';
@@ -156,7 +157,17 @@ export async function workflowRoutes(fastify: FastifyInstance) {
       const { id } = request.params as any;
       const { input = {}, triggeredBy = 'manual' } = request.body as ExecuteWorkflowRequest;
       
-      const execution = await workflowOrchestrator.executeWorkflow(id, input, triggeredBy);
+      const workflow = workflowOrchestrator.getWorkflow(id);
+      if (!workflow) {
+        reply.status(404).send({
+          success: false,
+          error: 'Workflow not found'
+        });
+        return;
+      }
+
+      // Use the new execution engine for enhanced workflow processing
+      const execution = await workflowExecutionEngine.executeWorkflow(workflow, input, triggeredBy);
       
       reply.send({
         success: true,
@@ -350,6 +361,143 @@ export async function workflowRoutes(fastify: FastifyInstance) {
       reply.status(500).send({
         success: false,
         error: 'Failed to update workflow status'
+      });
+    }
+  });
+
+  // Trigger workflow event
+  fastify.post('/trigger/:triggerType', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { triggerType } = request.params as any;
+      const { data = {}, source = 'api' } = request.body as any;
+      
+      await workflowExecutionEngine.triggerEvent(triggerType, data, source);
+      
+      reply.send({
+        success: true,
+        message: `Trigger event ${triggerType} processed`,
+        triggerType,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Failed to trigger workflow event:', error);
+      reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to trigger workflow event'
+      });
+    }
+  });
+
+  // Save workflow from builder
+  fastify.post('/builder/save', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { name, description, nodes, edges } = request.body as any;
+      
+      if (!name?.trim()) {
+        reply.status(400).send({
+          success: false,
+          error: 'Workflow name is required'
+        });
+        return;
+      }
+
+      // Convert frontend nodes to backend format
+      const workflowNodes = nodes.map((node: any) => ({
+        id: node.id,
+        type: node.type,
+        engine: node.type === 'ai' ? 'langgraph' : 'n8n',
+        name: node.data?.label || `${node.type} node`,
+        config: {
+          actionType: node.data?.actionType,
+          condition: node.data?.condition,
+          delay: node.data?.delay,
+          task: node.data?.task,
+          ...node.data
+        },
+        position: node.position
+      }));
+
+      const workflowEdges = edges.map((edge: any) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        conditions: edge.conditions || []
+      }));
+
+      // Create workflow definition
+      const workflowDef: Omit<WorkflowDefinition, 'id' | 'metadata'> = {
+        name,
+        description: description || '',
+        type: 'hybrid',
+        status: 'draft',
+        triggers: [{
+          id: 'manual_trigger',
+          type: 'manual',
+          config: {},
+          conditions: []
+        }],
+        nodes: workflowNodes,
+        edges: workflowEdges,
+        settings: {
+          timeout: 300000,
+          retryPolicy: {
+            maxRetries: 3,
+            backoffType: 'exponential',
+            delay: 1000
+          },
+          errorHandling: 'stop'
+        }
+      };
+
+      const workflow = await workflowOrchestrator.createWorkflow(workflowDef);
+      
+      reply.status(201).send({
+        success: true,
+        workflow,
+        message: 'Workflow saved successfully'
+      });
+    } catch (error) {
+      logger.error('Failed to save workflow from builder:', error);
+      reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save workflow'
+      });
+    }
+  });
+
+  // Test workflow execution
+  fastify.post('/:id/test', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { id } = request.params as any;
+      const { testData = {} } = request.body as any;
+      
+      const workflow = workflowOrchestrator.getWorkflow(id);
+      if (!workflow) {
+        reply.status(404).send({
+          success: false,
+          error: 'Workflow not found'
+        });
+        return;
+      }
+
+      // Execute workflow in test mode
+      const execution = await workflowExecutionEngine.executeWorkflow(
+        workflow,
+        { ...testData, testMode: true },
+        'test'
+      );
+      
+      reply.send({
+        success: true,
+        execution,
+        testMode: true,
+        message: 'Workflow test execution completed'
+      });
+    } catch (error) {
+      logger.error('Failed to test workflow:', error);
+      reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to test workflow'
       });
     }
   });

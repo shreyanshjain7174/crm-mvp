@@ -840,6 +840,30 @@ class ApiClient {
     });
   }
 
+  async getWorkflowAnalytics(period: string = '7d'): Promise<{
+    success: boolean;
+    analytics: any[];
+  }> {
+    return this.request(`/api/workflows/analytics?period=${period}`);
+  }
+
+  async duplicateWorkflow(id: string): Promise<{
+    success: boolean;
+    workflow: any;
+  }> {
+    return this.request(`/api/workflows/${id}/duplicate`, {
+      method: 'POST',
+    });
+  }
+
+  async deleteWorkflow(id: string): Promise<{
+    success: boolean;
+  }> {
+    return this.request(`/api/workflows/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Performance/Monitoring API
   async getPerformanceMetrics(): Promise<{
     success: boolean;
@@ -941,6 +965,50 @@ class ApiClient {
   }> {
     return this.request('/api/performance/warmup', {
       method: 'POST',
+    });
+  }
+
+  // Enhanced Workflow API
+  async saveWorkflowFromBuilder(data: {
+    name: string;
+    description: string;
+    nodes: any[];
+    edges: any[];
+  }): Promise<{
+    success: boolean;
+    workflow: any;
+    message: string;
+  }> {
+    return this.request('/api/workflows/builder/save', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async triggerWorkflowEvent(triggerType: string, data: {
+    data?: Record<string, any>;
+    source?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    triggerType: string;
+    timestamp: string;
+  }> {
+    return this.request(`/api/workflows/trigger/${triggerType}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async testWorkflow(id: string, testData?: Record<string, any>): Promise<{
+    success: boolean;
+    execution: any;
+    testMode: boolean;
+    message: string;
+  }> {
+    return this.request(`/api/workflows/${id}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ testData }),
     });
   }
 }

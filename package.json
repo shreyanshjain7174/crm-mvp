@@ -39,7 +39,7 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "dev:tools": "scripts/dev/dev-tools-setup.sh",
-    "dev:analyze": "scripts/dev/analyze-bundle.sh", 
+    "dev:analyze": "scripts/dev/analyze-bundle.sh",
     "dev:perf": "scripts/dev/check-performance.sh",
     "dev:clean": "rm -rf apps/frontend/.next apps/backend/dist node_modules/*/node_modules",
     "dev:reset": "npm run dev:clean && npm install",
@@ -50,6 +50,7 @@
     "security:audit": "npm audit --audit-level moderate"
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "concurrently": "^8.2.2"
   },
   "engines": {

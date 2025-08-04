@@ -87,22 +87,159 @@ export function ModernAgentMarketplace() {
     });
   };
 
+  const [installingAgents, setInstallingAgents] = useState<Set<string>>(new Set());
+  const [installedAgents, setInstalledAgents] = useState<Set<string>>(new Set());
+
   const handleInstall = async (agent: Agent) => {
     try {
+      setInstallingAgents(prev => new Set(prev).add(agent.agentId));
+      
       const result = await installAgent(agent.agentId);
       if (result.success) {
-        // Show success message
+        setInstalledAgents(prev => new Set(prev).add(agent.agentId));
         console.log(`✅ ${agent.name} installed successfully!`);
-        // In a real implementation, you might show a toast notification
-        alert(`🎉 ${agent.name} installed successfully! You can now use it in your workflows.`);
+        
+        // Create a secure success notification without innerHTML
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg transform transition-all duration-300';
+        
+        const container = document.createElement('div');
+        container.className = 'flex items-center gap-3';
+        
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('class', 'w-6 h-6');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('d', 'M5 13l4 4L19 7');
+        icon.appendChild(path);
+        
+        const textContainer = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'font-semibold';
+        title.textContent = `${agent.name} Installed!`;
+        
+        const subtitle = document.createElement('div');
+        subtitle.className = 'text-sm opacity-90';
+        subtitle.textContent = 'Ready to use in workflows';
+        
+        textContainer.appendChild(title);
+        textContainer.appendChild(subtitle);
+        container.appendChild(icon);
+        container.appendChild(textContainer);
+        notification.appendChild(container);
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove notification after 4 seconds
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              document.body.removeChild(notification);
+            }
+          }, 300);
+        }, 4000);
       } else {
-        // Show error message
         console.error(`❌ Failed to install ${agent.name}:`, result.error);
-        alert(`Failed to install ${agent.name}: ${result.error}`);
+        
+        // Create secure error notification
+        const errorNotification = document.createElement('div');
+        errorNotification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg';
+        
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'flex items-center gap-3';
+        
+        const errorIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        errorIcon.setAttribute('class', 'w-6 h-6');
+        errorIcon.setAttribute('fill', 'none');
+        errorIcon.setAttribute('stroke', 'currentColor');
+        errorIcon.setAttribute('viewBox', '0 0 24 24');
+        
+        const errorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        errorPath.setAttribute('stroke-linecap', 'round');
+        errorPath.setAttribute('stroke-linejoin', 'round');
+        errorPath.setAttribute('stroke-width', '2');
+        errorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+        errorIcon.appendChild(errorPath);
+        
+        const errorTextContainer = document.createElement('div');
+        const errorTitle = document.createElement('div');
+        errorTitle.className = 'font-semibold';
+        errorTitle.textContent = 'Installation Failed';
+        
+        const errorSubtitle = document.createElement('div');
+        errorSubtitle.className = 'text-sm opacity-90';
+        errorSubtitle.textContent = result.error || 'Unknown error occurred';
+        
+        errorTextContainer.appendChild(errorTitle);
+        errorTextContainer.appendChild(errorSubtitle);
+        errorContainer.appendChild(errorIcon);
+        errorContainer.appendChild(errorTextContainer);
+        errorNotification.appendChild(errorContainer);
+        
+        document.body.appendChild(errorNotification);
+        setTimeout(() => {
+          if (errorNotification.parentNode) {
+            document.body.removeChild(errorNotification);
+          }
+        }, 5000);
       }
     } catch (error) {
       console.error(`❌ Installation failed for ${agent.name}:`, error);
-      alert(`Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Create secure catch error notification
+      const catchErrorNotification = document.createElement('div');
+      catchErrorNotification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg';
+      
+      const catchErrorContainer = document.createElement('div');
+      catchErrorContainer.className = 'flex items-center gap-3';
+      
+      const catchErrorIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      catchErrorIcon.setAttribute('class', 'w-6 h-6');
+      catchErrorIcon.setAttribute('fill', 'none');
+      catchErrorIcon.setAttribute('stroke', 'currentColor');
+      catchErrorIcon.setAttribute('viewBox', '0 0 24 24');
+      
+      const catchErrorPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      catchErrorPath.setAttribute('stroke-linecap', 'round');
+      catchErrorPath.setAttribute('stroke-linejoin', 'round');
+      catchErrorPath.setAttribute('stroke-width', '2');
+      catchErrorPath.setAttribute('d', 'M6 18L18 6M6 6l12 12');
+      catchErrorIcon.appendChild(catchErrorPath);
+      
+      const catchErrorTextContainer = document.createElement('div');
+      const catchErrorTitle = document.createElement('div');
+      catchErrorTitle.className = 'font-semibold';
+      catchErrorTitle.textContent = 'Installation Failed';
+      
+      const catchErrorSubtitle = document.createElement('div');
+      catchErrorSubtitle.className = 'text-sm opacity-90';
+      catchErrorSubtitle.textContent = error instanceof Error ? error.message : 'Unknown error';
+      
+      catchErrorTextContainer.appendChild(catchErrorTitle);
+      catchErrorTextContainer.appendChild(catchErrorSubtitle);
+      catchErrorContainer.appendChild(catchErrorIcon);
+      catchErrorContainer.appendChild(catchErrorTextContainer);
+      catchErrorNotification.appendChild(catchErrorContainer);
+      
+      document.body.appendChild(catchErrorNotification);
+      setTimeout(() => {
+        if (catchErrorNotification.parentNode) {
+          document.body.removeChild(catchErrorNotification);
+        }
+      }, 5000);
+    } finally {
+      setInstallingAgents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(agent.agentId);
+        return newSet;
+      });
     }
   };
 
@@ -224,6 +361,79 @@ export function ModernAgentMarketplace() {
         </div>
       </div>
 
+      {/* Marketplace Stats */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.25 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg text-center">
+            <div className="text-3xl font-bold text-indigo-600 mb-2">{agents.length}+</div>
+            <div className="text-sm text-gray-600">AI Agents Available</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">{categoriesWithIcons.length - 1}</div>
+            <div className="text-sm text-gray-600">Categories</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">{installedAgents.size}</div>
+            <div className="text-sm text-gray-600">Installed Agents</div>
+          </div>
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-lg text-center">
+            <div className="text-3xl font-bold text-orange-600 mb-2">24/7</div>
+            <div className="text-sm text-gray-600">Always Available</div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Recently Installed Agents */}
+      {installedAgents.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Recently Installed</h2>
+            </div>
+            <button
+              onClick={() => window.open('/dashboard/workflows/builder', '_blank')}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              Use in Workflows →
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from(installedAgents).slice(0, 3).map((agentId) => {
+              const agent = agents.find(a => a.agentId === agentId);
+              if (!agent) return null;
+              return (
+                <div key={agentId} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{agent.name}</h3>
+                      <p className="text-sm text-gray-600">Ready to use</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {/* Featured Agents Section */}
       {featuredAgents.length > 0 && (
         <motion.div
@@ -246,7 +456,7 @@ export function ModernAgentMarketplace() {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group"
               >
-                <AgentCard agent={agent} onInstall={handleInstall} featured categories={categoriesWithIcons} />
+                <AgentCard agent={agent} onInstall={handleInstall} featured categories={categoriesWithIcons} isInstalling={installingAgents.has(agent.agentId)} isInstalled={installedAgents.has(agent.agentId)} />
               </motion.div>
             ))}
           </div>
@@ -376,6 +586,8 @@ export function ModernAgentMarketplace() {
                     onInstall={handleInstall} 
                     listView={filters.view === 'list'}
                     categories={categoriesWithIcons}
+                    isInstalling={installingAgents.has(agent.agentId)}
+                    isInstalled={installedAgents.has(agent.agentId)}
                   />
                 </motion.div>
               ))}
@@ -411,13 +623,17 @@ const AgentCard = memo(function AgentCard({
   onInstall, 
   featured = false, 
   listView = false,
-  categories
+  categories,
+  isInstalling = false,
+  isInstalled = false
 }: { 
   agent: Agent; 
   onInstall: (agent: Agent) => void; 
   featured?: boolean;
   listView?: boolean;
   categories: any[];
+  isInstalling?: boolean;
+  isInstalled?: boolean;
 }) {
   const categoryConfig = categories.find(cat => cat.id === agent.category) || categories[0];
   const Icon = categoryConfig.icon;
@@ -513,14 +729,37 @@ const AgentCard = memo(function AgentCard({
         </div>
         
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onInstall(agent)}
-          className="px-6 py-2 bg-primary text-primary-foreground rounded-xl
-                    hover:bg-primary/90 transition-all duration-300
-                    font-medium text-sm shadow-lg"
+          whileHover={{ scale: isInstalling || isInstalled ? 1 : 1.05 }}
+          whileTap={{ scale: isInstalling || isInstalled ? 1 : 0.95 }}
+          onClick={() => !isInstalling && !isInstalled && onInstall(agent)}
+          disabled={isInstalling || isInstalled}
+          className={`px-6 py-2 rounded-xl font-medium text-sm shadow-lg transition-all duration-300 ${
+            isInstalled 
+              ? 'bg-green-500 text-white cursor-default' 
+              : isInstalling 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+          }`}
         >
-          Install
+          {isInstalled ? (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Installed
+            </div>
+          ) : isInstalling ? (
+            <div className="flex items-center gap-2">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+              />
+              Installing...
+            </div>
+          ) : (
+            'Install'
+          )}
         </motion.button>
       </div>
     </div>

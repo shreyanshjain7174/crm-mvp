@@ -38,7 +38,7 @@ export interface WorkflowTrigger {
 
 export interface WorkflowNode {
   id: string;
-  type: 'action' | 'condition' | 'transform' | 'ai' | 'integration';
+  type: 'trigger' | 'action' | 'condition' | 'transform' | 'ai' | 'integration' | 'delay';
   engine: 'n8n' | 'langgraph';
   name: string;
   config: Record<string, any>;
