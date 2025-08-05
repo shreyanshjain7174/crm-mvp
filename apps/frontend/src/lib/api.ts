@@ -968,6 +968,26 @@ class ApiClient {
     });
   }
 
+  // Enhanced AI API methods
+  async generateAIResponse(request: any): Promise<any> {
+    return this.request('/api/ai/v2/generate', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getAIModels(): Promise<{ models: any[] }> {
+    return this.request('/api/ai/models');
+  }
+
+  async getAITokenUsage(): Promise<any> {
+    return this.request('/api/ai/usage');
+  }
+
+  async checkAIHealth(): Promise<{ status: string; ai_backend_connected: boolean }> {
+    return this.request('/api/ai/health');
+  }
+
   // Enhanced Workflow API
   async saveWorkflowFromBuilder(data: {
     name: string;

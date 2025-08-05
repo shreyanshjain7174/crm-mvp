@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Bot, 
   CheckCircle, 
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiClient, AISuggestion, AIAnalytics } from '@/lib/api';
+import { AIAssistant } from '@/components/ai/AIAssistant';
 
 type SuggestionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -188,7 +190,7 @@ export default function AIAssistantPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">AI Assistant</h1>
-          <p className="text-gray-600">AI-powered suggestions and automation</p>
+          <p className="text-gray-600">AI-powered chat, suggestions and automation</p>
         </div>
         <div className="flex items-center space-x-3">
           <Badge className="bg-green-100 text-green-800">
@@ -201,6 +203,25 @@ export default function AIAssistantPage() {
           </Button>
         </div>
       </div>
+
+      {/* Tabbed Interface */}
+      <Tabs defaultValue="chat" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="chat" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            AI Chat
+          </TabsTrigger>
+          <TabsTrigger value="suggestions" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Suggestions & Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="chat" className="space-y-6 mt-0">
+          <AIAssistant className="h-[600px]" />
+        </TabsContent>
+
+        <TabsContent value="suggestions" className="space-y-6 mt-0">
 
       {/* AI Performance Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -431,6 +452,8 @@ export default function AIAssistantPage() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
